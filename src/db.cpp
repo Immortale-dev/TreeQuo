@@ -34,6 +34,14 @@ void DB::fold()
 	blossomed = false;
 }
 
+void DB::create_qtree(KEY_TYPES type, string name)
+{
+	switch(type){
+		case KEY_TYPES::INT:
+
+	}
+}
+
 
 /**
  * Root file contains: `${number_of_elements} ${root_branch_file_name} ${is_root_branch_leaf_or_not} \n `
@@ -44,19 +52,19 @@ void DB::fold()
 void DB::create_root_file()
 {
 	DBFS::File* rf = DBFS::create();
-	if(rf.fail()){
+	if(rf->fail()){
 		throw DBException(DBException::ERRORS::CANNOT_CREATE_ROOT);
 	}
-	rf.write("0\n");
-	string root_branch_name = rf.name();
-	rf.close();
+	rf->write("0\n");
+	string root_branch_name = rf->name();
+	rf->close();
 	delete rf;
 	
 	DBFS::File* f = DBFS::create(ROOT_TREE);
-	if(f.fail()){
+	if(f->fail()){
 		throw DBException(DBException::ERRORS::CANNOT_CREATE_ROOT);
 	}
 	f->write("0 " + root_branch_name + " 1\n");
-	f.slose();
+	f->close();
 	delete f;
 }
