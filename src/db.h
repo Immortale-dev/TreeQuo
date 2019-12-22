@@ -2,9 +2,11 @@
 #define DB_H
 
 #include <string>
+#include <exception>
 #include "bplustree.hpp"
 #include "dbfs.hpp"
 #include "listcache.hpp"
+#include "dbexception.hpp"
 
 class DB{
 	
@@ -14,11 +16,25 @@ class DB{
 		DB();
 		~DB();
 		DB(string path);
-		void init();
 		
+		create_qtree();
+		delete_qtree();
+		
+		insert_qleaf();
+		erase_qleaf();
+		
+		find_qleaf();
+		find_qbranch();
+		
+		void bloom(string path);
+		void fold();
 	private:
-		bool initialized = false;
+		bplustree* FOREST;
+		bool blossomed = false;
+		
+		void create_root_file();
 	
+		string ROOT_TREE = "_root";
 };
 
 #endif // DB_H
