@@ -29,6 +29,7 @@ void DB::bloom(string path)
 	}
 	
 	FOREST = open_root();
+	tree_cache_f[(int_t)FOREST] = ROOT_TREE;
 	
 	blossomed = true;
 }

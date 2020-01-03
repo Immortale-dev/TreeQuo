@@ -304,6 +304,7 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 			DBFS::move(new_name, cur_name);
 		}
 	} else {
+		
 		leaf_t leaf_d;
 		leaf_d.type = get_tree_type<T>();
 		int c = node->get_childs()->size();
@@ -354,6 +355,13 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 		}
 	}
 	
+	std::cout << "d5" << std::endl;
+	
+	for(auto& it : tree_cache_f){
+		std::cout << "CF - " << it.first << std::endl;
+	}
+	std::cout << "LOOK " << ((int_t)tree) << std::endl;
+	
 	// Save Base File
 	string base_file_name = tree_cache_f[(int_t)tree];
 	DBFS::File* base_f = DBFS::create();
@@ -361,12 +369,20 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 	base_d.type = get_tree_type<T>();
 	base_d.count = tree->size();
 	base_d.factor = tree->get_factor();
+	
+	std::cout << "d6" << std::endl;
+	
 	typename T::node_ptr root_node = tree->get_root_pub();
 	base_d.branch_type = (root_node->is_leaf() ? NODE_TYPES::LEAF : NODE_TYPES::INTR);
 	node_data_ptr base_data = get_node_data(root_node->data);
 	base_d.branch = base_data->path;
 	write_base<T>(base_f, base_d);
 	string new_base_file_name = base_f->name();
+	
+	std::cout << "d7" << std::endl;
+	
+	std::cout << base_file_name << " " << new_base_file_name << std::endl;
+	
 	base_f->close();
 	DBFS::remove(base_file_name);
 	DBFS::move(new_base_file_name, base_file_name);
@@ -476,6 +492,7 @@ typename T::node_ptr DB::get_intr(string path)
 	intr_cache_m.unlock();
 	
 	// Fill node
+	intr_data = node_ptr(new typename T::InternalNode());
 	intr_t intr_d = read_intr<T>(path);
 	std::vector<typename T::key_type>* keys_ptr = (std::vector<typename T::key_type>*)intr_d.child_keys;
 	std::vector<string>* vals_ptr = (std::vector<string>*)intr_d.child_values;
@@ -545,6 +562,7 @@ typename T::node_ptr DB::get_leaf(string path)
 	leaf_cache_m.unlock();
 	
 	// Fill node
+	leaf_data = node_ptr(new typename T::LeafNode());
 	leaf_t leaf_d = read_leaf<T>(path);
 	std::vector<typename T::key_type>* keys_ptr = (std::vector<typename T::key_type>*)leaf_d.child_keys;
 	std::vector<int_t>* vals_length = (std::vector<int_t>*)leaf_d.child_lengths;
