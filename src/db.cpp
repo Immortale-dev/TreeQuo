@@ -21,6 +21,7 @@ void DB::bloom(string path)
 		return;
 		
 	init_drivers();
+	init_cache();
 		
 	DBFS::root = path;
 	if(!DBFS::exists(ROOT_TREE)){
@@ -102,7 +103,7 @@ DB::tree_t DB::get_tree(string path)
 	tree_cache_m.lock();
 	tree_cache.push(path, t);
 	tree_cache_r[path] = std::make_pair(t,0);
-	tree_cache_f[(int_t)t.tree] = path;
+	tree_cache_f[(int_t)t.tree.get()] = path;
 	p.set_value(t);
 	tree_cache_q.erase(path);
 	tree_cache_m.unlock();
@@ -120,7 +121,7 @@ DB::tree_t DB::find_qtree(string name)
 	}
 	
 	// Get tree path
-	string path = it->second;
+	string path = read_leaf_item(it->second);
 	
 	return open_qtree(path);
 }
@@ -200,7 +201,12 @@ DB::string DB::create_qtree_base(TREE_TYPES type)
 
 void DB::insert_qtree(string name, string file_name, TREE_TYPES type)
 {
-	FOREST->insert(make_pair(name,file_name));
+	file_data_t tmp(file_name.size(), [file_name](file_data_t* self, char* buf, int count){
+		for(int i=0;i<count;i++){
+			buf[i] = file_name[i];
+		}
+	});
+	FOREST->insert(make_pair(name,tmp));
 }
 
 void DB::erase_qtree(string name)
@@ -228,6 +234,13 @@ DB::tree_base_read_t DB::read_base(string filename)
 	f->close();
 	delete f;
 	return ret;
+}
+
+void DB::init_cache()
+{
+	tree_cache.set_callback([this](string key){ this->check_tree_ref(key); });
+	leaf_cache.set_callback([this](string key){ this->check_leaf_ref(key); });
+	intr_cache.set_callback([this](string key){ this->check_intr_ref(key); });
 }
 
 void DB::init_drivers()
@@ -267,9 +280,14 @@ void DB::init_drivers()
 	//driver_string = new driver_string_t(d_enter<string_tree_t>, d_leave<string_tree_t>, d_insert<string_tree_t>, d_remove<string_tree_t>, d_reserve<string_tree_t>, d_release<string_tree_t>, d_before_move<string_tree_t>, d_after_move<string_tree_t>);
 }
 
-DB::node_data_ptr DB::create_node_data(bool ghost, string path, TREE_TYPES type)
+DB::node_data_ptr DB::create_node_data(bool ghost, string path)
 {
-	return node_data_ptr(new node_data_t(ghost, path, type));
+	return node_data_ptr(new node_data_t(ghost, path));
+}
+
+DB::node_data_ptr DB::get_node_data(void_shared d)
+{
+	return std::static_pointer_cast<node_data_t>(d);
 }
 
 void DB::check_tree_ref(string key)
@@ -278,7 +296,8 @@ void DB::check_tree_ref(string key)
 		return;
 	if(tree_cache_r[key].second == 0 && !tree_cache.has(key)){
 		tree_cache_r.erase(key);
-		tree_cache_f.erase(key);
+		// TODO:
+		//tree_cache_f.erase(key);
 	}
 }
 
@@ -296,5 +315,17 @@ void DB::check_intr_ref(string key)
 		return;
 	if(intr_cache_r[key].second == 0 && !intr_cache.has(key))
 		intr_cache_r.erase(key);
+}
+
+DB::string DB::read_leaf_item(file_data_t item)
+{
+	int sz = item.size();
+	char* buf = new char[sz+1];
+	item.read(buf,sz);
+	buf[sz] = '\0';
+	string ret(buf,sz);
+	delete[] buf;
+	item.reset();
+	return ret;
 }
 

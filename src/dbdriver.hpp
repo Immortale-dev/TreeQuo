@@ -8,8 +8,8 @@
 template<typename T, typename V>
 struct DBDriver{
     using bpt_t = BPlusTree<T, V, DBDriver<T,V>>;
-    using fn = std::function<void(typename bpt_t::node_ptr, bpt_t*)>;
-    using fn_move = std::function<void(typename bpt_t::iterator, typename bpt_t::node_ptr, int, bpt_t*)>;
+    using fn = std::function<void(typename bpt_t::node_ptr&, bpt_t*)>;
+    using fn_move = std::function<void(typename bpt_t::iterator, typename bpt_t::node_ptr&, int, bpt_t*)>;
     fn enter, leave, insert, remove, reserve, release;
     fn_move beforeMove, afterMove;
     DBDriver(fn enter, fn leave, fn insert, fn remove, fn reserve, fn release, fn_move beforeMove, fn_move afterMove);
