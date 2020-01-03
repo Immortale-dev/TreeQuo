@@ -90,10 +90,10 @@ DB::tree_t DB::get_tree(string path)
 	t.type = tmp.type;
 	switch(tmp.type){
 		case TREE_TYPES::KEY_INT:
-			t.tree = void_shared(new int_tree_t(tmp.factor, create_node<int_tree_t>(tmp.branch, tmp.is_leaf), tmp.count, driver_int));
+			t.tree = void_shared(new int_tree_t(tmp.factor, create_node<int_tree_t>(tmp.branch, tmp.branch_type), tmp.count, driver_int));
 			break;
 		case TREE_TYPES::KEY_STRING:
-			t.tree = void_shared(new string_tree_t(tmp.factor, create_node<string_tree_t>(tmp.branch, tmp.is_leaf), tmp.count, driver_string));
+			t.tree = void_shared(new string_tree_t(tmp.factor, create_node<string_tree_t>(tmp.branch, tmp.branch_type), tmp.count, driver_string));
 			break;
 		default:
 			throw DBException(DBException::ERRORS::NOT_VALID_TREE_TYPE);
@@ -217,7 +217,7 @@ void DB::erase_qtree(string name)
 DB::root_tree_t* DB::open_root()
 {
 	tree_base_read_t base = read_base(ROOT_TREE);
-	return new root_tree_t(base.factor, create_node<root_tree_t>(base.branch, base.is_leaf), base.count, driver_root);
+	return new root_tree_t(base.factor, create_node<root_tree_t>(base.branch, base.branch_type), base.count, driver_root);
 }
 
 DB::tree_base_read_t DB::read_base(string filename)
@@ -225,12 +225,14 @@ DB::tree_base_read_t DB::read_base(string filename)
 	tree_base_read_t ret;
 	DBFS::File* f = new DBFS::File(filename);
 	int t;
+	int lt;
 	f->read(ret.count);
 	f->read(ret.factor);
 	f->read(t);
 	ret.type = (TREE_TYPES)t;
 	f->read(ret.branch);
-	f->read(ret.is_leaf);
+	f->read(lt);
+	ret.branch_type = NODE_TYPES(lt);
 	f->close();
 	delete f;
 	return ret;
@@ -295,9 +297,8 @@ void DB::check_tree_ref(string key)
 	if(!tree_cache_r.count(key))
 		return;
 	if(tree_cache_r[key].second == 0 && !tree_cache.has(key)){
+		tree_cache_f.erase((int_t)tree_cache_r[key].first.tree.get());
 		tree_cache_r.erase(key);
-		// TODO:
-		//tree_cache_f.erase(key);
 	}
 }
 

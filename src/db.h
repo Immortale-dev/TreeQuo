@@ -13,6 +13,7 @@
 #include <vector>
 #include <type_traits>
 #include <atomic>
+#include <sstream>
 #include "bplustree.hpp"
 #include "dbfs.hpp"
 #include "listcache.hpp"
@@ -64,7 +65,7 @@ class DB{
 		int factor;
 		TREE_TYPES type;
 		string branch;
-		bool is_leaf;
+		NODE_TYPES branch_type;
 	};
 	struct node_data_t {
 		bool ghost = true;
@@ -130,7 +131,7 @@ class DB{
 		
 		// Create Tree Node smart ptr
 		template<typename T>
-		typename T::node_ptr create_node(string path, bool is_leaf);
+		typename T::node_ptr create_node(string path, NODE_TYPES node_type);
 		
 		// Node data
 		node_data_ptr create_node_data(bool ghost, string path);
@@ -203,10 +204,10 @@ class DB{
 };
 
 template<typename T>
-typename T::node_ptr DB::create_node(string path, bool is_leaf)
+typename T::node_ptr DB::create_node(string path, NODE_TYPES node_type)
 {
 	typename T::Node* node;
-	if(!is_leaf){
+	if(node_type == NODE_TYPES::INTR){
 		node = new typename T::InternalNode();
 	} else {
 		node = new typename T::LeafNode();
@@ -361,7 +362,7 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 	base_d.count = tree->size();
 	base_d.factor = tree->get_factor();
 	typename T::node_ptr root_node = tree->get_root_pub();
-	base_d.is_leaf = (root_node->is_leaf());
+	base_d.branch_type = (root_node->is_leaf() ? NODE_TYPES::LEAF : NODE_TYPES::INTR);
 	node_data_ptr base_data = get_node_data(root_node->data);
 	base_d.branch = base_data->path;
 	write_base<T>(base_f, base_d);
@@ -634,7 +635,7 @@ DB::leaf_t DB::read_leaf(string filename)
 	f->read(c);
 	f->read(left_leaf);
 	f->read(right_leaf);
-	auto* keys = new std::vector<string>(c);
+	auto* keys = new std::vector<typename T::key_type>(c);
 	auto* vals_lengths = new std::vector<int_t>(c);
 	for(int i=0;i<c;i++){
 		f->read((*keys)[i]);
@@ -655,27 +656,69 @@ DB::leaf_t DB::read_leaf(string filename)
 }
 
 template<typename T>
-void DB::write_intr(DBFS::File* file, intr_t data)
+void DB::write_base(DBFS::File* file, tree_base_read_t data)
 {
-	
+	file->write( std::to_string(data.count) + " " + std::to_string(data.factor) + " " + std::to_string((int)data.type) + " " + data.branch + " " + std::to_string((int)data.branch_type) );
 }
 
 template<typename T>
-void DB::write_base(DBFS::File* file, tree_base_read_t data)
+void DB::write_intr(DBFS::File* file, intr_t data)
 {
-	
+	file->write( std::to_string((int)data.type) + " " + std::to_string((int)data.childs_type) + "\n" );
+	auto* keys = (std::vector<typename T::key_type>*)data.child_keys;
+	auto* paths = (std::vector<string>*)data.child_values;
+	//string keysStr = "";
+	string valsStr = "";
+	std::stringstream ss;
+	for(auto& key : (*keys)){
+		ss << key << "\n";
+		//keysStr.append(std::to_string(key) + "\n");
+	}
+	for(auto& val : (*paths)){
+		valsStr.append(val + "\n");
+	}
+	file->write(ss.str());
+	file->write(valsStr);
 }
 
 template<typename T>
 void DB::write_leaf(std::shared_ptr<DBFS::File> file, leaf_t data)
 {
-	
+	auto* keys = (std::vector<typename T::key_type>*)data.child_keys;
+	auto* lengths = (std::vector<int_t>*)data.child_lengths;
+	int c = keys->size();
+	file->write(std::to_string(c) + " " + data.left_leaf + " " + data.right_leaf+ "\n");
+	//string keysStr = "";
+	string lenStr = "";
+	std::stringstream ss;
+	for(auto& key : (*keys)){
+		ss << key << "\n";
+		//keysStr.append(std::to_string(key) + "\n");
+	}
+	for(auto& len : (*lengths)){
+		lenStr.append(std::to_string(len) + "\n");
+	}
+	file->write(ss.str());
+	file->write(lenStr);
+	//int_t start_data = file->tell();
 }
 
 template<typename T>
 void DB::write_leaf_item(std::shared_ptr<DBFS::File> file, typename T::val_type& data)
 {
-	
+	int_t start_data = file->tell();
+	int read_size = 4*1024;
+	char* buf = new char[read_size];
+	int rsz;
+	while( (rsz = data.read(buf, read_size)) ){
+		file->write(buf, rsz);
+	}
+	data.start = start_data;
+	data.reset();
+	data.file = file;
+	data._read = [](file_data_t* self, char* buf, int sz){ 
+		self->file->read(buf, sz);
+	};
 }
 
 template<typename T>
