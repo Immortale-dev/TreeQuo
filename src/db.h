@@ -14,6 +14,7 @@
 #include <type_traits>
 #include <atomic>
 #include <sstream>
+#include <cassert>
 #include "bplustree.hpp"
 #include "dbfs.hpp"
 #include "listcache.hpp"
@@ -198,7 +199,7 @@ class DB{
 		string read_leaf_item(file_data_t item);
 	
 		// Properties
-		const int DEFAULT_FACTOR = 100;
+		const int DEFAULT_FACTOR = 3;
 		const string ROOT_TREE = "_root";
 		const string LEAF_NULL = "-";
 };
@@ -298,38 +299,54 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 			intr_cache_r[new_name] = make_pair(n, 1);
 			intr_cache_m.unlock();
 		} else {
+			std::cout << "HERE!!!" << std::endl;
 			node_data_ptr data = get_node_data(node->data);
 			string cur_name = data->path;
-			DBFS::remove(cur_name);
+			std::cout << "HERE2!!!" << std::endl;
+			DBFS::remove(cur_name, false);
 			DBFS::move(new_name, cur_name);
+			std::cout << "HERE3!!!" << std::endl;
+			DBFS::remove(new_name);
+			std::cout << "HERE4!!!" << std::endl;
 		}
 	} else {
 		
+		std::cout << "INS_LEAF" << std::endl;
+		
 		leaf_t leaf_d;
 		leaf_d.type = get_tree_type<T>();
-		int c = node->get_childs()->size();
-		auto* keys = new std::vector<typename T::key_type>(c);
-		auto* lengths = new std::vector<int_t>(c);
+		//int c = node->get_childs()->size();
+		auto* keys = new std::vector<typename T::key_type>();
+		auto* lengths = new std::vector<int_t>();
+		
+		std::cout << "INS_LEAF_2" << std::endl;
 		
 		typename T::node_ptr p_leaf = node->prev_leaf();
 		typename T::node_ptr n_leaf = node->next_leaf();
 		if(p_leaf){
+			assert(p_leaf->data);
 			node_data_ptr p_leaf_data = get_node_data(p_leaf->data);
 			leaf_d.left_leaf = p_leaf_data->path;
 		} else {
 			leaf_d.left_leaf = LEAF_NULL;
 		}
 		if(n_leaf){
+			assert(n_leaf->data);
 			node_data_ptr n_leaf_data = get_node_data(n_leaf->data);
 			leaf_d.right_leaf = n_leaf_data->path;
 		} else {
 			leaf_d.right_leaf = LEAF_NULL;
 		}
 		
+		std::cout << "INS_LEAF_3" << std::endl;
+		
 		for(auto& it : *(node->get_childs()) ){
 			keys->push_back(it->first);
 			lengths->push_back(it->second.size());
 		}
+		
+		std::cout << "WTF? leys size - " << keys->size() << std::endl;
+		
 		leaf_d.child_keys = keys;
 		leaf_d.child_lengths = lengths;
 		std::shared_ptr<DBFS::File> fp(f);
@@ -338,11 +355,25 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 			write_leaf_item<T>(fp, it->second);
 		}
 		
+		fp->stream().flush();
+		
 		if(!node->data){
 			node->data = create_node_data(false, new_name);
 			// Cache new leaf node
 			typename T::node_ptr n = typename T::node_ptr(new typename T::LeafNode());
 			n->set_childs(node->get_childs());
+			//if(node->prev_leaf()){
+				n->set_prev_leaf(node->prev_leaf());
+			//}
+			//if(node->next_leaf()){
+				n->set_next_leaf(node->next_leaf());
+			//}
+			if(n->next_leaf()){
+				assert(n->next_leaf()->data);
+			}
+			if(n->prev_leaf()){
+				assert(n->prev_leaf()->data);
+			}
 			leaf_cache_m.lock();
 			leaf_cache.push(new_name, n);
 			leaf_cache_r[new_name] = make_pair(n, 1);
@@ -350,17 +381,26 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 		} else {
 			node_data_ptr data = get_node_data(node->data);
 			string cur_name = data->path;
-			DBFS::remove(cur_name);
-			fp->move(new_name);
+			
+			leaf_cache_m.lock();
+			if(leaf_cache_r.count(cur_name)){
+				typename T::node_ptr n = unvoid_node<T>(leaf_cache_r[cur_name].first);
+				n->set_prev_leaf(node->prev_leaf());
+				n->set_next_leaf(node->next_leaf());
+				
+				if(n->next_leaf()){
+					assert(n->next_leaf()->data);
+				}
+				if(n->prev_leaf()){
+					assert(n->prev_leaf()->data);
+				}
+			}
+			leaf_cache_m.unlock();
+			
+			DBFS::remove(cur_name, false);
+			fp->move(cur_name);
 		}
 	}
-	
-	std::cout << "d5" << std::endl;
-	
-	for(auto& it : tree_cache_f){
-		std::cout << "CF - " << it.first << std::endl;
-	}
-	std::cout << "LOOK " << ((int_t)tree) << std::endl;
 	
 	// Save Base File
 	string base_file_name = tree_cache_f[(int_t)tree];
@@ -370,8 +410,6 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 	base_d.count = tree->size();
 	base_d.factor = tree->get_factor();
 	
-	std::cout << "d6" << std::endl;
-	
 	typename T::node_ptr root_node = tree->get_root_pub();
 	base_d.branch_type = (root_node->is_leaf() ? NODE_TYPES::LEAF : NODE_TYPES::INTR);
 	node_data_ptr base_data = get_node_data(root_node->data);
@@ -379,13 +417,10 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 	write_base<T>(base_f, base_d);
 	string new_base_file_name = base_f->name();
 	
-	std::cout << "d7" << std::endl;
-	
-	std::cout << base_file_name << " " << new_base_file_name << std::endl;
-	
 	base_f->close();
-	DBFS::remove(base_file_name);
+	DBFS::remove(base_file_name, false);
 	DBFS::move(new_base_file_name, base_file_name);
+	DBFS::remove(new_base_file_name);
 }
 
 template<typename T>
@@ -433,8 +468,12 @@ void DB::materialize_intr(typename T::node_ptr& node, string path)
 template<typename T>
 void DB::materialize_leaf(typename T::node_ptr& node, string path)
 {
+	std::cout << "BEFORE_GET " << path << std::endl;
 	typename T::node_ptr n = get_leaf<T>(path);
+	std::cout << "AFTER_GET " << path << std::endl;
 	node->set_childs(n->get_childs());
+	node->set_prev_leaf(n->prev_leaf());
+	node->set_next_leaf(n->next_leaf());
 	leaf_cache_r[path].second++;
 }
 
@@ -452,6 +491,8 @@ void DB::unmaterialize_leaf(typename T::node_ptr& node, string path)
 {
 	leaf_cache_r[path].second--;
 	node->set_childs(nullptr);
+	node->set_prev_leaf(nullptr);
+	node->set_next_leaf(nullptr);
 	check_leaf_ref(path);
 }
 
@@ -491,9 +532,15 @@ typename T::node_ptr DB::get_intr(string path)
 	intr_cache_q[path] = p.get_future();
 	intr_cache_m.unlock();
 	
+	
+	std::cout << "READ INTR" << std::endl;
+	
 	// Fill node
 	intr_data = node_ptr(new typename T::InternalNode());
 	intr_t intr_d = read_intr<T>(path);
+	
+	std::cout << "AFTER_READ_INTR" << std::endl;
+	
 	std::vector<typename T::key_type>* keys_ptr = (std::vector<typename T::key_type>*)intr_d.child_keys;
 	std::vector<string>* vals_ptr = (std::vector<string>*)intr_d.child_values;
 	intr_data->add_keys(0, keys_ptr->begin(), keys_ptr->end());
@@ -581,13 +628,18 @@ typename T::node_ptr DB::get_leaf(string path)
 		}
 	}*/
 	//else{
+		int_t last_len = 0;
 		for(int i=0;i<c;i++){
-			leaf_data->insert(entry_ptr(new entry_pair( (*keys_ptr)[i], file_data_t(start_data, (*vals_length)[i], f, [](file_data_t* self, char* buf, int sz){ 
+			leaf_data->insert(entry_ptr(new entry_pair( (*keys_ptr)[i], file_data_t(start_data+last_len, (*vals_length)[i], f, [](file_data_t* self, char* buf, int sz){ 
+				std::cout << "STRT-INS-: " << self->start << " " << self->file->name() << " " << self->curr << std::endl;
+				self->file->seek(self->curr);
 				self->file->read(buf, sz);
 			}) )));
+			last_len += (*vals_length)[i];
 		}
 	//}
 	typename T::node_ptr left_node = nullptr, right_node = nullptr;
+	std::cout << "LEAFS--------------:\"" << leaf_d.left_leaf << "\" \"" << leaf_d.right_leaf << "\"" << std::endl;
 	if(leaf_d.left_leaf != LEAF_NULL){
 		left_node = typename T::node_ptr(new typename T::LeafNode());
 		left_node->data = create_node_data(true, leaf_d.left_leaf);
@@ -622,6 +674,8 @@ DB::intr_t DB::read_intr(string filename)
 	int t;
 	int c;
 	
+	std::cout << "RITR " << filename << std::endl;
+	
 	DBFS::File* f = new DBFS::File(filename);
 	f->read(t);
 	f->read(c);
@@ -635,6 +689,9 @@ DB::intr_t DB::read_intr(string filename)
 	for(int i=0;i<c;i++){
 		f->read((*vals)[i]);
 	}
+	
+	f->close();
+	delete f;
 	
 	return {type, (NODE_TYPES)t, keys, vals};
 }
@@ -653,6 +710,9 @@ DB::leaf_t DB::read_leaf(string filename)
 	f->read(c);
 	f->read(left_leaf);
 	f->read(right_leaf);
+	
+	std::cout << "READ_LEAF:FN--------:" << left_leaf << " " << right_leaf << "|END" << std::endl;
+	
 	auto* keys = new std::vector<typename T::key_type>(c);
 	auto* vals_lengths = new std::vector<int_t>(c);
 	for(int i=0;i<c;i++){
@@ -661,7 +721,7 @@ DB::leaf_t DB::read_leaf(string filename)
 	for(int i=0;i<c;i++){
 		f->read((*vals_lengths)[i]);
 	}
-	start_data = f->tell();
+	start_data = f->tell()+1;
 	leaf_t t;
 	t.type = get_tree_type<T>();
 	t.child_keys = keys;
@@ -682,20 +742,21 @@ void DB::write_base(DBFS::File* file, tree_base_read_t data)
 template<typename T>
 void DB::write_intr(DBFS::File* file, intr_t data)
 {
-	file->write( std::to_string((int)data.type) + " " + std::to_string((int)data.childs_type) + "\n" );
 	auto* keys = (std::vector<typename T::key_type>*)data.child_keys;
 	auto* paths = (std::vector<string>*)data.child_values;
+	file->write( std::to_string((int)data.childs_type) + " " + std::to_string(paths->size()) + "\n" );
+	
 	//string keysStr = "";
 	string valsStr = "";
 	std::stringstream ss;
 	for(auto& key : (*keys)){
-		ss << key << "\n";
+		ss << key << " ";
 		//keysStr.append(std::to_string(key) + "\n");
 	}
 	for(auto& val : (*paths)){
-		valsStr.append(val + "\n");
+		valsStr.append(val + " ");
 	}
-	file->write(ss.str());
+	file->write(ss.str() + "\n");
 	file->write(valsStr);
 }
 
@@ -704,20 +765,26 @@ void DB::write_leaf(std::shared_ptr<DBFS::File> file, leaf_t data)
 {
 	auto* keys = (std::vector<typename T::key_type>*)data.child_keys;
 	auto* lengths = (std::vector<int_t>*)data.child_lengths;
+	//for(auto& it : (*keys)){
+	//	std::cout << it << std::endl;
+	//}
+	//std::cout << "SIZE: " << keys->size() << std::endl;
 	int c = keys->size();
 	file->write(std::to_string(c) + " " + data.left_leaf + " " + data.right_leaf+ "\n");
 	//string keysStr = "";
 	string lenStr = "";
 	std::stringstream ss;
 	for(auto& key : (*keys)){
-		ss << key << "\n";
+		ss << key << " ";
 		//keysStr.append(std::to_string(key) + "\n");
 	}
+	std::cout << "STR:::" << ss.str() << std::endl;
 	for(auto& len : (*lengths)){
-		lenStr.append(std::to_string(len) + "\n");
+		lenStr.append(std::to_string(len) + " ");
 	}
-	file->write(ss.str());
-	file->write(lenStr);
+	lenStr.pop_back();
+	file->write(ss.str()+"\n");
+	file->write(lenStr+"\n");
 	//int_t start_data = file->tell();
 }
 
@@ -725,16 +792,23 @@ template<typename T>
 void DB::write_leaf_item(std::shared_ptr<DBFS::File> file, typename T::val_type& data)
 {
 	int_t start_data = file->tell();
+	std::cout << "START_DATA: " << start_data << std::endl;
 	int read_size = 4*1024;
 	char* buf = new char[read_size];
 	int rsz;
+	data.reset();
+	std::cout << "READ_MF! " << data.start << " " << data.curr << std::endl;
 	while( (rsz = data.read(buf, read_size)) ){
+		std::cout << "WRITE_LEAF_SZ: " << rsz << " " << string(buf, rsz) << std::endl;
 		file->write(buf, rsz);
 	}
+	delete[] buf;
 	data.start = start_data;
 	data.reset();
 	data.file = file;
 	data._read = [](file_data_t* self, char* buf, int sz){ 
+		std::cout << "STRT-WRITE-: " << self->start << " " << self->file->name() << " " << self->curr << std::endl;
+		self->file->seek(self->curr);
 		self->file->read(buf, sz);
 	};
 }

@@ -157,7 +157,7 @@ void DB::create_root_file()
 		throw DBException(DBException::ERRORS::CANNOT_CREATE_ROOT);
 		return;
 	}
-	rf->write("0\n-\n-\n");
+	rf->write("0 - - \n");
 	string root_branch_name = rf->name();
 	rf->close();
 	delete rf;
@@ -182,7 +182,7 @@ DB::string DB::create_qtree_base(TREE_TYPES type)
 		throw DBException(DBException::ERRORS::CANNOT_CREATE_FILE);
 		return "";
 	}
-	rf->write("0\n-\n-\n");
+	rf->write("0 - - \n");
 	string root_branch_name = rf->name();
 	rf->close();
 	delete rf;

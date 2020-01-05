@@ -15,8 +15,8 @@ class file_data_t{
 	using file_ptr = std::shared_ptr<DBFS::File>;
 	
 	public:
-		file_data_t(int_t start, int_t length, file_ptr file, fn read) : start(start), length(length), _read(read) { this->file = file; };
-		file_data_t(int_t length, fn read) : length(length), _read(read) { start = 0; };
+		file_data_t(int_t start, int_t length, file_ptr file, fn read) : start(start), length(length), _read(read) { this->file = file; reset(); };
+		file_data_t(int_t length, fn read) : length(length), _read(read) { start = 0; reset(); };
 		virtual ~file_data_t(){ };
 		int_t size()
 		{
@@ -30,8 +30,8 @@ class file_data_t{
 			int_t sz = length+(start-curr);
 			if(!sz) return 0;
 			int c = std::min(sz,(int_t)count);
-			curr += c;
 			_read(this, data, c);
+			curr += c;
 			return c;
 		};
 		int_t start, length, curr;
