@@ -6,6 +6,7 @@
 #include <string>
 #include <exception>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <memory>
 #include <mutex>
@@ -81,18 +82,17 @@ class DB{
 		~DB();
 		DB(string path);
 		
-		void create_qtree(TREE_TYPES type, string name);
-		void delete_qtree(string name);
-		tree_t find_qtree(string name);
-		tree_t open_qtree(string path);
-		void close_qtree(string path);
+		void create_tree(TREE_TYPES type, string name);
+		void delete_tree(string name);
+		tree_t find_tree(string name);
+		tree_t open_tree(string path);
+		void close_tree(string path);
 		
-		void insert_qleaf(string name);
-		void insert_qleaf(tree_t tree);
-		void erase_qleaf(string name);
-		void erase_qleaf(tree_t tree);
-		
-		//find_qleaf();
+		//void insert_leaf(string name);
+		//void insert_leaf(tree_t tree);
+		//void erase_leaf(string name);
+		//void erase_leaf(tree_t tree);
+		//find_leaf();
 				
 		void bloom(string path);
 		void fold(bool cut);
@@ -125,9 +125,9 @@ class DB{
 		// Tree base methods
 		tree_base_read_t read_base(string filename);
 		void create_root_file();
-		string create_qtree_base(TREE_TYPES type);
-		void insert_qtree(string name, string file_name, TREE_TYPES type);
-		void erase_qtree(string name);
+		string create_tree_base(TREE_TYPES type);
+		void insert_tree(string name, string file_name, TREE_TYPES type);
+		void erase_tree(string name);
 		void check_tree_ref(string key);
 		
 		// Create Tree Node smart ptr
@@ -149,6 +149,7 @@ class DB{
 		std::unordered_map<string, std::pair<tree_t, int_a> > tree_cache_r;
 		std::unordered_map<string, std::pair<void_shared, int_a> > intr_cache_r, leaf_cache_r;
 		std::unordered_map<int_t, string> tree_cache_f;
+		std::unordered_set<string> tree_cache_t;
 		
 		// Drivers
 		void init_drivers();

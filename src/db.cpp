@@ -43,13 +43,23 @@ void DB::fold(bool cut=false)
 	blossomed = false;
 }
 
-void DB::create_qtree(TREE_TYPES type, string name)
+void DB::create_tree(TREE_TYPES type, string name)
 {
-	string file_name = create_qtree_base(type);
-	insert_qtree(name, file_name, type);
+	tree_cache_m.lock();
+	if(tree_cache_t.count(name)){
+		tree_cache_m.unlock();
+		throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
+	}
+	tree_cache_t.insert(name);
+	tree_cache_m.unlock();
+	if(FOREST->find(name) != FOREST->end()){
+		throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
+	}
+	string file_name = create_tree_base(type);
+	insert_tree(name, file_name, type);
 }
 
-void DB::delete_qtree(string name)
+void DB::delete_tree(string name)
 {
 	// TODO custom delete
 }
@@ -113,7 +123,7 @@ DB::tree_t DB::get_tree(string path)
 	return t;
 }
 
-DB::tree_t DB::find_qtree(string name)
+DB::tree_t DB::find_tree(string name)
 {
 	// Error if not exists
 	auto it = FOREST->find(name);
@@ -124,17 +134,17 @@ DB::tree_t DB::find_qtree(string name)
 	// Get tree path
 	string path = read_leaf_item(it->second);
 	
-	return open_qtree(path);
+	return open_tree(path);
 }
 
-DB::tree_t DB::open_qtree(string path)
+DB::tree_t DB::open_tree(string path)
 {
 	tree_t t = get_tree(path);
 	tree_cache_r[path].second++;
 	return t;
 }
 
-void DB::close_qtree(string path)
+void DB::close_tree(string path)
 {
 	tree_cache_r[path].second--;
 	tree_cache_m.lock();
@@ -173,7 +183,7 @@ void DB::create_root_file()
 	delete f;
 }
 
-DB::string DB::create_qtree_base(TREE_TYPES type)
+DB::string DB::create_tree_base(TREE_TYPES type)
 {
 	string ret;
 	DBFS::File* rf = DBFS::create();
@@ -200,7 +210,7 @@ DB::string DB::create_qtree_base(TREE_TYPES type)
 	return ret;
 }
 
-void DB::insert_qtree(string name, string file_name, TREE_TYPES type)
+void DB::insert_tree(string name, string file_name, TREE_TYPES type)
 {
 	file_data_t tmp(file_name.size(), [file_name](file_data_t* self, char* buf, int count){
 		for(int i=0;i<count;i++){
@@ -210,7 +220,7 @@ void DB::insert_qtree(string name, string file_name, TREE_TYPES type)
 	FOREST->insert(make_pair(name,tmp));
 }
 
-void DB::erase_qtree(string name)
+void DB::erase_tree(string name)
 {
 	FOREST->erase(name);
 }
