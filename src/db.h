@@ -127,7 +127,7 @@ class DB{
 		void create_root_file();
 		string create_tree_base(TREE_TYPES type);
 		void insert_tree(string name, string file_name, TREE_TYPES type);
-		void erase_tree(string name);
+		void erase_tree(string path);
 		void check_tree_ref(string key);
 		
 		// Create Tree Node smart ptr

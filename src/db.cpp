@@ -61,7 +61,28 @@ void DB::create_tree(TREE_TYPES type, string name)
 
 void DB::delete_tree(string name)
 {
-	// TODO custom delete
+	tree_cache_m.lock();
+	if(tree_cache_d.count(name)){
+		// already deleted or not inserted yet
+		tree_cache_m.unlock();
+		return;
+	}
+	
+	tree_cache_m.unlock();
+	
+	// Not exist
+	auto it = FOREST->find(name);
+	if(it == FOREST->end()){
+		return;
+	}
+	
+	// Get tree path
+	string path = read_leaf_item(it->second);
+	
+	FOREST->erase(name);
+	
+	// Erase tree
+	erase_tree(path);
 }
 
 DB::tree_t DB::get_tree(string path)
@@ -220,9 +241,9 @@ void DB::insert_tree(string name, string file_name, TREE_TYPES type)
 	FOREST->insert(make_pair(name,tmp));
 }
 
-void DB::erase_tree(string name)
+void DB::erase_tree(string path)
 {
-	FOREST->erase(name);
+	
 }
 
 DB::root_tree_t* DB::open_root()
