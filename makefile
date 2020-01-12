@@ -1,4 +1,4 @@
-.PHONY: all generate_o generate_t generate_libs
+.PHONY: all generate_o generate_t generate_libs custom
 
 CC=g++
 CFLAGS=-c -Wall
@@ -33,6 +33,10 @@ generate_o: ${OBJS}
 generate_t: 
 	$(CC) $(CFLAGS) $(INCL) test/test.cpp -o test/test.o
 	${CC} ${INCL} -o test.exe test/test.o ${OBJS} ${LIBS_O}
+	
+custom: generate_o
+	$(CC) $(CFLAGS) $(INCL) test/mtest.cpp -o test/mtest.o
+	${CC} ${INCL} -o mtest.exe test/mtest.o ${OBJS} ${LIBS_O}
 
 %.o: %.cpp
 	${CC} ${CFLAGS} ${INCL} $< -o $@

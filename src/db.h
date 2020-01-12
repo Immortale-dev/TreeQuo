@@ -95,14 +95,15 @@ class DB{
 		//find_leaf();
 				
 		void bloom(string path);
-		void fold(bool cut);
+		void fold();
 		
 	private:
 		root_tree_t* FOREST;
 		bool blossomed = false;
 		
 		// Root methods
-		root_tree_t* open_root();
+		void open_root();
+		void close_root();
 		
 		// Intr methods
 		template<typename T>
@@ -140,6 +141,9 @@ class DB{
 		
 		// Cache
 		void init_cache();
+		void release_cache();
+		template<typename T>
+		void clear_node_cache(typename T::node_ptr node);
 		ListCache<string, tree_t> tree_cache;
 		ListCache<string, void_shared> leaf_cache;
 		ListCache<string, void_shared> intr_cache;
@@ -149,10 +153,11 @@ class DB{
 		std::unordered_map<string, std::pair<tree_t, int_a> > tree_cache_r;
 		std::unordered_map<string, std::pair<void_shared, int_a> > intr_cache_r, leaf_cache_r;
 		std::unordered_map<int_t, string> tree_cache_f;
-		std::unordered_set<string> tree_cache_t;
+		// std::unordered_set<string> tree_cache_t;
 		
 		// Drivers
 		void init_drivers();
+		void release_drivers();
 		driver_root_t* driver_root;
 		driver_int_t* driver_int;
 		driver_string_t* driver_string;
@@ -221,7 +226,7 @@ typename T::node_ptr DB::create_node(string path, NODE_TYPES node_type)
 template<typename T>
 void DB::d_enter(typename T::node_ptr& node, T* tree)
 {	
-	std::cout << "ENTER" << std::endl;
+	//std::cout << "ENTER" << std::endl;
 		
 	// Lock node mutex
 	node->lock();
@@ -243,14 +248,13 @@ void DB::d_enter(typename T::node_ptr& node, T* tree)
 		materialize_leaf<T>(node, data->path);
 		//TODO: Lock shared node
 	}
-	
 	data->ghost = false;
 }
 
 template<typename T>
 void DB::d_leave(typename T::node_ptr& node, T* tree)
 {
-	std::cout << "LEAVE" << std::endl;
+	//std::cout << "LEAVE" << std::endl;
 	
 	node_data_ptr data = get_node_data(node->data);
 	if(!node->is_leaf()){
@@ -268,7 +272,7 @@ void DB::d_leave(typename T::node_ptr& node, T* tree)
 template<typename T>
 void DB::d_insert(typename T::node_ptr& node, T* tree)
 {
-	std::cout << "INSERT" << std::endl;
+	//std::cout << "INSERT" << std::endl;
 	
 	DBFS::File* f = DBFS::create();
 	string new_name = f->name();
@@ -409,34 +413,42 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 template<typename T>
 void DB::d_remove(typename T::node_ptr& node, T* tree)
 {
-	std::cout << "REMOVE" << std::endl;
+	//std::cout << "REMOVE" << std::endl;
 	
 	node_data_ptr data = get_node_data(node->data);
+	
+	if(node->is_leaf() && node->size()){
+		node->first_child()->second.file->close();
+		node->get_childs()->resize(0);
+	}
+	
 	DBFS::remove(data->path);
+	
+	clear_node_cache<T>(node);
 }
 
 template<typename T>
 void DB::d_reserve(typename T::node_ptr& node, T* tree)
 {
-	std::cout << "RESERVE" << std::endl;
+	//std::cout << "RESERVE" << std::endl;
 }
 
 template<typename T>
 void DB::d_release(typename T::node_ptr& node, T* tree)
 {
-	std::cout << "RELEASE" << std::endl;
+	//std::cout << "RELEASE" << std::endl;
 }
 
 template<typename T>
 void DB::d_before_move(typename T::iterator& it, typename T::node_ptr& node, int_t step, T* tree)
 {
-	std::cout << "BEFORE_MOVE" << std::endl;
+	//std::cout << "BEFORE_MOVE" << std::endl;
 }
 
 template<typename T>
 void DB::d_after_move(typename T::iterator& it, typename T::node_ptr& node, int_t step, T* tree)
 {
-	std::cout << "AFTER_MOVE" << std::endl;
+	//std::cout << "AFTER_MOVE" << std::endl;
 }
 
 template<typename T>
@@ -726,7 +738,9 @@ void DB::write_leaf(std::shared_ptr<DBFS::File> file, leaf_t data)
 	for(auto& len : (*lengths)){
 		lenStr.append(std::to_string(len) + " ");
 	}
-	lenStr.pop_back();
+	if(lenStr.size()){
+		lenStr.pop_back();
+	}
 	file->write(ss.str()+"\n");
 	file->write(lenStr+"\n");
 }
@@ -750,6 +764,33 @@ void DB::write_leaf_item(std::shared_ptr<DBFS::File> file, typename T::val_type&
 		self->file->seek(self->curr);
 		self->file->read(buf, sz);
 	};
+}
+
+template<typename T>
+void DB::clear_node_cache(typename T::node_ptr node)
+{
+	node_data_ptr data = get_node_data(node->data);
+	string path = data->path;
+	if(node->is_leaf()){
+		leaf_cache_m.lock();
+		if(leaf_cache_r.count(path)){
+			leaf_cache_r.erase(path);
+		}
+		if(leaf_cache.has(path)){
+			leaf_cache.remove(path);
+		}
+		leaf_cache_m.unlock();
+	}
+	else{
+		intr_cache_m.lock();
+		if(intr_cache_r.count(path)){
+			intr_cache_r.erase(path);
+		}
+		if(intr_cache.has(path)){
+			intr_cache.remove(path);
+		}
+		intr_cache_m.unlock();
+	}
 }
 
 template<typename T>

@@ -7,7 +7,7 @@ DB::DB()
 
 DB::~DB()
 {
-	fold(false);
+	fold();
 }
 
 DB::DB(string path)
@@ -28,30 +28,33 @@ void DB::bloom(string path)
 		create_root_file();
 	}
 	
-	FOREST = open_root();
-	tree_cache_f[(int_t)FOREST] = ROOT_TREE;
+	open_root();
 	
 	blossomed = true;
 }
 
-void DB::fold(bool cut=false)
+void DB::fold()
 {
 	if(!blossomed)
 		return;
 		
-	delete FOREST;
 	blossomed = false;
+	
+	close_root();
+	release_drivers();
+	release_cache();
 }
 
 void DB::create_tree(TREE_TYPES type, string name)
 {
-	tree_cache_m.lock();
-	if(tree_cache_t.count(name)){
-		tree_cache_m.unlock();
-		throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
-	}
-	tree_cache_t.insert(name);
-	tree_cache_m.unlock();
+	// tree_cache_m.lock();
+	// if(tree_cache_t.count(name)){
+	// 	tree_cache_m.unlock();
+	// 	throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
+	// }
+	// tree_cache_t.insert(name);
+	// tree_cache_m.unlock();
+	
 	if(FOREST->find(name) != FOREST->end()){
 		throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
 	}
@@ -60,16 +63,7 @@ void DB::create_tree(TREE_TYPES type, string name)
 }
 
 void DB::delete_tree(string name)
-{
-	tree_cache_m.lock();
-	if(tree_cache_d.count(name)){
-		// already deleted or not inserted yet
-		tree_cache_m.unlock();
-		return;
-	}
-	
-	tree_cache_m.unlock();
-	
+{	
 	// Not exist
 	auto it = FOREST->find(name);
 	if(it == FOREST->end()){
@@ -79,6 +73,7 @@ void DB::delete_tree(string name)
 	// Get tree path
 	string path = read_leaf_item(it->second);
 	
+	// Remove tree from forest
 	FOREST->erase(name);
 	
 	// Erase tree
@@ -242,14 +237,45 @@ void DB::insert_tree(string name, string file_name, TREE_TYPES type)
 }
 
 void DB::erase_tree(string path)
-{
+{	
+	tree_t t = open_tree(path);
 	
+	if(t.type == TREE_TYPES::KEY_INT){
+		int_tree_t* tree = (int_tree_t*)t.tree.get();
+		tree->clear();
+	}
+	else{
+		string_tree_t* tree = (string_tree_t*)t.tree.get();
+		tree->clear();
+	}
+	
+	DBFS::remove(path);
+
+	// Clear cache
+	tree_cache_m.lock();
+	if(tree_cache_r.count(path)){
+		tree_cache_r.erase(path);
+	}
+	if(tree_cache.has(path)){
+		tree_cache.remove(path);
+	}
+	if(tree_cache_f.count((int_t)t.tree.get())){
+		tree_cache_f.erase((int_t)t.tree.get());
+	}
+	tree_cache_m.unlock();
 }
 
-DB::root_tree_t* DB::open_root()
+void DB::open_root()
 {
 	tree_base_read_t base = read_base(ROOT_TREE);
-	return new root_tree_t(base.factor, create_node<root_tree_t>(base.branch, base.branch_type), base.count, driver_root);
+	FOREST = new root_tree_t(base.factor, create_node<root_tree_t>(base.branch, base.branch_type), base.count, driver_root);
+	tree_cache_f[(int_t)FOREST] = ROOT_TREE;
+}
+
+void DB::close_root()
+{
+	tree_cache_f.erase((int_t)FOREST);
+	delete FOREST;
 }
 
 DB::tree_base_read_t DB::read_base(string filename)
@@ -275,6 +301,11 @@ void DB::init_cache()
 	tree_cache.set_callback([this](string key){ this->check_tree_ref(key); });
 	leaf_cache.set_callback([this](string key){ this->check_leaf_ref(key); });
 	intr_cache.set_callback([this](string key){ this->check_intr_ref(key); });
+}
+
+void DB::release_cache()
+{
+	
 }
 
 void DB::init_drivers()
@@ -312,6 +343,13 @@ void DB::init_drivers()
 	//driver_root = new driver_root_t(d_enter<root_tree_t>, d_leave<root_tree_t>, d_insert<root_tree_t>, d_remove<root_tree_t>, d_reserve<root_tree_t>, d_release<root_tree_t>, d_before_move<root_tree_t>, d_after_move<root_tree_t>);
 	//driver_int = new driver_int_t(d_enter<int_tree_t>, d_leave<int_tree_t>, d_insert<int_tree_t>, d_remove<int_tree_t>, d_reserve<int_tree_t>, d_release<int_tree_t>, d_before_move<int_tree_t>, d_after_move<int_tree_t>);
 	//driver_string = new driver_string_t(d_enter<string_tree_t>, d_leave<string_tree_t>, d_insert<string_tree_t>, d_remove<string_tree_t>, d_reserve<string_tree_t>, d_release<string_tree_t>, d_before_move<string_tree_t>, d_after_move<string_tree_t>);
+}
+
+void DB::release_drivers()
+{
+	delete driver_root;
+	delete driver_int;
+	delete driver_string;
 }
 
 DB::node_data_ptr DB::create_node_data(bool ghost, string path)
