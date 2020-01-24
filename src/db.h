@@ -176,9 +176,9 @@ class DB{
 		template<typename T>
 		void d_release(typename T::node_ptr& node, T* tree);
 		template<typename T>
-		void d_before_move(typename T::child_item_type_ptr& item, int_t step, T* tree);
+		void d_before_move(typename T::child_item_type_ptr item, int_t step, T* tree);
 		template<typename T>
-		void d_after_move(typename T::child_item_type_ptr& item, int_t step, T* tree);
+		void d_after_move(typename T::child_item_type_ptr item, int_t step, T* tree);
 		
 		// Getters
 		template<typename T>
@@ -228,86 +228,67 @@ typename T::node_ptr DB::create_node(string path, NODE_TYPES node_type)
 template<typename T>
 void DB::d_enter(typename T::node_ptr& node, T* tree)
 {	
-	std::cout << "ENTER_START" << std::endl;
+	//std::cout << "ENTER_START" << std::endl;
 		
 	// Lock node mutex
 	node->lock();
 	
-	std::cout << "ENTER_START_AFTER_LOCK" << std::endl;
-	
 	// Nothing to do with stem
 	if(tree->is_stem_pub(node))
 		return;
-		
-	std::cout << "ENTER_START_AFTER_STEM_CHECK" << std::endl;
 	
 	// Check for newly created node
 	if(!node->data)
 		return;
-		
-	std::cout << "ENTER_MID" << std::endl;
 		
 	// Check for node already materialized
 	node_data_ptr data = get_node_data(node->data);
 	if(!data->ghost)
 		return;
 		
-	std::cout << "ENTER_BEFORE_MAT" << std::endl;
-		
 	if(!node->is_leaf()){
-		std::cout << "ENTER_MAT_INTR" << std::endl;
 		materialize_intr<T>(node, data->path);
-		std::cout << "ENTER_MAT_INTR_END" << std::endl;
 		//TODO: Lock shared node
 	}
 	else{
-		std::cout << "ENTER_MAT_LEAF" << std::endl;
 		materialize_leaf<T>(node, data->path);
-		std::cout << "ENTER_MAT_LEAF_END" << std::endl;
 		//TODO: Lock shared node
 	}
 	data->ghost = false;
 	
-	std::cout << "ENTER_END" << std::endl;
+	//std::cout << "ENTER_END" << std::endl;
 }
 
 template<typename T>
 void DB::d_leave(typename T::node_ptr& node, T* tree)
 {
-	std::cout << "LEAVE_START" << std::endl;
+	//std::cout << "LEAVE_START" << std::endl;
 	
 	// Nothing to do with stem
 	if(tree->is_stem_pub(node)){
-		std::cout << "LEAVE_START_STEM" << std::endl;
 		node->unlock();
 		return;
 	}
 	
-	std::cout << "LEAVE_START_AFTER_STEM_CHECK" << std::endl;
-	
 	node_data_ptr data = get_node_data(node->data);
 	if(!node->is_leaf()){
-		std::cout << "LEAVE_START_INTR" << std::endl;
 		unmaterialize_intr<T>(node, data->path);
-		std::cout << "LEAVE_START_INTR_END" << std::endl;
 		//TODO: Unlock shared node
 	}
 	else{
-		std::cout << "LEAVE_START_LEAF" << std::endl;
 		unmaterialize_leaf<T>(node, data->path);
-		std::cout << "LEAVE_START_LEAF_END" << std::endl;
 		//TODO: Unlock shared node
 	}
 	data->ghost = true;
 	node->unlock();
 	
-	std::cout << "LEAVE_END" << std::endl;
+	//std::cout << "LEAVE_END" << std::endl;
 }
 
 template<typename T>
 void DB::d_insert(typename T::node_ptr& node, T* tree)
 {	
-	std::cout << "INSERT_START" << std::endl;
+	//std::cout << "INSERT_START" << std::endl;
 	
 	if(tree->is_stem_pub(node)){
 		assert(false);
@@ -346,9 +327,8 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 		} else {
 			node_data_ptr data = get_node_data(node->data);
 			string cur_name = data->path;
-			DBFS::remove(cur_name, false);
+			DBFS::remove(cur_name);
 			DBFS::move(new_name, cur_name);
-			DBFS::remove(new_name);
 		}
 	} else {
 		leaf_t leaf_d;
@@ -401,7 +381,7 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 			if(n->prev_leaf()){
 				assert(n->prev_leaf()->data);
 			}
-			n->update_positions(n);
+			//n->update_positions(n);
 			leaf_cache_m.lock();
 			leaf_cache.push(new_name, n);
 			leaf_cache_r[new_name] = make_pair(n, 1);
@@ -422,16 +402,17 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 				if(n->prev_leaf()){
 					assert(n->prev_leaf()->data);
 				}
-				n->update_positions(n);
+				//n->update_positions(n);
 			}
 			leaf_cache_m.unlock();
 			
-			DBFS::remove(cur_name, false);
+			DBFS::remove(cur_name);
 			fp->move(cur_name);
 		}
 	}
 	
 	tempmtx.lock();
+	
 	// Save Base File
 	string base_file_name = tree_cache_f[(int_t)tree];
 	DBFS::File* base_f = DBFS::create();
@@ -448,18 +429,17 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 	string new_base_file_name = base_f->name();
 	
 	base_f->close();
-	DBFS::remove(base_file_name, false);
+	DBFS::remove(base_file_name);
 	DBFS::move(new_base_file_name, base_file_name);
-	DBFS::remove(new_base_file_name);
-	tempmtx.unlock();
 	
-	std::cout << "INSERT_END" << std::endl;
+	tempmtx.unlock();
+	//std::cout << "INSERT_END" << std::endl;
 }
 
 template<typename T>
 void DB::d_remove(typename T::node_ptr& node, T* tree)
 {
-	std::cout << "REMOVE_START" << std::endl;
+	//std::cout << "REMOVE_START" << std::endl;
 	
 	node_data_ptr data = get_node_data(node->data);
 	
@@ -472,7 +452,7 @@ void DB::d_remove(typename T::node_ptr& node, T* tree)
 	
 	clear_node_cache<T>(node);
 	
-	std::cout << "REMOVE_END" << std::endl;
+	//std::cout << "REMOVE_END" << std::endl;
 }
 
 template<typename T>
@@ -488,13 +468,13 @@ void DB::d_release(typename T::node_ptr& node, T* tree)
 }
 
 template<typename T>
-void DB::d_before_move(typename T::child_item_type_ptr& item, int_t step, T* tree)
+void DB::d_before_move(typename T::child_item_type_ptr item, int_t step, T* tree)
 {
 	//std::cout << "BEFORE_MOVE" << std::endl;
 }
 
 template<typename T>
-void DB::d_after_move(typename T::child_item_type_ptr& item, int_t step, T* tree)
+void DB::d_after_move(typename T::child_item_type_ptr item, int_t step, T* tree)
 {
 	//std::cout << "AFTER_MOVE" << std::endl;
 }
@@ -660,7 +640,7 @@ typename T::node_ptr DB::get_leaf(string path)
 		}) )));
 		last_len += (*vals_length)[i];
 	}
-	leaf_data->update_positions(leaf_data);
+	//leaf_data->update_positions(leaf_data);
 	typename T::node_ptr left_node = nullptr, right_node = nullptr;
 	if(leaf_d.left_leaf != LEAF_NULL){
 		left_node = typename T::node_ptr(new typename T::LeafNode());
@@ -751,7 +731,7 @@ DB::leaf_t DB::read_leaf(string filename)
 template<typename T>
 void DB::write_base(DBFS::File* file, tree_base_read_t data)
 {
-	file->write( std::to_string(data.count) + " " + std::to_string(data.factor) + " " + std::to_string((int)data.type) + " " + data.branch + " " + std::to_string((int)data.branch_type) );
+	file->write( std::to_string(data.count) + " " + std::to_string(data.factor) + " " + std::to_string((int)data.type) + " " + data.branch + " " + std::to_string((int)data.branch_type) + "\n" );
 }
 
 template<typename T>

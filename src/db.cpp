@@ -59,6 +59,8 @@ void DB::create_tree(TREE_TYPES type, string name)
 		throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
 	}
 	string file_name = create_tree_base(type);
+	string ss = "TREE CREATED - " + file_name + '\n';
+	//printf(ss.c_str());
 	insert_tree(name, file_name, type);
 }
 
@@ -72,6 +74,10 @@ void DB::delete_tree(string name)
 	
 	// Get tree path
 	string path = read_leaf_item(it->second);
+	
+	string ss = "TREE DELETE - " + path + '\n';
+	//tst_cout += ss;
+	//std::cout << ss;
 	
 	// Remove tree from forest
 	FOREST->erase(name);
@@ -221,6 +227,10 @@ DB::string DB::create_tree_base(TREE_TYPES type)
 	}
 	ret = f->name();
 	f->write("0 " + std::to_string(DEFAULT_FACTOR) + " " + std::to_string((int)type) + " " + root_branch_name + " " + std::to_string((int)NODE_TYPES::LEAF) + "\n");
+	if(f->size() < 10){
+		std::cout << "SIZE < 10 ON CREATE! " << ret << std::endl;
+		throw "WTF???";
+	}
 	f->close();
 	delete f;
 	return ret;
@@ -280,8 +290,20 @@ void DB::close_root()
 
 DB::tree_base_read_t DB::read_base(string filename)
 {
+	if(!DBFS::exists(filename)){
+		std::cout << "FAIL WITH NOT EXISTS!!! " << filename << std::endl;
+		throw "WTF???";
+	}
 	tree_base_read_t ret;
 	DBFS::File* f = new DBFS::File(filename);
+	if(f->fail()){
+		std::cout << "FAIL WITH OPEN - OTHER!!! " << filename << std::endl;
+		throw "WTF???";
+	}
+	if(f->size() < 2){
+		std::cout << "FAIL WITH OPEN SIZE!!! " << filename << std::endl;
+		throw "WTF???";
+	}
 	int t;
 	int lt;
 	f->read(ret.count);
@@ -291,6 +313,12 @@ DB::tree_base_read_t DB::read_base(string filename)
 	f->read(ret.branch);
 	f->read(lt);
 	ret.branch_type = NODE_TYPES(lt);
+	
+	if(f->fail()){
+		std::cout << "FAIL WITH OPEN (READ_BASE)!!! " << filename << std::endl;
+		throw "WTF???";
+	}
+	
 	f->close();
 	delete f;
 	return ret;
@@ -317,8 +345,8 @@ void DB::init_drivers()
 		,[this](typename root_tree_t::node_ptr& node, root_tree_t* tree){ this->d_remove<root_tree_t>(node, tree); }
 		,[this](typename root_tree_t::node_ptr& node, root_tree_t* tree){ this->d_reserve<root_tree_t>(node, tree); }
 		,[this](typename root_tree_t::node_ptr& node, root_tree_t* tree){ this->d_release<root_tree_t>(node, tree); }
-		,[this](typename root_tree_t::child_item_type_ptr& item, int_t step, root_tree_t* tree){ this->d_before_move<root_tree_t>(item, step, tree); }
-		,[this](typename root_tree_t::child_item_type_ptr& item, int_t step, root_tree_t* tree){ this->d_after_move<root_tree_t>(item, step, tree); }
+		,[this](typename root_tree_t::child_item_type_ptr item, int_t step, root_tree_t* tree){ this->d_before_move<root_tree_t>(item, step, tree); }
+		,[this](typename root_tree_t::child_item_type_ptr item, int_t step, root_tree_t* tree){ this->d_after_move<root_tree_t>(item, step, tree); }
 	);
 	driver_int = new driver_int_t(
 		[this](typename int_tree_t::node_ptr& node, int_tree_t* tree){ d_enter<int_tree_t>(node, tree); }
@@ -327,8 +355,8 @@ void DB::init_drivers()
 		,[this](typename int_tree_t::node_ptr& node, int_tree_t* tree){ d_remove<int_tree_t>(node, tree); }
 		,[this](typename int_tree_t::node_ptr& node, int_tree_t* tree){ d_reserve<int_tree_t>(node, tree); }
 		,[this](typename int_tree_t::node_ptr& node, int_tree_t* tree){ d_release<int_tree_t>(node, tree); }
-		,[this](typename int_tree_t::child_item_type_ptr& item, int_t step, int_tree_t* tree){ d_before_move<int_tree_t>(item, step, tree); }
-		,[this](typename int_tree_t::child_item_type_ptr& item, int_t step, int_tree_t* tree){ d_after_move<int_tree_t>(item, step, tree); }
+		,[this](typename int_tree_t::child_item_type_ptr item, int_t step, int_tree_t* tree){ d_before_move<int_tree_t>(item, step, tree); }
+		,[this](typename int_tree_t::child_item_type_ptr item, int_t step, int_tree_t* tree){ d_after_move<int_tree_t>(item, step, tree); }
 	);
 	driver_string = new driver_string_t(
 		[this](typename string_tree_t::node_ptr& node, string_tree_t* tree){ d_enter<string_tree_t>(node, tree); }
@@ -337,8 +365,8 @@ void DB::init_drivers()
 		,[this](typename string_tree_t::node_ptr& node, string_tree_t* tree){ d_remove<string_tree_t>(node, tree); }
 		,[this](typename string_tree_t::node_ptr& node, string_tree_t* tree){ d_reserve<string_tree_t>(node, tree); }
 		,[this](typename string_tree_t::node_ptr& node, string_tree_t* tree){ d_release<string_tree_t>(node, tree); }
-		,[this](typename string_tree_t::child_item_type_ptr& item, int_t step, string_tree_t* tree){ d_before_move<string_tree_t>(item, step, tree); }
-		,[this](typename string_tree_t::child_item_type_ptr& item, int_t step, string_tree_t* tree){ d_after_move<string_tree_t>(item, step, tree); }
+		,[this](typename string_tree_t::child_item_type_ptr item, int_t step, string_tree_t* tree){ d_before_move<string_tree_t>(item, step, tree); }
+		,[this](typename string_tree_t::child_item_type_ptr item, int_t step, string_tree_t* tree){ d_after_move<string_tree_t>(item, step, tree); }
 	);
 	//driver_root = new driver_root_t(d_enter<root_tree_t>, d_leave<root_tree_t>, d_insert<root_tree_t>, d_remove<root_tree_t>, d_reserve<root_tree_t>, d_release<root_tree_t>, d_before_move<root_tree_t>, d_after_move<root_tree_t>);
 	//driver_int = new driver_int_t(d_enter<int_tree_t>, d_leave<int_tree_t>, d_insert<int_tree_t>, d_remove<int_tree_t>, d_reserve<int_tree_t>, d_release<int_tree_t>, d_before_move<int_tree_t>, d_after_move<int_tree_t>);

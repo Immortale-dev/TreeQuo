@@ -3,7 +3,7 @@
 using namespace std;
 
 
-#define DEBUG
+//#define DEBUG
 
 #include "qtest.hpp"
 #include "src/helper.cpp"

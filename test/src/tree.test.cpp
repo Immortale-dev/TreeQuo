@@ -1,5 +1,6 @@
 #include "db.h"
 
+
 DESCRIBE_SKIP("Test single thread", {
 	
 	srand(0);
@@ -92,6 +93,7 @@ DESCRIBE("Test multi threads", {
 	DESCRIBE("Initialize forest at tmp/t2", {
 		
 		DB forest;
+		mutex mt;
 		
 		BEFORE_ALL({
 			forest.bloom("tmp/t2");
@@ -102,14 +104,16 @@ DESCRIBE("Test multi threads", {
 			// Remove dirs?
 		});
 		
-		DESCRIBE("Add 100 trees in 10 threads", {
+		DESCRIBE_SKIP("Add 100 trees in 10 threads", {
 			BEFORE_ALL({
 				vector<thread> trds;
 				for(int i=0;i<10;i++){
-					thread t([&forest](int i){
+					thread t([&forest, &mt](int i){
 						while(i<100){
+							mt.lock();
 							forest.create_tree(TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(i));
 							i+=10;
+							mt.unlock();
 						}
 					},i);
 					trds.push_back(move(t));
@@ -127,15 +131,14 @@ DESCRIBE("Test multi threads", {
 			
 			DESCRIBE("Then remove 100 trees in 10 threads", {
 				BEFORE_ALL({
-					int a;
-					cout << "WOHOO!!!" << endl;
-					cin >> a;
 					vector<thread> trds;
 					for(int i=0;i<10;i++){
-						thread t([&forest](int i){
+						thread t([&forest, &mt](int i){
 							while(i<100){
+								mt.lock();
 								forest.delete_tree("test_string_tree_"+to_string(i));
 								i+=10;
+								mt.unlock();
 							}
 						},i);
 						trds.push_back(move(t));
@@ -168,16 +171,19 @@ DESCRIBE("Test multi threads", {
 				}
 				
 				vector<thread> trds;
-				for(int i=0;i<10;i++){
-					thread t([&cnt,&nums,&forest](int i){
+				
+				for(int i=0;i<100;i++){
+					thread t([&cnt,&nums,&forest,&mt](int i){
 						while(i<cnt){
-							forest.create_tree(TREE_TYPES::KEY_STRING, "tree_"+to_string(nums[i]));
-							i+=10;
+							//mt.lock();
+							forest.create_tree(TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(nums[i]));
+							i+=100;
+							//mt.unlock();
 						}
 					},i);
 					trds.push_back(move(t));
 				}
-				for(int i=0;i<10;i++){
+				for(int i=0;i<100;i++){
 					trds[i].join();
 				}
 			});
@@ -194,16 +200,18 @@ DESCRIBE("Test multi threads", {
 						swap(nums[i],nums[rand()%cnt]);
 					}
 					vector<thread> trds;
-					for(int i=0;i<10;i++){
-						thread t([&cnt,&nums,&forest](int i){
+					for(int i=0;i<100;i++){
+						thread t([&cnt,&nums,&forest,&mt](int i){
 							while(i<cnt){
+								//mt.lock();
 								forest.delete_tree("test_string_tree_"+to_string(nums[i]));
-								i+=10;
+								i+=100;
+								//mt.unlock();
 							}
 						},i);
 						trds.push_back(move(t));
 					}
-					for(int i=0;i<10;i++){
+					for(int i=0;i<100;i++){
 						trds[i].join();
 					}
 				});
