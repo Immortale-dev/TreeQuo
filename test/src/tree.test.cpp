@@ -135,10 +135,10 @@ DESCRIBE("Test multi threads", {
 					for(int i=0;i<10;i++){
 						thread t([&forest, &mt](int i){
 							while(i<100){
-								mt.lock();
+								//mt.lock();
 								forest.delete_tree("test_string_tree_"+to_string(i));
 								i+=10;
-								mt.unlock();
+								//mt.unlock();
 							}
 						},i);
 						trds.push_back(move(t));

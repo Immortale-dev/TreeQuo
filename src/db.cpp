@@ -385,6 +385,14 @@ DB::node_data_ptr DB::create_node_data(bool ghost, string path)
 	return node_data_ptr(new node_data_t(ghost, path));
 }
 
+DB::node_data_ptr DB::create_node_data(bool ghost, string path, string prev, string next)
+{
+	auto p = node_data_ptr(new node_data_t(ghost, path));
+	p->prev = prev;
+	p->next = next;
+	return p;
+}
+
 DB::node_data_ptr DB::get_node_data(void_shared d)
 {
 	return std::static_pointer_cast<node_data_t>(d);

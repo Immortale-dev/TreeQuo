@@ -72,6 +72,8 @@ class DB{
 	struct node_data_t {
 		bool ghost = true;
 		string path = "";
+		string prev = "-";
+		string next = "-";
 		node_data_t(bool ghost, string path) : ghost(ghost), path(path) {};
 	};
 	
@@ -137,6 +139,7 @@ class DB{
 		
 		// Node data
 		node_data_ptr create_node_data(bool ghost, string path);
+		node_data_ptr create_node_data(bool ghost, string path, string prev, string next);
 		node_data_ptr get_node_data(void_shared d);
 		
 		// Cache
@@ -338,6 +341,10 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 		
 		typename T::node_ptr p_leaf = node->prev_leaf();
 		typename T::node_ptr n_leaf = node->next_leaf();
+		
+		//!p_leaf = nullptr;
+		//!n_leaf = nullptr;
+		
 		if(p_leaf){
 			assert(p_leaf->data);
 			node_data_ptr p_leaf_data = get_node_data(p_leaf->data);
@@ -373,14 +380,9 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 			// Cache new leaf node
 			typename T::node_ptr n = typename T::node_ptr(new typename T::LeafNode());
 			n->set_childs(node->get_childs());
-			n->set_prev_leaf(node->prev_leaf());
-			n->set_next_leaf(node->next_leaf());
-			if(n->next_leaf()){
-				assert(n->next_leaf()->data);
-			}
-			if(n->prev_leaf()){
-				assert(n->prev_leaf()->data);
-			}
+			
+			n->data = create_node_data(false, new_name, leaf_d.left_leaf, leaf_d.right_leaf);
+			
 			//n->update_positions(n);
 			leaf_cache_m.lock();
 			leaf_cache.push(new_name, n);
@@ -393,15 +395,11 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 			leaf_cache_m.lock();
 			if(leaf_cache_r.count(cur_name)){
 				typename T::node_ptr n = unvoid_node<T>(leaf_cache_r[cur_name].first);
-				n->set_prev_leaf(node->prev_leaf());
-				n->set_next_leaf(node->next_leaf());
 				
-				if(n->next_leaf()){
-					assert(n->next_leaf()->data);
-				}
-				if(n->prev_leaf()){
-					assert(n->prev_leaf()->data);
-				}
+				node_data_ptr c_data = get_node_data(n->data);
+				c_data->prev = leaf_d.left_leaf;
+				c_data->next = leaf_d.right_leaf;
+				
 				//n->update_positions(n);
 			}
 			leaf_cache_m.unlock();
@@ -411,9 +409,9 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 		}
 	}
 	
-	tempmtx.lock();
-	
+	/*
 	// Save Base File
+	tempmtx.lock();
 	string base_file_name = tree_cache_f[(int_t)tree];
 	DBFS::File* base_f = DBFS::create();
 	tree_base_read_t base_d;
@@ -432,7 +430,7 @@ void DB::d_insert(typename T::node_ptr& node, T* tree)
 	DBFS::remove(base_file_name);
 	DBFS::move(new_base_file_name, base_file_name);
 	
-	tempmtx.unlock();
+	tempmtx.unlock();*/
 	//std::cout << "INSERT_END" << std::endl;
 }
 
@@ -491,10 +489,24 @@ void DB::materialize_intr(typename T::node_ptr& node, string path)
 template<typename T>
 void DB::materialize_leaf(typename T::node_ptr& node, string path)
 {
-	typename T::node_ptr n = get_leaf<T>(path);
+	typename T::node_ptr n = get_leaf<T>(path), next_leaf, prev_leaf;
 	node->set_childs(n->get_childs());
-	node->set_prev_leaf(n->prev_leaf());
-	node->set_next_leaf(n->next_leaf());
+	
+	next_leaf = typename T::node_ptr(new typename T::LeafNode());
+	prev_leaf = typename T::node_ptr(new typename T::LeafNode());
+	
+	node_data_ptr data = get_node_data(n->data);
+	
+	next_leaf->data = create_node_data(true, data->next);
+	prev_leaf->data = create_node_data(true, data->prev);
+	
+	if(data->prev != LEAF_NULL){
+		node->set_prev_leaf(prev_leaf);
+	}
+	if(data->next != LEAF_NULL){
+		node->set_next_leaf(next_leaf);
+	}
+	
 	leaf_cache_r[path].second++;
 }
 
@@ -635,24 +647,19 @@ typename T::node_ptr DB::get_leaf(string path)
 	int_t last_len = 0;
 	for(int i=0;i<c;i++){
 		leaf_data->insert(entry_ptr(new entry_pair( (*keys_ptr)[i], file_data_t(start_data+last_len, (*vals_length)[i], f, [](file_data_t* self, char* buf, int sz){ 
-			self->file->seek(self->curr);
-			self->file->read(buf, sz);
+			try{
+				self->file->seek(self->curr);
+				self->file->read(buf, sz);
+			} catch(...) {
+				std::cout << "ERROR WHEN SOMETHING ELSE" << std::endl;
+				throw "error";
+			}
 		}) )));
 		last_len += (*vals_length)[i];
 	}
 	//leaf_data->update_positions(leaf_data);
-	typename T::node_ptr left_node = nullptr, right_node = nullptr;
-	if(leaf_d.left_leaf != LEAF_NULL){
-		left_node = typename T::node_ptr(new typename T::LeafNode());
-		left_node->data = create_node_data(true, leaf_d.left_leaf);
-		leaf_data->set_prev_leaf(left_node);
-	}
-	if(leaf_d.right_leaf != LEAF_NULL){
-		right_node = typename T::node_ptr(new typename T::LeafNode());
-		right_node->data = create_node_data(true, leaf_d.right_leaf);
-		leaf_data->set_next_leaf(right_node);
-	}
-	leaf_data->data = create_node_data(false, path);
+	
+	leaf_data->data = create_node_data(false, path, leaf_d.left_leaf, leaf_d.right_leaf);
 	
 	// Set cache and future
 	leaf_cache_m.lock();
@@ -783,8 +790,13 @@ void DB::write_leaf_item(std::shared_ptr<DBFS::File> file, typename T::val_type&
 	char* buf = new char[read_size];
 	int rsz;
 	data.reset();
-	while( (rsz = data.read(buf, read_size)) ){
-		file->write(buf, rsz);
+	try{
+		while( (rsz = data.read(buf, read_size)) ){
+			file->write(buf, rsz);
+		}
+	} catch(...){
+		std::cout << "ERROR WHEN WRITE LEAF ITEM" << std::endl;
+		throw "error";
 	}
 	delete[] buf;
 	data.start = start_data;
