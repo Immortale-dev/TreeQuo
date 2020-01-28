@@ -490,6 +490,9 @@ template<typename T>
 void DB::materialize_leaf(typename T::node_ptr& node, string path)
 {
 	typename T::node_ptr n = get_leaf<T>(path), next_leaf, prev_leaf;
+	
+	//n->lock();
+	
 	node->set_childs(n->get_childs());
 	
 	next_leaf = typename T::node_ptr(new typename T::LeafNode());
@@ -522,7 +525,9 @@ void DB::unmaterialize_intr(typename T::node_ptr& node, string path)
 template<typename T>
 void DB::unmaterialize_leaf(typename T::node_ptr& node, string path)
 {
+	//typename T::node_ptr n = get_leaf<T>(path);
 	leaf_cache_r[path].second--;
+	//n->unlock();
 	node->set_childs(nullptr);
 	node->set_prev_leaf(nullptr);
 	node->set_next_leaf(nullptr);
