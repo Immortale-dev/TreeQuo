@@ -15,6 +15,7 @@ namespace forest{
 	
 	using string = std::string;
 	using int_t = long long int;
+	using uint_t = unsigned long long int;
 	using file_pos_t = unsigned long long int;
 	using mutex = std::mutex;
 	using void_shared = std::shared_ptr<void>;
