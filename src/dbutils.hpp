@@ -7,9 +7,12 @@
 #include <algorithm>
 #include <mutex>
 #include <atomic>
+#include <utility>
+#include <unordered_map>
 #include "dbfs.hpp"
 #include "bplustree.hpp"
 #include "dbdriver.hpp"
+#include "dbexception.hpp"
 
 namespace forest{
 	

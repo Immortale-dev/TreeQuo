@@ -1,5 +1,5 @@
 
-#include "db.h"
+#include "forest.hpp"
 #include <iostream>
 #include <thread>
 #include <mutex>
@@ -7,49 +7,15 @@
 #include <chrono>
 using namespace std;
 
-#define DEBUG
+//#define DEBUG
 
-
-void test_files()
-{
-    atomic<int> ind;
-    mutex mtx;
-    ind = 0;
-    bool br = false;
-    vector<thread> v;
-    while(!br){
-        for(int i=0;i<50;i++){
-            if(ind++ >= 5000){
-                br = true;
-                break;
-            }
-            thread t([&mtx](int ind){
-                //lock_guard<mutex> lock(mtx);
-                ofstream f("tmp/mtest/test/t_" + to_string(ind));
-                f << "test test test test test test test test test test test test ";
-                f.close();
-            }, ind.load());
-            v.push_back(move(t));
-        }
-    }
-    cout << "SIZE: " << v.size() << endl;
-    for(auto &it : v){
-        it.join();
-    }
-}
 
 
 int main(){
     
     cout << "WTF???" << endl;
-
-    auto t1 = chrono::system_clock::now();
-    test_files();
-    auto t2 = chrono::system_clock::now();
     
-    auto d = chrono::duration_cast<chrono::milliseconds>(t2-t1);
-    
-    cout << d.count() << endl;
+    forest::bloom("tmp/mtest");
 	
 	//DB db;
 
