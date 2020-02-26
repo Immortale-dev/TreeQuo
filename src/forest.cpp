@@ -12,7 +12,6 @@ namespace forest{
 		std::unordered_map<string, std::shared_future<tree_t::node_ptr> > intr_cache_q, leaf_cache_q;
 		std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
 		std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r, leaf_cache_r;
-		std::unordered_map<int_t, string> tree_cache_f;
 	}
 	
 	tree_ptr FOREST;
@@ -70,7 +69,7 @@ void forest::delete_tree(string name)
 	string path = read_leaf_item(it->second);
 	
 	// Remove tree from forest
-	FOREST->get_tree()->erase(name);
+	FOREST->erase(name);
 	
 	// Erase tree
 	erase_tree(path);
@@ -105,6 +104,34 @@ forest::tree_ptr forest::open_tree(string path)
 	return t;
 }
 
+void forest::insert_leaf(string name, tree_t::key_type key, tree_t::val_type val)
+{
+	tree_ptr tree = find_tree(name);
+	tree->insert(key, val);
+	close_tree(tree->get_name());
+}
+
+void forest::erase_leaf(string name, tree_t::key_type key)
+{
+	tree_ptr tree = find_tree(name);
+	tree->erase(key);
+	close_tree(tree->get_name());
+}
+
+forest::file_data_t forest::find_leaf(string name, tree_t::key_type key)
+{
+	tree_ptr tree = find_tree(name);
+	try{
+		file_data_t t = tree->find(key);
+		close_tree(tree->get_name());
+		return t;
+	} 
+	catch(DBException& e) {
+		close_tree(tree->get_name());
+		throw e;
+	}
+}
+
 
 /////////////////////////////////////////////////////////////////////
 
@@ -127,7 +154,6 @@ void forest::cache::check_tree_ref(string key)
 	if(!tree_cache_r.count(key))
 		return;
 	if(tree_cache_r[key].second == 0 && !tree_cache.has(key)){
-		tree_cache_f.erase((int_t)tree_cache_r[key].first.get());
 		tree_cache_r.erase(key);
 	}
 }
@@ -159,15 +185,11 @@ void forest::create_root_file()
 void forest::open_root()
 {
 	FOREST = tree_ptr(new Tree(ROOT_TREE));
-	
-	// Remove?
-	cache::tree_cache_f[(int_t)(FOREST.get())] = ROOT_TREE;
 }
 
 void forest::close_root()
 {
 	// Remove?
-	cache::tree_cache_f.erase((int_t)(FOREST.get()));
 }
 
 void forest::insert_tree(string name, string file_name)
@@ -177,7 +199,7 @@ void forest::insert_tree(string name, string file_name)
 			buf[i] = file_name[i];
 		}
 	});
-	FOREST->get_tree()->insert(make_pair(name,tmp));
+	FOREST->insert(name, tmp);
 }
 
 void forest::erase_tree(string path)
@@ -195,9 +217,6 @@ void forest::erase_tree(string path)
 	}
 	if(cache::tree_cache.has(path)){
 		cache::tree_cache.remove(path);
-	}
-	if(cache::tree_cache_f.count((int_t)t.get())){
-		cache::tree_cache_f.erase((int_t)t.get());
 	}
 	cache::tree_cache_m.unlock();
 }

@@ -1,33 +1,33 @@
-#include "forest.h"
+#include "forest.hpp"
 
 
-DESCRIBE_SKIP("Test single thread", {
+DESCRIBE("Test single thread", {
 	
 	srand(0);
 
 	DESCRIBE("Initialize forest at tmp/t1", {
 		
-		DB forest;
+		//DB forest;
 		
 		BEFORE_ALL({
-			forest.bloom("tmp/t1");
+			forest::bloom("tmp/t1");
 		});
 		
 		AFTER_ALL({
-			forest.fold();
+			forest::fold();
 			// Remove dirs?
 		});
 		
 		DESCRIBE("Add 100 trees", {
 			BEFORE_ALL({
 				for(int i=0;i<100;i++){
-					forest.create_tree(TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(i));
+					forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(i));
 				}
 			});
 			
 			IT("Trees should be created", {
 				int fc = dir_count("tmp/t1");
-				EXPECT(fc).toBeGreaterThanOrEqual(202);
+				EXPECT(fc).toBeGreaterThanOrEqual(102);
 				INFO_PRINT("Dirs count: " + to_string(fc));
 			});
 		});
@@ -35,7 +35,7 @@ DESCRIBE_SKIP("Test single thread", {
 		DESCRIBE("Remove 100 trees", {
 			BEFORE_ALL({
 				for(int i=0;i<100;i++){
-					forest.delete_tree("test_string_tree_"+to_string(i));
+					forest::delete_tree("test_string_tree_"+to_string(i));
 				}
 			});
 			
@@ -58,13 +58,13 @@ DESCRIBE_SKIP("Test single thread", {
 					swap(nums[i],nums[rand()%cnt]);
 				}
 				for(int i=0;i<cnt;i++){
-					forest.create_tree(TREE_TYPES::KEY_STRING, "tree_"+to_string(nums[i]));
+					forest::create_tree(forest::TREE_TYPES::KEY_STRING, "tree_"+to_string(nums[i]));
 				}
 			});
 			
 			IT("Trees should be created", {
 				int fc = dir_count("tmp/t1");
-				EXPECT(fc).toBeGreaterThanOrEqual(cnt*2+2);
+				EXPECT(fc).toBeGreaterThanOrEqual(cnt+2);
 				INFO_PRINT("Dirs count: " + to_string(fc));
 			});
 			
@@ -74,7 +74,7 @@ DESCRIBE_SKIP("Test single thread", {
 						swap(nums[i],nums[rand()%cnt]);
 					}
 					for(int i=0;i<cnt;i++){
-						forest.delete_tree("tree_"+to_string(nums[i]));
+						forest::delete_tree("tree_"+to_string(nums[i]));
 					}
 				});
 				
@@ -92,28 +92,27 @@ DESCRIBE_SKIP("Test single thread", {
 DESCRIBE("Test multi threads", {
 	DESCRIBE("Initialize forest at tmp/t2", {
 		
-		DB forest;
 		mutex mt;
 		
 		BEFORE_ALL({
-			forest.bloom("tmp/t2");
+			forest::bloom("tmp/t2");
 		});
 		
 		AFTER_ALL({
-			forest.fold();
+			forest::fold();
 			// Remove dirs?
 		});
 		
-		DESCRIBE_SKIP("Add 100 trees in 10 threads", {
+		DESCRIBE("Add 100 trees in 10 threads", {
 			BEFORE_ALL({
 				vector<thread> trds;
 				for(int i=0;i<10;i++){
-					thread t([&forest, &mt](int i){
+					thread t([&mt](int i){
 						while(i<100){
-							mt.lock();
-							forest.create_tree(TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(i));
+							//mt.lock();
+							forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(i));
 							i+=10;
-							mt.unlock();
+							//mt.unlock();
 						}
 					},i);
 					trds.push_back(move(t));
@@ -125,7 +124,7 @@ DESCRIBE("Test multi threads", {
 			
 			IT("Trees should be created", {
 				int fc = dir_count("tmp/t2");
-				EXPECT(fc).toBeGreaterThanOrEqual(202);
+				EXPECT(fc).toBeGreaterThanOrEqual(102);
 				INFO_PRINT("Dirs count: " + to_string(fc));
 			});
 			
@@ -133,10 +132,10 @@ DESCRIBE("Test multi threads", {
 				BEFORE_ALL({
 					vector<thread> trds;
 					for(int i=0;i<10;i++){
-						thread t([&forest, &mt](int i){
+						thread t([&mt](int i){
 							while(i<100){
 								//mt.lock();
-								forest.delete_tree("test_string_tree_"+to_string(i));
+								forest::delete_tree("test_string_tree_"+to_string(i));
 								i+=10;
 								//mt.unlock();
 							}
@@ -173,10 +172,10 @@ DESCRIBE("Test multi threads", {
 				vector<thread> trds;
 				
 				for(int i=0;i<100;i++){
-					thread t([&cnt,&nums,&forest,&mt](int i){
+					thread t([&cnt,&nums,&mt](int i){
 						while(i<cnt){
 							//mt.lock();
-							forest.create_tree(TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(nums[i]));
+							forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(nums[i]));
 							i+=100;
 							//mt.unlock();
 						}
@@ -190,7 +189,7 @@ DESCRIBE("Test multi threads", {
 			
 			IT("Trees should be created", {
 				int fc = dir_count("tmp/t2");
-				EXPECT(fc).toBeGreaterThanOrEqual(cnt*2+2);
+				EXPECT(fc).toBeGreaterThanOrEqual(cnt+2);
 				INFO_PRINT("Dirs count: " + to_string(fc));
 			});
 			
@@ -201,10 +200,10 @@ DESCRIBE("Test multi threads", {
 					}
 					vector<thread> trds;
 					for(int i=0;i<100;i++){
-						thread t([&cnt,&nums,&forest,&mt](int i){
+						thread t([&cnt,&nums,&mt](int i){
 							while(i<cnt){
 								//mt.lock();
-								forest.delete_tree("test_string_tree_"+to_string(nums[i]));
+								forest::delete_tree("test_string_tree_"+to_string(nums[i]));
 								i+=100;
 								//mt.unlock();
 							}

@@ -11,7 +11,8 @@ class DBException : public std::exception {
 			CANNOT_CREATE_FILE,
 			NOT_VALID_TREE_TYPE,
 			TREE_DOES_NOT_EXISTS,
-			TREE_ALREADY_EXISTS
+			TREE_ALREADY_EXISTS,
+			LEAF_DOES_NOT_EXISTS
 		};
 		
 		DBException(ERRORS code)
@@ -25,12 +26,13 @@ class DBException : public std::exception {
 		
 	private:
 		std::string msg;
-		const std::string error_messages[5] = {
+		const std::string error_messages[6] = {
 			"Cannot create root files",
 			"Cannot create files",
 			"Not valid tree type",
 			"Trying to open not valid tree type",
-			"Tree with name you trying to create is already exists"
+			"Tree with name you trying to create is already exists",
+			"Leaf does not exists in the tree"
 		};
 			   
 };

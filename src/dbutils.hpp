@@ -61,6 +61,15 @@ namespace forest{
 			int_t start, length, curr;
 			fn _read;
 			file_ptr file;
+			
+			static file_data_t from_string(string str){
+				int* i = new int(0);
+				return file_data_t(str.size(), [str,i](file_data_t* self, char* buf, int count){
+					for(;*i<count;(*i)++){
+						buf[*i] = str[*i];
+					}
+				});
+			}
 	};
 
 }

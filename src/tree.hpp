@@ -69,7 +69,12 @@ namespace forest{
 			Tree(string path);
 			~Tree();
 			
+			string get_name();
+			
 			tree_t* get_tree();
+			void insert(tree_t::key_type key, tree_t::val_type val);
+			void erase(tree_t::key_type key);
+			file_data_t find(tree_t::key_type key);
 			
 			static string seed(TREE_TYPES type);
 			static string seed(TREE_TYPES type, string path);
@@ -105,6 +110,7 @@ namespace forest{
 			void d_release(tree_t::node_ptr& node, tree_t* tree);
 			void d_before_move(tree_t::child_item_type_ptr item, int_t step, tree_t* tree);
 			void d_after_move(tree_t::child_item_type_ptr item, int_t step, tree_t* tree);
+			void d_save_base(tree_t::node_ptr& node, tree_t* tree);
 			
 			// Getters
 			node_ptr get_intr(string path);
@@ -122,9 +128,12 @@ namespace forest{
 			void clear_node_cache(tree_t::node_ptr node);
 			driver_t* init_driver();
 			node_ptr create_node(string path, NODE_TYPES node_type);
+			TREE_TYPES get_type();
 			
 			tree_t* tree;
-			TREE_TYPES type;	
+			TREE_TYPES type;
+			mutex tree_m;
+			string name;
 	};
 	
 	
@@ -142,7 +151,6 @@ namespace forest{
 		extern std::unordered_map<string, std::shared_future<node_ptr> > intr_cache_q, leaf_cache_q;
 		extern std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
 		extern std::unordered_map<string, std::pair<node_ptr, int_a> > intr_cache_r, leaf_cache_r;
-		extern std::unordered_map<int_t, string> tree_cache_f;
 	}
 	
 	extern const string LEAF_NULL;

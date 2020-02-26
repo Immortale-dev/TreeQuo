@@ -18,11 +18,9 @@ namespace forest{
 	tree_ptr open_tree(string path);
 	void close_tree(string path);
 	
-	//void insert_leaf(string name);
-	//void insert_leaf(tree_t tree);
-	//void erase_leaf(string name);
-	//void erase_leaf(tree_t tree);
-	//find_leaf();
+	void insert_leaf(string name, tree_t::key_type key, tree_t::val_type val);
+	void erase_leaf(string name, tree_t::key_type key);
+	file_data_t find_leaf(string name, tree_t::key_type key);
 			
 	void bloom(string path);
 	void fold();

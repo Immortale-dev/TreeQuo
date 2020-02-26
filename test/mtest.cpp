@@ -13,10 +13,33 @@ using namespace std;
 
 int main(){
     
-    cout << "WTF???" << endl;
-    
-    forest::bloom("tmp/mtest");
+    cout << "START" << endl;
+    {
+		forest::bloom("tmp/mtest");
+		
+		forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test");
+		forest::insert_leaf("test", "leaf_1", forest::file_data_t::from_string("Woohoo!!! Its fucking works!!!"));
+		for(int i=0;i<100;i++){
+			forest::insert_leaf("test", "test_"+to_string(i), forest::file_data_t::from_string("Yes it is! jst for test and number - "+to_string(i)));
+		}
+		
+		for(int i=70;i>=10;i--){
+			forest::erase_leaf("test", "test_"+to_string(i));
+		}
+		
+		forest::file_data_t t = forest::find_leaf("test", "test_80");
+		char tmp[30];
+		t.reset();
+		int count = t.read(tmp,30);
+		cout << "LEAF 80: " << string(tmp,count) << endl;
+		
+		//cout << "------------------DELETE-------------------" << endl;
+		
+		forest::delete_tree("test");
 	
+		forest::fold();
+	}
+	cout << "END" << endl;
 	//DB db;
 
 	//db.bloom("tmp/mtest");
