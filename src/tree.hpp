@@ -74,7 +74,7 @@ namespace forest{
 			tree_t* get_tree();
 			void insert(tree_t::key_type key, tree_t::val_type val);
 			void erase(tree_t::key_type key);
-			file_data_t find(tree_t::key_type key);
+			file_data_ptr find(tree_t::key_type key);
 			
 			static string seed(TREE_TYPES type);
 			static string seed(TREE_TYPES type, string path);

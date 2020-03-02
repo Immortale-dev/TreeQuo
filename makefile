@@ -1,7 +1,7 @@
 .PHONY: all generate_o generate_t generate_libs custom
 
 CC=g++
-CFLAGS=-c -Wall
+CFLAGS=-c -Wall -std=c++17
 LDFLAGS=
 SRCPATH:=src/
 SRCS:=$(wildcard $(SRCPATH)*.cpp)

@@ -1,11 +1,12 @@
 #include <iostream>
 #include <thread>
-using namespace std;
 
 
-//#define DEBUG
+#define DEBUG
+#define TEST_ONLY_RULE
 
 #include "qtest.hpp"
+using namespace std;
 #include "src/helper.cpp"
 
 #include "src/tree.test.cpp"

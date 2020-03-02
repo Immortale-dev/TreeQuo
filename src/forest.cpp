@@ -118,11 +118,11 @@ void forest::erase_leaf(string name, tree_t::key_type key)
 	close_tree(tree->get_name());
 }
 
-forest::file_data_t forest::find_leaf(string name, tree_t::key_type key)
+forest::file_data_ptr forest::find_leaf(string name, tree_t::key_type key)
 {
 	tree_ptr tree = find_tree(name);
 	try{
-		file_data_t t = tree->find(key);
+		file_data_ptr t = tree->find(key);
 		close_tree(tree->get_name());
 		return t;
 	} 
@@ -162,8 +162,13 @@ void forest::cache::check_leaf_ref(string key)
 {
 	if(!leaf_cache_r.count(key))
 		return;
-	if(leaf_cache_r[key].second == 0 && !leaf_cache.has(key))
+	if(leaf_cache_r[key].second == 0 && !leaf_cache.has(key)){
+		for(auto& it : (*leaf_cache_r[key].first->get_childs())){
+			it->item->second->set_file(nullptr);
+			it->item->second = nullptr;
+		}
 		leaf_cache_r.erase(key);
+	}
 }
 
 void forest::cache::check_intr_ref(string key)
@@ -194,11 +199,13 @@ void forest::close_root()
 
 void forest::insert_tree(string name, string file_name)
 {
+	file_data_ptr tmp = file_data_ptr(new file_data_t(file_name.c_str(), file_name.size()));
+	/*
 	file_data_t tmp(file_name.size(), [file_name](file_data_t* self, char* buf, int count){
 		for(int i=0;i<count;i++){
 			buf[i] = file_name[i];
 		}
-	});
+	});*/
 	FOREST->insert(name, tmp);
 }
 
@@ -226,15 +233,14 @@ forest::tree_ptr forest::get_tree(string path)
 	return Tree::get(path);
 }
 
-forest::string forest::read_leaf_item(file_data_t item)
+forest::string forest::read_leaf_item(file_data_ptr item)
 {
-	int sz = item.size();
-	char* buf = new char[sz+1];
-	item.read(buf,sz);
-	buf[sz] = '\0';
+	int sz = item->size();
+	char* buf = new char[sz];
+	auto reader = item->get_reader();
+	reader.read(buf,sz);
 	string ret(buf,sz);
 	delete[] buf;
-	item.reset();
 	return ret;
 }
 

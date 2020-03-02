@@ -20,7 +20,7 @@ namespace forest{
 	
 	void insert_leaf(string name, tree_t::key_type key, tree_t::val_type val);
 	void erase_leaf(string name, tree_t::key_type key);
-	file_data_t find_leaf(string name, tree_t::key_type key);
+	file_data_ptr find_leaf(string name, tree_t::key_type key);
 			
 	void bloom(string path);
 	void fold();
@@ -28,7 +28,7 @@ namespace forest{
 	//////////// Private? ////////////
 	
 	// Other
-	string read_leaf_item(file_data_t item);
+	string read_leaf_item(file_data_ptr item);
 	
 	// Root methods
 	void open_root();

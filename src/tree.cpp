@@ -102,7 +102,7 @@ void forest::Tree::erase(tree_t::key_type key)
 	tree->save_base();
 }
 
-forest::file_data_t forest::Tree::find(tree_t::key_type key)
+forest::file_data_ptr forest::Tree::find(tree_t::key_type key)
 {
 	auto it = tree->find(key);
 	if(it == tree->end()){
@@ -230,7 +230,9 @@ forest::Tree::tree_leaf_read_t forest::Tree::read_leaf(string filename)
 void forest::Tree::materialize_intr(tree_t::node_ptr& node, string path)
 {
 	tree_t::node_ptr n = get_intr(path);
+	cache::intr_cache_m.lock();
 	cache::intr_cache_r[path].second++;
+	cache::intr_cache_m.unlock();
 	node->set_keys(n->get_keys());
 	node->set_nodes(n->get_nodes());
 }
@@ -238,7 +240,9 @@ void forest::Tree::materialize_intr(tree_t::node_ptr& node, string path)
 void forest::Tree::materialize_leaf(tree_t::node_ptr& node, string path)
 {
 	tree_t::node_ptr n = get_leaf(path), next_leaf, prev_leaf;
+	cache::leaf_cache_m.lock();
 	cache::leaf_cache_r[path].second++;
+	cache::leaf_cache_m.unlock();
 	
 	// Lock original node as well
 	n->lock();
@@ -265,23 +269,29 @@ void forest::Tree::unmaterialize_intr(tree_t::node_ptr& node, string path)
 {
 	node->set_keys(nullptr);
 	node->set_nodes(nullptr);
+	cache::intr_cache_m.lock();
 	cache::intr_cache_r[path].second--;
 	cache::check_intr_ref(path);
+	cache::intr_cache_m.unlock();
 }
 
 void forest::Tree::unmaterialize_leaf(tree_t::node_ptr& node, string path)
 {
 	// Unlock original node if it was not already deleted
+	cache::leaf_cache_m.lock();
 	if(cache::leaf_cache_r.count(path)){
-		tree_t::node_ptr n = get_leaf(path);
+		tree_t::node_ptr n = cache::leaf_cache_r[path].first;
 		n->unlock();
 	}
+	cache::leaf_cache_m.unlock();
 	
 	node->set_childs(nullptr);
 	node->set_prev_leaf(nullptr);
 	node->set_next_leaf(nullptr);
+	cache::leaf_cache_m.lock();
 	cache::leaf_cache_r[path].second--;
 	cache::check_leaf_ref(path);
+	cache::leaf_cache_m.unlock();
 }
 
 forest::node_ptr forest::Tree::create_node(string path, NODE_TYPES node_type)
@@ -438,7 +448,8 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	int c = keys_ptr->size();
 	uint_t last_len = 0;
 	for(int i=0;i<c;i++){
-		leaf_data->insert(entry_ptr(new entry_pair( (*keys_ptr)[i], file_data_t(start_data+last_len, (*vals_length)[i], f, [](file_data_t* self, char* buf, int sz){ 
+		leaf_data->insert(entry_ptr(new entry_pair( (*keys_ptr)[i], file_data_ptr(new file_data_t(f, start_data+last_len, (*vals_length)[i])) )));
+		/*leaf_data->insert(entry_ptr(new entry_pair( (*keys_ptr)[i], file_data_t(start_data+last_len, (*vals_length)[i], f, [](file_data_t* self, char* buf, int sz){ 
 			try{
 				self->file->seek(self->curr);
 				self->file->read(buf, sz);
@@ -446,7 +457,7 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 				//std::cout << "ERROR WHEN SOMETHING ELSE" << std::endl;
 				//throw "error";
 			}
-		}) )));
+		}) )));*/
 		last_len += (*vals_length)[i];
 	}
 	//leaf_data->update_positions(leaf_data);
@@ -515,9 +526,9 @@ void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val
 	int read_size = 4*1024;
 	char* buf = new char[read_size];
 	int rsz;
-	data.reset();
+	auto reader = data->get_reader();
 	try{
-		while( (rsz = data.read(buf, read_size)) ){
+		while( (rsz = reader.read(buf, read_size)) ){
 			file->write(buf, rsz);
 		}
 	} catch(...){
@@ -525,13 +536,9 @@ void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val
 		//throw "error";
 	}
 	delete[] buf;
-	data.start = start_data;
-	data.reset();
-	data.file = file;
-	data._read = [](file_data_t* self, char* buf, int sz){ 
-		self->file->seek(self->curr);
-		self->file->read(buf, sz);
-	};
+	data->set_start(start_data);
+	data->set_file(file);
+	data->delete_cache();
 }
 
 void forest::Tree::clear_node_cache(tree_t::node_ptr node)
@@ -714,7 +721,7 @@ void forest::Tree::d_insert(tree_t::node_ptr& node, tree_t* tree)
 		
 		for(auto& it : *(node->get_childs()) ){
 			keys->push_back(it->item->first);
-			lengths->push_back(it->item->second.size());
+			lengths->push_back(it->item->second->size());
 		}
 		
 		leaf_d.child_keys = keys;
@@ -775,8 +782,9 @@ void forest::Tree::d_remove(tree_t::node_ptr& node, tree_t* tree)
 	
 	node_data_ptr data = get_node_data(node->data);
 	
+	// TODO: RECODE WHEN DELAYED SAVE IMPLEMENTED
 	if(node->is_leaf() && node->size()){
-		node->first_child()->item->second.file->close();
+		node->first_child()->item->second->file->close();
 		node->get_childs()->resize(0);
 	}
 	

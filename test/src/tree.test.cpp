@@ -103,7 +103,7 @@ DESCRIBE("Test multi threads", {
 			// Remove dirs?
 		});
 		
-		DESCRIBE("Add 100 trees in 10 threads", {
+		DESCRIBE_ONLY("Add 100 trees in 10 threads", {
 			BEFORE_ALL({
 				vector<thread> trds;
 				for(int i=0;i<10;i++){
