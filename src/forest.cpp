@@ -1,12 +1,15 @@
 #include "forest.hpp"
 
 namespace forest{
-	const int DEFAULT_FACTOR = 3;
 	const string ROOT_TREE = "_root";
+	int DEFAULT_FACTOR = 3;
+	int INTR_CACHE_LENGTH = 10;
+	int LEAF_CACHE_LENGTH = 10;
+	int TREE_CACHE_LENGTH = 10;
 	
 	namespace cache{
-		ListCache<string, tree_ptr> tree_cache;
-		ListCache<string, tree_t::node_ptr> leaf_cache, intr_cache;
+		ListCache<string, tree_ptr> tree_cache(TREE_CACHE_LENGTH);
+		ListCache<string, tree_t::node_ptr> leaf_cache(LEAF_CACHE_LENGTH), intr_cache(INTR_CACHE_LENGTH);
 		mutex tree_cache_m, leaf_cache_m, intr_cache_m;
 		std::unordered_map<string, std::shared_future<tree_ptr> > tree_cache_q;
 		std::unordered_map<string, std::shared_future<tree_t::node_ptr> > intr_cache_q, leaf_cache_q;
@@ -178,6 +181,30 @@ void forest::cache::check_intr_ref(string key)
 	if(intr_cache_r[key].second == 0 && !intr_cache.has(key)){
 		intr_cache_r.erase(key);
 	}
+}
+
+void forest::cache::set_tree_cache_length(int length)
+{
+	TREE_CACHE_LENGTH = length;
+	tree_cache_m.lock();
+	tree_cache.resize(TREE_CACHE_LENGTH);
+	tree_cache_m.unlock();
+}
+
+void forest::cache::set_intr_cache_length(int length)
+{
+	INTR_CACHE_LENGTH = length;
+	intr_cache_m.lock();
+	intr_cache.resize(INTR_CACHE_LENGTH);
+	intr_cache_m.unlock();
+}
+
+void forest::cache::set_leaf_cache_length(int length)
+{
+	LEAF_CACHE_LENGTH = length;
+	leaf_cache_m.lock();
+	leaf_cache.resize(LEAF_CACHE_LENGTH);
+	leaf_cache_m.unlock();
 }
 
 ////////////FOREST_METHODS///////////////

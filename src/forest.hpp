@@ -47,6 +47,9 @@ namespace forest{
 		void check_leaf_ref(string key);
 		void check_intr_ref(string key);
 		void check_tree_ref(string key);
+		void set_tree_cache_length(int length);
+		void set_intr_cache_length(int length);
+		void set_leaf_cache_length(int length);
 		
 		extern ListCache<string, tree_ptr> tree_cache;
 		extern ListCache<string, tree_t::node_ptr> leaf_cache, intr_cache;
@@ -61,7 +64,10 @@ namespace forest{
 	// Constants
 	extern tree_ptr FOREST;
 	extern bool blossomed;
-	extern const int DEFAULT_FACTOR;
+	extern int DEFAULT_FACTOR;
+	extern int INTR_CACHE_LENGTH;
+	extern int LEAF_CACHE_LENGTH;
+	extern int TREE_CACHE_LENGTH;
 	extern const string ROOT_TREE;
 }
 

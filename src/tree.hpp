@@ -154,7 +154,7 @@ namespace forest{
 	}
 	
 	extern const string LEAF_NULL;
-	extern const int DEFAULT_FACTOR;
+	extern int DEFAULT_FACTOR;
 }
 
 #endif //FOREST_TREE_H
