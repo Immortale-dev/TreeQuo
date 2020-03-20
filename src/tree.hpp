@@ -102,14 +102,16 @@ namespace forest{
 			node_data_ptr get_node_data(void_shared d);
 		
 			// Proceed
-			void d_enter(tree_t::node_ptr& node, tree_t* tree);
-			void d_leave(tree_t::node_ptr& node, tree_t* tree);
+			void d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tree_t* tree);
+			void d_leave(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tree_t* tree);
 			void d_insert(tree_t::node_ptr& node, tree_t* tree);
 			void d_remove(tree_t::node_ptr& node, tree_t* tree);
 			void d_reserve(tree_t::node_ptr& node, tree_t* tree);
 			void d_release(tree_t::node_ptr& node, tree_t* tree);
 			void d_before_move(tree_t::child_item_type_ptr item, int_t step, tree_t* tree);
 			void d_after_move(tree_t::child_item_type_ptr item, int_t step, tree_t* tree);
+			void d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree);
+			void d_item_release(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree);
 			void d_save_base(tree_t::node_ptr& node, tree_t* tree);
 			
 			// Getters

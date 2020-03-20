@@ -570,14 +570,16 @@ void forest::Tree::clear_node_cache(tree_t::node_ptr node)
 forest::driver_t* forest::Tree::init_driver()
 {
 	return new driver_t(
-		[this](tree_t::node_ptr& node, tree_t* tree){ this->d_enter(node, tree); }
-		,[this](tree_t::node_ptr& node, tree_t* tree){ this->d_leave(node, tree); }
+		[this](tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_enter(node, type, tree); }
+		,[this](tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_leave(node, type, tree); }
 		,[this](tree_t::node_ptr& node, tree_t* tree){ this->d_insert(node, tree); }
 		,[this](tree_t::node_ptr& node, tree_t* tree){ this->d_remove(node, tree); }
 		,[this](tree_t::node_ptr& node, tree_t* tree){ this->d_reserve(node, tree); }
 		,[this](tree_t::node_ptr& node, tree_t* tree){ this->d_release(node, tree); }
 		,[this](tree_t::child_item_type_ptr item, int_t step, tree_t* tree){ this->d_before_move(item, step, tree); }
 		,[this](tree_t::child_item_type_ptr item, int_t step, tree_t* tree){ this->d_after_move(item, step, tree); }
+		,[this](tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_item_reserve(item, type, tree); }
+		,[this](tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_item_release(item, type, tree); }
 		,[this](tree_t::node_ptr& node, tree_t* tree){ this->d_save_base(node, tree); }
 	);
 }
@@ -585,7 +587,7 @@ forest::driver_t* forest::Tree::init_driver()
 
 
 // Proceed
-void forest::Tree::d_enter(tree_t::node_ptr& node, tree_t* tree)
+void forest::Tree::d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
 	//std::cout << "ENTER_START" << std::endl;
 		
@@ -620,7 +622,7 @@ void forest::Tree::d_enter(tree_t::node_ptr& node, tree_t* tree)
 	//std::cout << "ENTER_END" << std::endl;
 }
 
-void forest::Tree::d_leave(tree_t::node_ptr& node, tree_t* tree)
+void forest::Tree::d_leave(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
 	//std::cout << "LEAVE_START" << std::endl;
 	
@@ -813,6 +815,16 @@ void forest::Tree::d_before_move(tree_t::child_item_type_ptr item, int_t step, t
 void forest::Tree::d_after_move(tree_t::child_item_type_ptr item, int_t step, tree_t* tree)
 {
 	//std::cout << "AFTER_MOVE" << std::endl;
+}
+
+void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree)
+{
+	//std::cout << "ITEM_RESERVE" << std::endl;
+}
+
+void forest::Tree::d_item_release(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree)
+{
+	//std::cout << "ITEM_RELEASE" << std::endl;
 }
 
 void forest::Tree::d_save_base(tree_t::node_ptr& node, tree_t* tree)
