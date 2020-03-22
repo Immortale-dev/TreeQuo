@@ -84,13 +84,13 @@ namespace forest{
 		
 			// Intr methods
 			tree_intr_read_t read_intr(string filename);
-			void materialize_intr(tree_t::node_ptr& node, string path);
-			void unmaterialize_intr(tree_t::node_ptr& node, string path);
+			void materialize_intr(tree_t::node_ptr& node);
+			void unmaterialize_intr(tree_t::node_ptr& node);
 			
 			// Leaf methods
 			tree_leaf_read_t read_leaf(string filename);
-			void materialize_leaf(tree_t::node_ptr& node, string path);
-			void unmaterialize_leaf(tree_t::node_ptr& node, string path);
+			void materialize_leaf(tree_t::node_ptr& node);
+			void unmaterialize_leaf(tree_t::node_ptr& node);
 			
 			// Tree base methods
 			tree_base_read_t read_base(string filename);
@@ -99,7 +99,11 @@ namespace forest{
 			// Node data
 			node_data_ptr create_node_data(bool ghost, string path);
 			node_data_ptr create_node_data(bool ghost, string path, string prev, string next);
-			node_data_ptr get_node_data(void_shared d);
+			node_data_ptr get_node_data(tree_t::node_ptr node);
+			void set_node_data(tree_t::node_ptr node, node_data_ptr d);
+			void set_node_data(tree_t::Node* node, node_data_ptr d);
+			bool has_data(tree_t::node_ptr node);
+			bool has_data(tree_t::Node* node);
 		
 			// Proceed
 			void d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tree_t* tree);
@@ -124,6 +128,20 @@ namespace forest{
 			void write_base(DBFS::File* file, tree_base_read_t data);
 			void write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t data);
 			void write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data);
+			
+			// Locks
+			void lock_read(tree_t::node_ptr node);
+			void lock_read(tree_t::Node* node);
+			void unlock_read(tree_t::node_ptr node);
+			void unlock_read(tree_t::Node* node);
+			void lock_write(tree_t::node_ptr node);
+			void lock_write(tree_t::Node* node);
+			void unlock_write(tree_t::node_ptr node);
+			void unlock_write(tree_t::Node* node);
+			void lock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type);
+			void lock_type(tree_t::Node* node, tree_t::PROCESS_TYPE type);
+			void unlock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type);
+			void unlock_type(tree_t::Node* node, tree_t::PROCESS_TYPE type);
 			
 			// Other
 			//tree_t::node_ptr unvoid_node(void_shared node);

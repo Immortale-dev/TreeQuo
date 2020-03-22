@@ -1,7 +1,7 @@
 #include "forest.hpp"
 
 
-DESCRIBE("Test single thread", {
+DESCRIBE_SKIP("Test single thread", {
 	
 	srand(0);
 
@@ -103,7 +103,7 @@ DESCRIBE("Test multi threads", {
 			// Remove dirs?
 		});
 		
-		DESCRIBE_ONLY("Add 100 trees in 10 threads", {
+		DESCRIBE_SKIP("Add 100 trees in 10 threads", {
 			BEFORE_ALL({
 				vector<thread> trds;
 				for(int i=0;i<10;i++){
@@ -188,6 +188,13 @@ DESCRIBE("Test multi threads", {
 			});
 			
 			IT("Trees should be created", {
+				DBFS::File* f = new DBFS::File("_root");
+				int a;
+				f->read(a);
+				EXPECT(a).toBe(100);
+				INFO_PRINT("Trees created: " + to_string(a));
+				f->close();
+				delete f;
 				int fc = dir_count("tmp/t2");
 				EXPECT(fc).toBeGreaterThanOrEqual(cnt+2);
 				INFO_PRINT("Dirs count: " + to_string(fc));
