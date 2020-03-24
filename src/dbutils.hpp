@@ -88,7 +88,9 @@ namespace forest{
 			void set_start(uint_t start) { this->start = start; };
 			void set_length(uint_t length) { this->length = length; };
 			void delete_cache() { if(cached) delete[] data_cached; cached = false; };
+			
 			file_ptr file;
+			std::mutex m,g;
 			
 			struct file_data_reader{
 				file_data_reader(file_data_t* item) : data(item), lock(item->mtx), pos(0) { };

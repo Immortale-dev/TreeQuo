@@ -62,14 +62,17 @@ void forest::create_tree(TREE_TYPES type, string name)
 
 void forest::delete_tree(string name)
 {
+	string path;
 	// Not exist
-	auto it = FOREST->get_tree()->find(name);
-	if(it == FOREST->get_tree()->end()){
-		return;
+	{
+		auto it = FOREST->get_tree()->find(name);
+		if(it == FOREST->get_tree()->end()){
+			return;
+		}
+		
+		// Get tree path
+		path = read_leaf_item(it->second);
 	}
-	
-	// Get tree path
-	string path = read_leaf_item(it->second);
 	
 	// Remove tree from forest
 	FOREST->erase(name);
@@ -270,5 +273,4 @@ forest::string forest::read_leaf_item(file_data_ptr item)
 	delete[] buf;
 	return ret;
 }
-
 

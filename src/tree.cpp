@@ -278,6 +278,7 @@ void forest::Tree::materialize_leaf(tree_t::node_ptr& node)
 	// n->lock();
 	if(node->data.travel_locks.wlock){
 		lock_write(n);
+		//n->data.change_locks.m.lock();
 	}
 	else{
 		lock_read(n);
@@ -366,6 +367,7 @@ void forest::Tree::unmaterialize_leaf(tree_t::node_ptr& node)
 		//n->unlock();
 		if(node->data.travel_locks.wlock){
 			unlock_write(n);
+			//n->data.change_locks.m.unlock();
 		}
 		else{
 			unlock_read(n);
@@ -1013,12 +1015,62 @@ void forest::Tree::d_after_move(tree_t::child_item_type_ptr item, int_t step, tr
 
 void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
+	std::cout << "RESERVE_WRITE_START!!!" << std::endl;
+	std::cout << "RESERVE_WRITE_START!!!" << std::endl;
+	std::cout << "RESERVE_WRITE_START!!!" << std::endl;
+	return;
+	//item->item->second->m.lock();
 	//std::cout << "ITEM_RESERVE" << std::endl;
+	//return;
+	if(type == tree_t::PROCESS_TYPE::WRITE){
+		std::cout << "RESERVE_WRITE_START!!!" << std::endl;
+		// We assume that node already locked for travel
+		//tree_t::node_ptr node = item->node;
+		//tree_t::node_ptr n;
+		
+		// Its a long story... (update_positions)
+		/*if(has_data(node)){
+			node_data_ptr data = get_node_data(node);
+			string& path = data->path;
+			n = get_leaf(path);
+		}
+		else{
+			n = node;
+		}*/
+		
+		// unlock previous lock (as it is not insert but delete)
+		///n->data.change_locks.m.unlock();
+		
+		std::cout << "RESERVE_WRITE_START_BEFORE!!!" << std::endl;
+		// Lock without dead lock
+		///std::lock(n->data.change_locks.m, item->item->second->m);
+		item->item->second->m.lock();
+		std::cout << "RESERVE_WRITE_START_AFTER!!!" << std::endl;
+	}
+	else{
+		item->item->second->m.lock();
+	}
 }
 
 void forest::Tree::d_item_release(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
-	//std::cout << "ITEM_RELEASE" << std::endl;
+	//item->item->second->m.unlock();
+	//return;
+	std::cout << "ITEM_RELEASE" << std::endl;
+	std::cout << "ITEM_RELEASE" << std::endl;
+	std::cout << "ITEM_RELEASE" << std::endl;
+	return;
+	
+	if(type == tree_t::PROCESS_TYPE::WRITE){
+		//tree_t::node_ptr node = item->node;
+		//node_data_ptr data = get_node_data(node);
+		//string& path = data->path;
+		//tree_t::node_ptr n = get_leaf(path);
+		//n->data.change_locks.m.unlock();
+	}
+	item->item->second->m.unlock();
+	
+	std::cout << "ITEM_RELEASE_END" << std::endl;
 }
 
 void forest::Tree::d_save_base(tree_t::node_ptr& node, tree_t* tree)

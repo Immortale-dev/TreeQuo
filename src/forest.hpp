@@ -11,6 +11,7 @@
 namespace forest{
 	
 	using tree_ptr = std::shared_ptr<Tree>;
+	using child_item_type_ptr = tree_t::child_item_type_ptr;
 	
 	void create_tree(TREE_TYPES type, string name);
 	void delete_tree(string name);
@@ -29,6 +30,7 @@ namespace forest{
 	
 	// Other
 	string read_leaf_item(file_data_ptr item);
+	
 	
 	// Root methods
 	void open_root();
