@@ -3,9 +3,9 @@
 namespace forest{
 	const string ROOT_TREE = "_root";
 	int DEFAULT_FACTOR = 3;
-	int INTR_CACHE_LENGTH = 10;
-	int LEAF_CACHE_LENGTH = 10;
-	int TREE_CACHE_LENGTH = 10;
+	int INTR_CACHE_LENGTH = 3;
+	int LEAF_CACHE_LENGTH = 3;
+	int TREE_CACHE_LENGTH = 3;
 	
 	namespace cache{
 		ListCache<string, tree_ptr> tree_cache(TREE_CACHE_LENGTH);
@@ -53,8 +53,10 @@ void forest::fold()
 
 void forest::create_tree(TREE_TYPES type, string name)
 {
-	if(FOREST->get_tree()->find(name) != FOREST->get_tree()->end()){
-		throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
+	{
+		if(FOREST->get_tree()->find(name) != FOREST->get_tree()->end()){
+			throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
+		}
 	}
 	string file_name = Tree::seed(type);
 	insert_tree(name, file_name);
@@ -67,24 +69,26 @@ void forest::delete_tree(string name)
 	{
 		auto it = FOREST->get_tree()->find(name);
 		if(it == FOREST->get_tree()->end()){
+			std::cout << "=============DIDINT FIND ITEM TO DELETE=========" << std::endl;
+			//assert(false);
 			return;
 		}
 		
 		// Get tree path
-		path = read_leaf_item(it->second);
+		//path = read_leaf_item(it->second);
 	}
 	
 	// Remove tree from forest
-	FOREST->erase(name);
+	//FOREST->erase(name);
 	
 	// Erase tree
-	erase_tree(path);
+	//erase_tree(path);
 }
 
 void forest::close_tree(string path)
 {
-	cache::tree_cache_r[path].second--;
 	cache::tree_cache_m.lock();
+	cache::tree_cache_r[path].second--;
 	cache::check_tree_ref(path);
 	cache::tree_cache_m.unlock();
 }
@@ -105,8 +109,10 @@ forest::tree_ptr forest::find_tree(string name)
 
 forest::tree_ptr forest::open_tree(string path)
 {
+	cache::tree_cache_m.lock();
 	tree_ptr t = get_tree(path);
 	cache::tree_cache_r[path].second++;
+	cache::tree_cache_m.unlock();;
 	return t;
 }
 
@@ -182,6 +188,7 @@ void forest::cache::check_intr_ref(string key)
 	if(!intr_cache_r.count(key))
 		return;
 	if(intr_cache_r[key].second == 0 && !intr_cache.has(key)){
+		intr_cache_r[key].first->get_nodes()->resize(0);
 		intr_cache_r.erase(key);
 	}
 }

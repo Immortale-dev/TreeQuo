@@ -43,10 +43,10 @@ forest::tree_ptr forest::Tree::get(string path)
 	tree_ptr t;
 	
 	// Try to get from cache
-	cache::tree_cache_m.lock();
+	//cache::tree_cache_m.lock();
 	if(cache::tree_cache.has(path)){
 		t = cache::tree_cache.get(path);
-		cache::tree_cache_m.unlock();
+		//cache::tree_cache_m.unlock();
 		return t;
 	}
 	
@@ -54,7 +54,7 @@ forest::tree_ptr forest::Tree::get(string path)
 	if(cache::tree_cache_r.count(path)){
 		t = cache::tree_cache_r[path].first;
 		cache::tree_cache.push(path, t);
-		cache::tree_cache_m.unlock();
+		//cache::tree_cache_m.unlock();
 		return t;
 	}
 	
@@ -62,7 +62,9 @@ forest::tree_ptr forest::Tree::get(string path)
 	if(cache::tree_cache_q.count(path)){
 		std::shared_future<tree_ptr> f = cache::tree_cache_q[path];
 		cache::tree_cache_m.unlock();
-		return f.get();
+		t = f.get();
+		cache::tree_cache_m.lock();
+		return t;
 	}
 	
 	// Create Promise
@@ -79,7 +81,7 @@ forest::tree_ptr forest::Tree::get(string path)
 	cache::tree_cache_r[path] = std::make_pair(t,0);
 	p.set_value(t);
 	cache::tree_cache_q.erase(path);
-	cache::tree_cache_m.unlock();
+	//cache::tree_cache_m.unlock();
 	
 	// return value
 	return t;
@@ -240,10 +242,18 @@ void forest::Tree::materialize_intr(tree_t::node_ptr& node)
 	node_data_ptr data = get_node_data(node);
 	string& path = data->path;
 	
-	tree_t::node_ptr n = get_intr(path);
 	cache::intr_cache_m.lock();
+	tree_t::node_ptr n = get_intr(path);
 	cache::intr_cache_r[path].second++;
 	cache::intr_cache_m.unlock();
+	
+	if(node->data.travel_locks.wlock){
+		lock_write(n);
+		//n->data.change_locks.m.lock();
+	}
+	else{
+		lock_read(n);
+	}
 	
 	// Owners lock made for readers-writer concept
 	node->data.owner_locks.m.lock();
@@ -269,8 +279,8 @@ void forest::Tree::materialize_leaf(tree_t::node_ptr& node)
 	node_data_ptr data = get_node_data(node);
 	string& path = data->path;
 	
-	tree_t::node_ptr n = get_leaf(path), next_leaf, prev_leaf;
 	cache::leaf_cache_m.lock();
+	tree_t::node_ptr n = get_leaf(path), next_leaf, prev_leaf;
 	cache::leaf_cache_r[path].second++;
 	cache::leaf_cache_m.unlock();
 	
@@ -278,7 +288,7 @@ void forest::Tree::materialize_leaf(tree_t::node_ptr& node)
 	// n->lock();
 	if(node->data.travel_locks.wlock){
 		lock_write(n);
-		//n->data.change_locks.m.lock();
+		n->data.change_locks.m.lock();
 	}
 	else{
 		lock_read(n);
@@ -320,6 +330,7 @@ void forest::Tree::materialize_leaf(tree_t::node_ptr& node)
 void forest::Tree::unmaterialize_intr(tree_t::node_ptr& node)
 {
 	if(!has_data(node)){
+		assert(false);
 		node->data.owner_locks.m.lock();
 		node->data.owner_locks.c--;
 		node->data.owner_locks.m.unlock();
@@ -329,6 +340,23 @@ void forest::Tree::unmaterialize_intr(tree_t::node_ptr& node)
 	// Get node data
 	node_data_ptr data = get_node_data(node);
 	string& path = data->path;
+	
+	// Unlock original node if it was not already deleted
+	cache::intr_cache_m.lock();
+	assert(cache::intr_cache_r[path].second > 0);
+	assert(cache::intr_cache_r.count(path));
+	if(cache::intr_cache_r.count(path)){
+		tree_t::node_ptr n = cache::intr_cache_r[path].first;
+		//n->unlock();
+		if(node->data.travel_locks.wlock){
+			unlock_write(n);
+			//n->data.change_locks.m.unlock();
+		}
+		else{
+			unlock_read(n);
+		}
+	}
+	cache::intr_cache_m.unlock();
 	
 	// made for readers-writer concept
 	node->data.owner_locks.m.lock();
@@ -362,12 +390,14 @@ void forest::Tree::unmaterialize_leaf(tree_t::node_ptr& node)
 	
 	// Unlock original node if it was not already deleted
 	cache::leaf_cache_m.lock();
+	assert(cache::leaf_cache_r.count(path));
+	assert(cache::leaf_cache_r[path].second > 0);
 	if(cache::leaf_cache_r.count(path)){
 		tree_t::node_ptr n = cache::leaf_cache_r[path].first;
 		//n->unlock();
 		if(node->data.travel_locks.wlock){
 			unlock_write(n);
-			//n->data.change_locks.m.unlock();
+			n->data.change_locks.m.unlock();
 		}
 		else{
 			unlock_read(n);
@@ -461,10 +491,9 @@ forest::tree_t::node_ptr forest::Tree::get_intr(string path)
 	node_ptr intr_data;
 	
 	// Check cache
-	cache::intr_cache_m.lock();
 	if(cache::intr_cache.has(path)){
 		intr_data = cache::intr_cache.get(path);
-		cache::intr_cache_m.unlock();
+		//cache::intr_cache_m.unlock();
 		return intr_data;
 	}
 	
@@ -472,7 +501,7 @@ forest::tree_t::node_ptr forest::Tree::get_intr(string path)
 	if(cache::intr_cache_r.count(path)){
 		intr_data = cache::intr_cache_r[path].first;
 		cache::intr_cache.push(path, intr_data);
-		cache::intr_cache_m.unlock();
+		//cache::intr_cache_m.unlock();
 		return intr_data;
 	}
 	
@@ -481,6 +510,7 @@ forest::tree_t::node_ptr forest::Tree::get_intr(string path)
 		std::shared_future<node_ptr> f = cache::intr_cache_q[path];
 		cache::intr_cache_m.unlock();
 		intr_data = f.get();
+		cache::intr_cache_m.lock();
 		return intr_data;
 	}
 	
@@ -515,7 +545,6 @@ forest::tree_t::node_ptr forest::Tree::get_intr(string path)
 	cache::intr_cache_r[path] = std::make_pair(intr_data,0);
 	p.set_value(intr_data);
 	cache::intr_cache_q.erase(path);
-	cache::intr_cache_m.unlock();
 	
 	// Return
 	return intr_data;
@@ -528,12 +557,10 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	
 	node_ptr leaf_data;
 	
-	cache::leaf_cache_m.lock();
-	
 	// Check cache
 	if(cache::leaf_cache.has(path)){
 		leaf_data = cache::leaf_cache.get(path);
-		cache::leaf_cache_m.unlock();
+		//cache::leaf_cache_m.unlock();
 		return leaf_data;
 	}
 	
@@ -541,7 +568,7 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	if(cache::leaf_cache_r.count(path)){
 		leaf_data = cache::leaf_cache_r[path].first;
 		cache::leaf_cache.push(path, leaf_data);
-		cache::leaf_cache_m.unlock();
+		//cache::leaf_cache_m.unlock();
 		return leaf_data;
 	}
 	
@@ -550,6 +577,7 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 		std::shared_future<node_ptr> f = cache::leaf_cache_q[path];
 		cache::leaf_cache_m.unlock();
 		leaf_data = f.get();
+		cache::leaf_cache_m.lock();
 		return leaf_data;
 	}
 	
@@ -580,7 +608,7 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 		}) )));*/
 		last_len += (*vals_length)[i];
 	}
-	//leaf_data->update_positions(leaf_data);
+	leaf_data->update_positions(leaf_data);
 	
 	set_node_data(leaf_data, create_node_data(false, path, leaf_d.left_leaf, leaf_d.right_leaf));
 	//leaf_data->data = create_node_data(false, path, leaf_d.left_leaf, leaf_d.right_leaf);
@@ -591,7 +619,6 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	cache::leaf_cache_r[path] = std::make_pair(leaf_data,0);
 	p.set_value(leaf_data);
 	cache::leaf_cache_q.erase(path);
-	cache::leaf_cache_m.unlock();
 	
 	// Return
 	return leaf_data;
@@ -673,8 +700,8 @@ void forest::Tree::lock_read(tree_t::Node* node)
 {
 	auto& tl = node->data.travel_locks;
 	
-	tl.m.lock();
-	return;
+	//tl.m.lock();
+	//return;
 	
 	tl.m.lock();
 	if(tl.c++ == 0){
@@ -692,8 +719,8 @@ void forest::Tree::unlock_read(tree_t::Node* node)
 {
 	auto& tl = node->data.travel_locks;
 	
-	tl.m.unlock();
-	return;
+	//tl.m.unlock();
+	//return;
 	
 	tl.m.lock();
 	if(--tl.c == 0){
@@ -711,8 +738,8 @@ void forest::Tree::lock_write(tree_t::Node* node)
 {
 	auto& tl = node->data.travel_locks;
 	
-	tl.m.lock();
-	return;
+	//tl.m.lock();
+	//return;
 	
 	tl.g.lock();
 	tl.wlock = true;
@@ -727,8 +754,8 @@ void forest::Tree::unlock_write(tree_t::Node* node)
 {
 	auto& tl = node->data.travel_locks;
 	
-	tl.m.unlock();
-	return;
+	//tl.m.unlock();
+	//return;
 	
 	tl.wlock = false;
 	tl.g.unlock();
@@ -803,6 +830,8 @@ forest::driver_t* forest::Tree::init_driver()
 void forest::Tree::d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
 	//std::cout << "ENTER_START" << std::endl;
+	
+	//std::this_thread::sleep_for(std::chrono::milliseconds(3));
 		
 	// Lock node mutex
 	lock_type(node, type);
@@ -826,6 +855,8 @@ void forest::Tree::d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tr
 void forest::Tree::d_leave(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
 	//std::cout << "LEAVE_START" << std::endl;
+
+	//std::this_thread::sleep_for(std::chrono::milliseconds(3));
 	
 	// Nothing to do with stem
 	if(tree->is_stem_pub(node)){
@@ -848,6 +879,8 @@ void forest::Tree::d_leave(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tr
 void forest::Tree::d_insert(tree_t::node_ptr& node, tree_t* tree)
 {
 	//std::cout << "INSERT_START" << std::endl;
+	
+	//std::this_thread::sleep_for(std::chrono::milliseconds(3));
 	
 	if(tree->is_stem_pub(node)){
 		assert(false);
@@ -877,6 +910,13 @@ void forest::Tree::d_insert(tree_t::node_ptr& node, tree_t* tree)
 			//node->data = create_node_data(false, new_name);
 			// Cache new intr node
 			tree_t::node_ptr n = tree_t::node_ptr(new tree_t::InternalNode());
+			
+			// Lock node
+			lock_write(n);
+			//n->data.change_locks.m.lock();
+			
+			set_node_data(n, create_node_data(false, new_name));
+			
 			n->set_keys(node->get_keys());
 			n->set_nodes(node->get_nodes());
 			cache::intr_cache_m.lock();
@@ -935,14 +975,21 @@ void forest::Tree::d_insert(tree_t::node_ptr& node, tree_t* tree)
 			set_node_data(node, create_node_data(false, new_name));
 			// Cache new leaf node
 			node_ptr n = tree_t::node_ptr(new tree_t::LeafNode());
+			
+			// Lock node
+			lock_write(n);
+			n->data.change_locks.m.lock();
+			
 			n->set_childs(node->get_childs());
 			
 			//n->data = create_node_data(false, new_name, leaf_d.left_leaf, leaf_d.right_leaf);
 			set_node_data(n, create_node_data(false, new_name, leaf_d.left_leaf, leaf_d.right_leaf));
 			
-			//n->update_positions(n);
+			n->update_positions(n);
+			
 			cache::leaf_cache_m.lock();
 			cache::leaf_cache.push(new_name, n);
+			assert(!cache::leaf_cache_r.count(new_name));
 			cache::leaf_cache_r[new_name] = make_pair(n, 1);
 			cache::leaf_cache_m.unlock();
 		} else {
@@ -950,15 +997,19 @@ void forest::Tree::d_insert(tree_t::node_ptr& node, tree_t* tree)
 			string cur_name = data->path;
 			
 			cache::leaf_cache_m.lock();
-			if(cache::leaf_cache_r.count(cur_name)){
-				node_ptr n = cache::leaf_cache_r[cur_name].first;
-				
-				node_data_ptr c_data = get_node_data(n);
-				c_data->prev = leaf_d.left_leaf;
-				c_data->next = leaf_d.right_leaf;
-				
-				//n->update_positions(n);
-			}
+			
+			assert(cache::leaf_cache_r.count(cur_name));
+
+			node_ptr n = cache::leaf_cache_r[cur_name].first;
+			
+			assert(n->get_childs() == node->get_childs());
+			
+			node_data_ptr c_data = get_node_data(n);
+			c_data->prev = leaf_d.left_leaf;
+			c_data->next = leaf_d.right_leaf;
+			
+			n->update_positions(n);
+		
 			cache::leaf_cache_m.unlock();
 			
 			DBFS::remove(cur_name);
@@ -986,21 +1037,47 @@ void forest::Tree::d_remove(tree_t::node_ptr& node, tree_t* tree)
 		node->get_childs()->resize(0);
 	}
 	
+	//string& path = data->path;
+	//if(node->is_leaf()){
+	//	tree_t::node_ptr n = get_leaf(path);
+	//}
+	
 	DBFS::remove(data->path);
 	
-	clear_node_cache(node);
+	///clear_node_cache(node);
 	
 	//std::cout << "REMOVE_END" << std::endl;
 }
 
 void forest::Tree::d_reserve(tree_t::node_ptr& node, tree_t* tree)
 {
+	//return;
 	//std::cout << "RESERVE" << std::endl;
+
+	node_data_ptr data = get_node_data(node);
+	string& path = data->path;
+	
+	
+	cache::leaf_cache_m.lock();
+	assert(cache::leaf_cache_r[path].second > 0);
+	cache::leaf_cache_r[path].second++;
+	cache::leaf_cache_m.unlock();
 }
 
 void forest::Tree::d_release(tree_t::node_ptr& node, tree_t* tree)
 {
+	//return;
 	//std::cout << "RELEASE" << std::endl;
+	
+	node_data_ptr data = get_node_data(node);
+	string& path = data->path;
+	
+	
+	cache::leaf_cache_m.lock();
+	assert(cache::leaf_cache_r[path].second > 0);
+	cache::leaf_cache_r[path].second--;
+	cache::check_leaf_ref(path);
+	cache::leaf_cache_m.unlock();
 }
 
 void forest::Tree::d_before_move(tree_t::child_item_type_ptr item, int_t step, tree_t* tree)
@@ -1015,37 +1092,34 @@ void forest::Tree::d_after_move(tree_t::child_item_type_ptr item, int_t step, tr
 
 void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
-	std::cout << "RESERVE_WRITE_START!!!" << std::endl;
-	std::cout << "RESERVE_WRITE_START!!!" << std::endl;
-	std::cout << "RESERVE_WRITE_START!!!" << std::endl;
+	std::cout << "ITEM_RESERVE" << std::endl;
+	std::cout << "ITEM_RESERVE" << std::endl;
+	std::cout << "ITEM_RESERVE" << std::endl;
+	std::cout << "ITEM_RESERVE" << std::endl;
+	std::cout << "ITEM_RESERVE" << std::endl;
 	return;
-	//item->item->second->m.lock();
-	//std::cout << "ITEM_RESERVE" << std::endl;
-	//return;
+	
 	if(type == tree_t::PROCESS_TYPE::WRITE){
-		std::cout << "RESERVE_WRITE_START!!!" << std::endl;
+		
 		// We assume that node already locked for travel
-		//tree_t::node_ptr node = item->node;
-		//tree_t::node_ptr n;
+		tree_t::node_ptr node = item->node;
+		tree_t::node_ptr n;
 		
 		// Its a long story... (update_positions)
-		/*if(has_data(node)){
+		if(has_data(node)){
 			node_data_ptr data = get_node_data(node);
 			string& path = data->path;
 			n = get_leaf(path);
 		}
 		else{
 			n = node;
-		}*/
+		}
 		
 		// unlock previous lock (as it is not insert but delete)
-		///n->data.change_locks.m.unlock();
+		n->data.change_locks.m.unlock();
 		
-		std::cout << "RESERVE_WRITE_START_BEFORE!!!" << std::endl;
 		// Lock without dead lock
-		///std::lock(n->data.change_locks.m, item->item->second->m);
-		item->item->second->m.lock();
-		std::cout << "RESERVE_WRITE_START_AFTER!!!" << std::endl;
+		std::lock(n->data.change_locks.m, item->item->second->m);
 	}
 	else{
 		item->item->second->m.lock();
@@ -1054,23 +1128,13 @@ void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROC
 
 void forest::Tree::d_item_release(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
-	//item->item->second->m.unlock();
-	//return;
+	std::cout << "ITEM_RELEASE" << std::endl;
+	std::cout << "ITEM_RELEASE" << std::endl;
 	std::cout << "ITEM_RELEASE" << std::endl;
 	std::cout << "ITEM_RELEASE" << std::endl;
 	std::cout << "ITEM_RELEASE" << std::endl;
 	return;
-	
-	if(type == tree_t::PROCESS_TYPE::WRITE){
-		//tree_t::node_ptr node = item->node;
-		//node_data_ptr data = get_node_data(node);
-		//string& path = data->path;
-		//tree_t::node_ptr n = get_leaf(path);
-		//n->data.change_locks.m.unlock();
-	}
 	item->item->second->m.unlock();
-	
-	std::cout << "ITEM_RELEASE_END" << std::endl;
 }
 
 void forest::Tree::d_save_base(tree_t::node_ptr& node, tree_t* tree)
