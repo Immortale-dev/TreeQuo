@@ -5,7 +5,7 @@ namespace forest{
 	int DEFAULT_FACTOR = 3;
 	int INTR_CACHE_LENGTH = 3;
 	int LEAF_CACHE_LENGTH = 3;
-	int TREE_CACHE_LENGTH = 3;
+	int TREE_CACHE_LENGTH = 100;
 	
 	namespace cache{
 		ListCache<string, tree_ptr> tree_cache(TREE_CACHE_LENGTH);
@@ -15,6 +15,7 @@ namespace forest{
 		std::unordered_map<string, std::shared_future<tree_t::node_ptr> > intr_cache_q, leaf_cache_q;
 		std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
 		std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r, leaf_cache_r;
+		std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
 	}
 	
 	tree_ptr FOREST;
@@ -25,16 +26,16 @@ void forest::bloom(string path)
 {
 	if(blossomed)
 		return;
-		
+
 	cache::init_cache();
-		
+
 	DBFS::root = path;
 	if(!DBFS::exists(ROOT_TREE)){
 		create_root_file();
 	}
-	
+
 	open_root();
-	
+
 	blossomed = true;
 }
 
@@ -46,6 +47,7 @@ void forest::fold()
 	blossomed = false;
 	
 	close_root();
+	
 	cache::release_cache();
 }
 
@@ -75,14 +77,14 @@ void forest::delete_tree(string name)
 		}
 		
 		// Get tree path
-		//path = read_leaf_item(it->second);
+		path = read_leaf_item(it->second);
 	}
 	
 	// Remove tree from forest
-	//FOREST->erase(name);
+	FOREST->erase(name);
 	
 	// Erase tree
-	//erase_tree(path);
+	erase_tree(path);
 }
 
 void forest::close_tree(string path)
@@ -217,6 +219,27 @@ void forest::cache::set_leaf_cache_length(int length)
 	leaf_cache_m.unlock();
 }
 
+void forest::cache::insert_item(tree_t::node_ptr node, int pos)
+{
+	leaf_cache_i[reinterpret_cast<uintptr_t>(node.get())][pos]++;
+}
+
+void forest::cache::remove_item(tree_t::node_ptr node, int pos)
+{
+	uintptr_t ptr = reinterpret_cast<uintptr_t>(node.get());
+	auto& c_node = leaf_cache_i[ptr];
+	
+	assert(c_node[pos] > 0);
+	
+	c_node[pos]--;
+	if(!c_node[pos]){
+		c_node.erase(pos);
+	}
+	if(!c_node.size()){
+		leaf_cache_i.erase(ptr);
+	}
+}
+
 ////////////FOREST_METHODS///////////////
 
 void forest::create_root_file()
@@ -231,18 +254,13 @@ void forest::open_root()
 
 void forest::close_root()
 {
+	FOREST = nullptr;
 	// Remove?
 }
 
 void forest::insert_tree(string name, string file_name)
 {
 	file_data_ptr tmp = file_data_ptr(new file_data_t(file_name.c_str(), file_name.size()));
-	/*
-	file_data_t tmp(file_name.size(), [file_name](file_data_t* self, char* buf, int count){
-		for(int i=0;i<count;i++){
-			buf[i] = file_name[i];
-		}
-	});*/
 	FOREST->insert(name, tmp);
 }
 

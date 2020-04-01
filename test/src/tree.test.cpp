@@ -88,7 +88,6 @@ DESCRIBE_SKIP("Test single thread", {
 	});
 });
 
-
 DESCRIBE("Test multi threads", {
 	DESCRIBE("Initialize forest at tmp/t2", {
 		

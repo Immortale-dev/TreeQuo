@@ -116,6 +116,7 @@ namespace forest{
 			void d_after_move(tree_t::child_item_type_ptr item, int_t step, tree_t* tree);
 			void d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree);
 			void d_item_release(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree);
+			void d_item_move(tree_t::node_ptr node, bool release, tree_t* tree);
 			void d_save_base(tree_t::node_ptr& node, tree_t* tree);
 			
 			// Getters
@@ -163,6 +164,8 @@ namespace forest{
 		void check_leaf_ref(string key);
 		void check_intr_ref(string key);
 		void check_tree_ref(string key);
+		void insert_item(tree_t::node_ptr node, int pos);
+		void remove_item(tree_t::node_ptr node, int pos);
 		
 		extern ListCache<string, tree_ptr> tree_cache;
 		extern ListCache<string, node_ptr> leaf_cache, intr_cache;
@@ -171,6 +174,7 @@ namespace forest{
 		extern std::unordered_map<string, std::shared_future<node_ptr> > intr_cache_q, leaf_cache_q;
 		extern std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
 		extern std::unordered_map<string, std::pair<node_ptr, int_a> > intr_cache_r, leaf_cache_r;
+		extern std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
 	}
 	
 	extern const string LEAF_NULL;

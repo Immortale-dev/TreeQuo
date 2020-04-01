@@ -52,6 +52,8 @@ namespace forest{
 		void set_tree_cache_length(int length);
 		void set_intr_cache_length(int length);
 		void set_leaf_cache_length(int length);
+		void insert_item(tree_t::node_ptr node, int pos);
+		void remove_item(tree_t::node_ptr node, int pos);
 		
 		extern ListCache<string, tree_ptr> tree_cache;
 		extern ListCache<string, tree_t::node_ptr> leaf_cache, intr_cache;
@@ -61,6 +63,7 @@ namespace forest{
 		extern std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
 		extern std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r, leaf_cache_r;
 		extern std::unordered_map<int_t, string> tree_cache_f;
+		extern std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
 	}
 	
 	// Constants

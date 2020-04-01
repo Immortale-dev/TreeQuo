@@ -9,6 +9,7 @@
 #include <atomic>
 #include <utility>
 #include <unordered_map>
+#include <cstdint>
 #include "dbfs.hpp"
 #include "bplustree.hpp"
 #include "dbdriver.hpp"
@@ -23,6 +24,7 @@ namespace forest{
 	using mutex = std::mutex;
 	using void_shared = std::shared_ptr<void>;
 	using int_a = std::atomic<int>;
+	using uintptr_t = std::uintptr_t;
 	
 	enum class TREE_TYPES { KEY_STRING };
 	class file_data_t;
