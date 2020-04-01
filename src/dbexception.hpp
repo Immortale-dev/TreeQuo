@@ -1,6 +1,7 @@
 #ifndef DBEXCEPTION_H
 #define DBEXCEPTION_H
 
+#include <stdexcept>
 #include <string>
 
 class DBException : public std::exception {

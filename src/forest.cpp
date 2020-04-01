@@ -1,10 +1,11 @@
 #include "forest.hpp"
 
 namespace forest{
-	const string ROOT_TREE = "_root";
+	string ROOT_TREE = "_root";
+	int ROOT_FACTOR = 10;
 	int DEFAULT_FACTOR = 3;
-	int INTR_CACHE_LENGTH = 3;
-	int LEAF_CACHE_LENGTH = 3;
+	int INTR_CACHE_LENGTH = 10;
+	int LEAF_CACHE_LENGTH = 10;
 	int TREE_CACHE_LENGTH = 100;
 	
 	namespace cache{
@@ -53,14 +54,18 @@ void forest::fold()
 
 
 
-void forest::create_tree(TREE_TYPES type, string name)
+void forest::create_tree(TREE_TYPES type, string name, int factor)
 {
+	if(!factor){
+		factor = DEFAULT_FACTOR;
+	}
+	
 	{
 		if(FOREST->get_tree()->find(name) != FOREST->get_tree()->end()){
 			throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
 		}
 	}
-	string file_name = Tree::seed(type);
+	string file_name = Tree::seed(type, factor);
 	insert_tree(name, file_name);
 }
 
@@ -244,7 +249,7 @@ void forest::cache::remove_item(tree_t::node_ptr node, int pos)
 
 void forest::create_root_file()
 {
-	Tree::seed(TREE_TYPES::KEY_STRING, ROOT_TREE);
+	Tree::seed(TREE_TYPES::KEY_STRING, ROOT_TREE, ROOT_FACTOR);
 }
 
 void forest::open_root()

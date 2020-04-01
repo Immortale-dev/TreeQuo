@@ -13,7 +13,7 @@ namespace forest{
 	using tree_ptr = std::shared_ptr<Tree>;
 	using child_item_type_ptr = tree_t::child_item_type_ptr;
 	
-	void create_tree(TREE_TYPES type, string name);
+	void create_tree(TREE_TYPES type, string name, int factor = 0);
 	void delete_tree(string name);
 	tree_ptr find_tree(string name);
 	tree_ptr open_tree(string path);
@@ -73,7 +73,8 @@ namespace forest{
 	extern int INTR_CACHE_LENGTH;
 	extern int LEAF_CACHE_LENGTH;
 	extern int TREE_CACHE_LENGTH;
-	extern const string ROOT_TREE;
+	extern string ROOT_TREE;
+	extern int ROOT_FACTOR;
 }
 
 #endif //FOREST_H

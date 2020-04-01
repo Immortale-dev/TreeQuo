@@ -22,19 +22,19 @@ forest::Tree::~Tree()
 	delete tree;
 }
 
-forest::string forest::Tree::seed(TREE_TYPES type)
+forest::string forest::Tree::seed(TREE_TYPES type, int factor)
 {
 	DBFS::File* f = DBFS::create();
 	string path = f->name();
-	seed_tree(f, type, DEFAULT_FACTOR);
+	seed_tree(f, type, factor);
 	return path;
 }
 
-forest::string forest::Tree::seed(TREE_TYPES type, string path)
+forest::string forest::Tree::seed(TREE_TYPES type, string path, int factor)
 {	
 	DBFS::File* f = DBFS::create(path);
 	string path_name = f->name();
-	seed_tree(f, type, DEFAULT_FACTOR);
+	seed_tree(f, type, factor);
 	return path_name;
 }
 
@@ -124,7 +124,7 @@ void forest::Tree::seed_tree(DBFS::File* f, TREE_TYPES type, int factor)
 		throw DBException(DBException::ERRORS::CANNOT_CREATE_FILE);
 		return;
 	}
-	f->write("0 " + std::to_string(DEFAULT_FACTOR) + " " + std::to_string((int)type) + " " + LEAF_NULL + " " + std::to_string((int)NODE_TYPES::LEAF) + "\n");
+	f->write("0 " + to_string(factor) + " " + to_string((int)type) + " " + LEAF_NULL + " " + to_string((int)NODE_TYPES::LEAF) + "\n");
 	f->close();
 	delete f;
 }
@@ -607,7 +607,7 @@ void forest::Tree::write_intr(DBFS::File* file, tree_intr_read_t data)
 {
 	auto* keys = data.child_keys;
 	auto* paths = data.child_values;
-	file->write( std::to_string((int)data.childs_type) + " " + std::to_string(paths->size()) + "\n" );
+	file->write( to_string((int)data.childs_type) + " " + to_string(paths->size()) + "\n" );
 	
 	string valsStr = "";
 	std::stringstream ss;
@@ -623,7 +623,7 @@ void forest::Tree::write_intr(DBFS::File* file, tree_intr_read_t data)
 
 void forest::Tree::write_base(DBFS::File* file, tree_base_read_t data)
 {
-	file->write( std::to_string(data.count) + " " + std::to_string(data.factor) + " " + std::to_string((int)data.type) + " " + data.branch + " " + std::to_string((int)data.branch_type) + "\n" );
+	file->write( to_string(data.count) + " " + to_string(data.factor) + " " + to_string((int)data.type) + " " + data.branch + " " + to_string((int)data.branch_type) + "\n" );
 }
 
 void forest::Tree::write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t data)
@@ -631,14 +631,14 @@ void forest::Tree::write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t
 	auto* keys = data.child_keys;
 	auto* lengths = data.child_lengths;
 	int c = keys->size();
-	file->write(std::to_string(c) + " " + data.left_leaf + " " + data.right_leaf+ "\n");
+	file->write(to_string(c) + " " + data.left_leaf + " " + data.right_leaf+ "\n");
 	string lenStr = "";
 	std::stringstream ss;
 	for(auto& key : (*keys)){
 		ss << key << " ";
 	}
 	for(auto& len : (*lengths)){
-		lenStr.append(std::to_string(len) + " ");
+		lenStr.append(to_string(len) + " ");
 	}
 	if(lenStr.size()){
 		lenStr.pop_back();

@@ -130,7 +130,28 @@ namespace forest{
 			bool cached = false;
 	};
 	
-
+	inline file_data_ptr leaf_value(string str)
+	{
+		return file_data_ptr(new file_data_t(str.c_str(), str.size()));
+	}
+	
+	inline string to_string(int num)
+	{
+		if(!num){
+			return "0";
+		}
+		const int buf_c = 11;
+		char* buf = new char[buf_c];
+		int i = buf_c;
+		while(num > 0){
+			if(!i) throw std::out_of_range("Number is too big");
+			buf[--i] = (num%10)+'0';
+			num /= 10;
+		}
+		string ret(buf+i,buf_c-i);
+		delete[] buf;
+		return ret;
+	}
 }
 
 #endif //FOREST_DBUTILS_H
