@@ -76,8 +76,6 @@ void forest::delete_tree(string name)
 	{
 		auto it = FOREST->get_tree()->find(name);
 		if(it == FOREST->get_tree()->end()){
-			std::cout << "=============DIDINT FIND ITEM TO DELETE=========" << std::endl;
-			//assert(false);
 			return;
 		}
 		

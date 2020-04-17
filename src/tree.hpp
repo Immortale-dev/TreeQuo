@@ -106,18 +106,24 @@ namespace forest{
 			bool has_data(tree_t::Node* node);
 		
 			// Proceed
-			void d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tree_t* tree);
-			void d_leave(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type, tree_t* tree);
-			void d_insert(tree_t::node_ptr& node, tree_t* tree);
-			void d_remove(tree_t::node_ptr& node, tree_t* tree);
-			void d_reserve(tree_t::node_ptr& node, tree_t* tree);
-			void d_release(tree_t::node_ptr& node, tree_t* tree);
+			void d_enter(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree);
+			void d_leave(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree);
+			void d_insert(tree_t::node_ptr node, tree_t* tree);
+			void d_remove(tree_t::node_ptr node, tree_t* tree);
+			void d_reserve(tree_t::node_ptr node, tree_t* tree);
+			void d_release(tree_t::node_ptr node, tree_t* tree);
 			void d_before_move(tree_t::child_item_type_ptr item, int_t step, tree_t* tree);
 			void d_after_move(tree_t::child_item_type_ptr item, int_t step, tree_t* tree);
 			void d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree);
 			void d_item_release(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree);
 			void d_item_move(tree_t::node_ptr node, bool release, tree_t* tree);
-			void d_save_base(tree_t::node_ptr& node, tree_t* tree);
+			void d_leaf_insert(tree_t::node_ptr node, tree_t* tree);
+			void d_leaf_delete(tree_t::node_ptr node, tree_t::child_item_type_ptr item, tree_t* tree);
+			void d_leaf_split(tree_t::node_ptr node, tree_t::node_ptr new_node, tree_t::node_ptr link_node, tree_t* tree);
+			void d_leaf_join(tree_t::node_ptr node, tree_t::node_ptr join_node, tree_t::node_ptr link_node, tree_t* tree);
+			void d_leaf_shift(tree_t::node_ptr node, tree_t::node_ptr shift_node, tree_t* tree);
+			void d_leaf_free(tree_t::node_ptr node, tree_t* tree);
+			void d_save_base(tree_t::node_ptr node, tree_t* tree);
 			
 			// Getters
 			node_ptr get_intr(string path);
