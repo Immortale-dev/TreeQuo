@@ -7,6 +7,7 @@
 #include "dbexception.hpp"
 #include "dbutils.hpp"
 #include "tree.hpp"
+#include "leaf_record.hpp"
 
 namespace forest{
 	
@@ -20,8 +21,10 @@ namespace forest{
 	void close_tree(string path);
 	
 	void insert_leaf(string name, tree_t::key_type key, tree_t::val_type val);
+	void update_leaf(string name, tree_t::key_type key, tree_t::val_type val);
 	void erase_leaf(string name, tree_t::key_type key);
-	file_data_ptr find_leaf(string name, tree_t::key_type key);
+	LeafRecord_ptr find_leaf(string name, tree_t::key_type key);
+	LeafRecord_ptr find_leaf(string name, RECORD_POSITION position = RECORD_POSITION::BEGIN);
 			
 	void bloom(string path);
 	void fold();
@@ -52,8 +55,8 @@ namespace forest{
 		void set_tree_cache_length(int length);
 		void set_intr_cache_length(int length);
 		void set_leaf_cache_length(int length);
-		void insert_item(tree_t::node_ptr node, int pos);
-		void remove_item(tree_t::node_ptr node, int pos);
+		void insert_item(string path, int pos);
+		void remove_item(string path, int pos);
 		
 		extern ListCache<string, tree_ptr> tree_cache;
 		extern ListCache<string, tree_t::node_ptr> leaf_cache, intr_cache;
@@ -63,7 +66,7 @@ namespace forest{
 		extern std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
 		extern std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r, leaf_cache_r;
 		extern std::unordered_map<int_t, string> tree_cache_f;
-		extern std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
+		extern std::unordered_map<string, std::unordered_map<int, int> > leaf_cache_i;
 	}
 	
 	// Constants

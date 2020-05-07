@@ -2,10 +2,10 @@
 
 namespace forest{
 	string ROOT_TREE = "_root";
-	int ROOT_FACTOR = 10;
+	int ROOT_FACTOR = 3;
 	int DEFAULT_FACTOR = 3;
-	int INTR_CACHE_LENGTH = 10;
-	int LEAF_CACHE_LENGTH = 10;
+	int INTR_CACHE_LENGTH = 3;
+	int LEAF_CACHE_LENGTH = 1;
 	int TREE_CACHE_LENGTH = 100;
 	
 	namespace cache{
@@ -16,7 +16,7 @@ namespace forest{
 		std::unordered_map<string, std::shared_future<tree_t::node_ptr> > intr_cache_q, leaf_cache_q;
 		std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
 		std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r, leaf_cache_r;
-		std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
+		std::unordered_map<string, std::unordered_map<int, int> > leaf_cache_i;
 	}
 	
 	tree_ptr FOREST;
@@ -51,8 +51,6 @@ void forest::fold()
 	
 	cache::release_cache();
 }
-
-
 
 void forest::create_tree(TREE_TYPES type, string name, int factor)
 {
@@ -128,6 +126,13 @@ void forest::insert_leaf(string name, tree_t::key_type key, tree_t::val_type val
 	close_tree(tree->get_name());
 }
 
+void forest::update_leaf(string name, tree_t::key_type key, tree_t::val_type val)
+{
+	tree_ptr tree = find_tree(name);
+	tree->insert(key, val, true);
+	close_tree(tree->get_name());
+}
+
 void forest::erase_leaf(string name, tree_t::key_type key)
 {
 	tree_ptr tree = find_tree(name);
@@ -135,14 +140,35 @@ void forest::erase_leaf(string name, tree_t::key_type key)
 	close_tree(tree->get_name());
 }
 
-forest::file_data_ptr forest::find_leaf(string name, tree_t::key_type key)
+forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key)
 {
 	tree_ptr tree = find_tree(name);
 	try{
-		file_data_ptr t = tree->find(key);
+		tree_t::iterator t = tree->find(key);
 		close_tree(tree->get_name());
-		return t;
+		return LeafRecord_ptr(new LeafRecord(t));
 	} 
+	catch(DBException& e) {
+		close_tree(tree->get_name());
+		throw e;
+	}
+}
+
+forest::LeafRecord_ptr forest::find_leaf(string name, RECORD_POSITION position)
+{
+	tree_ptr tree = find_tree(name);
+	try{
+		tree_t::iterator t;
+		if(position == RECORD_POSITION::BEGIN){
+			t = tree->get_tree()->begin();
+		}
+		else{
+			t = tree->get_tree()->end();
+			--t;
+		}
+		close_tree(tree->get_name());
+		return LeafRecord_ptr(new LeafRecord(t));
+	}
 	catch(DBException& e) {
 		close_tree(tree->get_name());
 		throw e;
@@ -180,10 +206,13 @@ void forest::cache::check_leaf_ref(string key)
 	if(!leaf_cache_r.count(key))
 		return;
 	if(leaf_cache_r[key].second == 0 && !leaf_cache.has(key)){
-		for(auto& it : (*leaf_cache_r[key].first->get_childs())){
+		tree_t::node_ptr node = leaf_cache_r[key].first;
+		for(auto& it : (*node->get_childs())){
 			it->item->second->set_file(nullptr);
 			it->item->second = nullptr;
 		}
+		node->set_next_leaf(nullptr);
+		node->set_prev_leaf(nullptr);
 		leaf_cache_r.erase(key);
 	}
 }
@@ -222,15 +251,14 @@ void forest::cache::set_leaf_cache_length(int length)
 	leaf_cache_m.unlock();
 }
 
-void forest::cache::insert_item(tree_t::node_ptr node, int pos)
+void forest::cache::insert_item(string path, int pos)
 {
-	leaf_cache_i[reinterpret_cast<uintptr_t>(node.get())][pos]++;
+	leaf_cache_i[path][pos]++;
 }
 
-void forest::cache::remove_item(tree_t::node_ptr node, int pos)
+void forest::cache::remove_item(string path, int pos)
 {
-	uintptr_t ptr = reinterpret_cast<uintptr_t>(node.get());
-	auto& c_node = leaf_cache_i[ptr];
+	auto& c_node = leaf_cache_i[path];
 	
 	assert(c_node[pos] > 0);
 	
@@ -239,7 +267,7 @@ void forest::cache::remove_item(tree_t::node_ptr node, int pos)
 		c_node.erase(pos);
 	}
 	if(!c_node.size()){
-		leaf_cache_i.erase(ptr);
+		leaf_cache_i.erase(path);
 	}
 }
 

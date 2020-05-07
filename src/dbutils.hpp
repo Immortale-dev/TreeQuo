@@ -36,6 +36,8 @@ namespace forest{
 
 	////////////////////////////////////////////////////////////////
 	
+	enum class RECORD_POSITION{ BEGIN, END };
+	
 	class file_data_t{
 		
 		using fn = std::function<void(file_data_t* self, char*, int)>;
@@ -52,7 +54,7 @@ namespace forest{
 			void delete_cache() { if(cached) delete[] data_cached; cached = false; };
 			
 			file_ptr file;
-			std::mutex m,g;
+			std::mutex m,g,o;
 			int c = 0;
 			
 			struct file_data_reader{

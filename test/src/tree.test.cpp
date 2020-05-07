@@ -1,9 +1,8 @@
 #include "forest.hpp"
 
-
 DESCRIBE("Test single thread", {
 	
-	srand(0);
+	srand(time(0));
 
 	DESCRIBE("Initialize forest at tmp/t1", {
 		
@@ -87,11 +86,11 @@ DESCRIBE("Test single thread", {
 		});
 		
 		DESCRIBE("Add `test` tree to the forest", {
-			BEFORE_ALL({
+			BEFORE_EACH({
 				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 10);
 			});
 			
-			AFTER_ALL({
+			AFTER_EACH({
 				forest::delete_tree("test");
 			});
 			
@@ -102,17 +101,11 @@ DESCRIBE("Test single thread", {
 					}
 				});
 				
-				IT("The value of `k25` should be equal to `value_625`", {
-					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k25"))).toBe("value_625");
-				});
-				
-				IT("The value of `k100` should be equal to `value_10000`", {
-					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k100"))).toBe("value_10000");
-				});
-				
 				IT("Tree should contain keys from `k0` to `k99`", {
+					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k25")->val())).toBe("value_625");
+					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k100")->val())).toBe("value_10000");
 					for(int i=0;i<100;i++){
-						EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k" + std::to_string(i)))).toBe("value_" + std::to_string(i*i));
+						EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k" + std::to_string(i))->val())).toBe("value_" + std::to_string(i*i));
 					}
 				});
 			});
@@ -131,8 +124,58 @@ DESCRIBE("Test single thread", {
 				
 				IT("all leafs should exist in tree", {
 					for(auto &it : check){
-						EXPECT(forest::read_leaf_item(forest::find_leaf("test", "p" + std::to_string(it)))).toBe("val_" + std::to_string(it*it));
+						EXPECT(forest::read_leaf_item(forest::find_leaf("test", "p" + std::to_string(it))->val())).toBe("val_" + std::to_string(it*it));
 					}
+				});
+			});
+			
+			DESCRIBE("Add 150 items in random shuffle", {
+				
+				unordered_set<int> check;
+				int num_of_items;
+				BEFORE_ALL({
+					for(int i=0;i<150;i++){
+						int rnd = rand()%10000 + 200;
+						if(!check.count(rnd)){
+							check.insert(rnd);
+							forest::insert_leaf("test", "p"+std::to_string(rnd), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
+						}
+					}
+					num_of_items = check.size();
+				});
+				
+				DESCRIBE("Move throug all of the items with ++it mode", {
+					vector<string> tree_keys;
+					int time_for_trave;
+					
+					BEFORE_ALL({
+						auto it = forest::find_leaf("test");
+						
+						chrono::time_point t1 = chrono::system_clock::now();
+						
+						do{
+							tree_keys.push_back(it->key());
+						}while(it->move_forward());
+						
+						chrono::time_point t2 = chrono::system_clock::now();
+						
+						time_for_trave = chrono::duration_cast<chrono::milliseconds>(t2-t1).count();
+					});
+					
+					IT("All keys should be iterated", {
+						vector<string> set_keys;
+						for(auto& it : check){
+							set_keys.push_back("p"+std::to_string(it));
+						}
+						
+						sort(set_keys.begin(), set_keys.end());
+						sort(tree_keys.begin(), tree_keys.end());
+						
+						INFO_PRINT("Time for Travel: " + to_string(time_for_trave) + " ms");
+						
+						EXPECT(set_keys.size()).toBe(tree_keys.size());
+						EXPECT(set_keys).toBeIterableEqual(tree_keys);
+					});
 				});
 			});
 		});
@@ -153,7 +196,7 @@ DESCRIBE("Test multi threads", {
 			// Remove dirs?
 		});
 		
-		DESCRIBE_ONLY("Add 100 trees in 10 threads", {
+		DESCRIBE("Add 100 trees in 10 threads", {
 			BEFORE_ALL({
 				vector<thread> trds;
 				for(int i=0;i<10;i++){
@@ -282,11 +325,11 @@ DESCRIBE("Test multi threads", {
 		
 		// Leaf insertions
 		DESCRIBE("Add `test` tree to the forest", {
-			BEFORE_ALL({
-				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 10);
+			BEFORE_EACH({
+				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 3);
 			});
 			
-			AFTER_ALL({
+			AFTER_EACH({
 				forest::delete_tree("test");
 			});
 			
@@ -307,22 +350,16 @@ DESCRIBE("Test multi threads", {
 					}
 				});
 				
-				IT("The value of `k25` should be equal to `value_625`", {
-					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k25"))).toBe("value_625");
-				});
-				
-				IT("The value of `k100` should be equal to `value_10000`", {
-					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k100"))).toBe("value_10000");
-				});
-				
 				IT("Tree should contain keys from `k0` to `k99`", {
+					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k25")->val())).toBe("value_625");
+					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k100")->val())).toBe("value_10000");
 					for(int i=0;i<100;i++){
-						EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k" + std::to_string(i)))).toBe("value_" + std::to_string(i*i));
+						EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k" + std::to_string(i))->val())).toBe("value_" + std::to_string(i*i));
 					}
 				});
 			});
 			
-			DESCRIBE("Add 100 random leafs in 100 threads to the tree and check the value of all items in 100 threads", {
+			DESCRIBE("Add 100 random items in 100 threads to the tree and check the value of all items in 100 threads", {
 				unordered_set<int> check;
 				bool good = true;
 				BEFORE_ALL({
@@ -342,8 +379,9 @@ DESCRIBE("Test multi threads", {
 					}
 					trds.resize(0);
 					for(auto &it : check){
-						thread t([&good](int ind){								
-							if( forest::read_leaf_item(forest::find_leaf("test", "p" + std::to_string(ind))) != "val_" + std::to_string(ind*ind) ){
+						thread t([&good](int ind){		
+							auto it = forest::find_leaf("test", "p" + std::to_string(ind));						
+							if( forest::read_leaf_item(it->val()) != "val_" + std::to_string(ind*ind) ){
 								good = false;
 							}
 						}, it);
@@ -356,6 +394,227 @@ DESCRIBE("Test multi threads", {
 				
 				IT("all leafs should exist in tree", {
 					EXPECT(good).toBe(true);
+				});
+			});
+			
+			DESCRIBE("Add 150 items in random shuffle", {
+				unordered_set<int> check;
+				int num_of_items;
+				BEFORE_EACH({
+					check.clear();
+					for(int i=0;i<150;i++){
+						int rnd = rand()%10000 + 200;
+						if(!check.count(rnd)){
+							check.insert(rnd);
+							forest::insert_leaf("test", "p"+std::to_string(rnd), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
+						}
+					}
+					num_of_items = check.size();
+					//assert(false);
+				});
+				
+				
+				DESCRIBE("Move throug all of the items in 2 threads one to another", {
+					vector<string> tree_keys_f, tree_keys_b;
+					
+					BEFORE_ALL({
+						auto itf = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
+						auto itb = forest::find_leaf("test", forest::RECORD_POSITION::END);
+
+						thread t1([&itf, &tree_keys_f](){	
+							do{
+								tree_keys_f.push_back(itf->key());
+							}while(itf->move_forward());
+						});
+						
+						thread t2([&itb, &tree_keys_b](){
+							do{
+								tree_keys_b.push_back(itb->key());
+							}while(itb->move_back());
+						});
+						
+						t1.join();
+						t2.join();
+					});
+					
+					IT("All keys should be iterated", {
+						vector<string> set_keys;
+						for(auto& it : check){
+							set_keys.push_back("p"+std::to_string(it));
+						}
+						
+						sort(set_keys.begin(), set_keys.end());
+						sort(tree_keys_f.begin(), tree_keys_f.end());
+						sort(tree_keys_b.begin(), tree_keys_b.end());
+						
+						EXPECT(set_keys.size()).toBe(tree_keys_f.size());
+						EXPECT(set_keys.size()).toBe(tree_keys_b.size());
+						
+						EXPECT(set_keys).toBeIterableEqual(tree_keys_f);
+						EXPECT(set_keys).toBeIterableEqual(tree_keys_b);
+					});
+				});
+				
+				DESCRIBE("Move throug all of the items in 100 threads in random shuffle", {
+					
+					int tests_count = 100;
+					
+					vector<vector<string> > tree_keys_check(tests_count);
+					vector<thread> threads;
+					
+					BEFORE_ALL({
+						for(int i=0;i<tests_count;i++){
+							thread t([&tree_keys_check](int index){
+								auto it = forest::find_leaf("test", (index%2 ? forest::RECORD_POSITION::BEGIN : forest::RECORD_POSITION::END));
+								do{
+									tree_keys_check[index].push_back(it->key());
+									if( (index%2 == 1 && !it->move_forward()) || (index%2 == 0 && !it->move_back()) ){
+										break;
+									}
+								}while(true);
+							}, i);
+							threads.push_back(move(t));
+						}
+						for(auto& it : threads){
+							it.join();
+						}
+					});
+					
+					IT("All iterators should successfully move throug the all records", {
+						vector<string> set_keys;
+						for(auto& it : check){
+							set_keys.push_back("p"+std::to_string(it));
+						}
+						sort(set_keys.begin(), set_keys.end());
+						
+						for(auto& it : tree_keys_check){
+							sort(it.begin(), it.end());
+							EXPECT(set_keys).toBeIterableEqual(it);
+						}
+					});
+				});
+				
+				DESCRIBE("Do 200 operations in 200 threads", {
+					int tests_count = 200;
+					
+					vector<vector<string> > tree_keys_check;
+					vector<thread> threads;
+					
+					unordered_set<string> should_contains;
+					
+					queue<int> q;
+					
+					
+					
+					BEFORE_ALL({
+						
+						for(auto& it : check){
+							q.push(it);
+							should_contains.insert("p"+std::to_string(it));
+						}
+						mutex m;
+						
+						for(int i=0;i<tests_count;i++){
+							int rnd = rand()%10000 + 11200;
+							thread t([&m, &q, &check, &tree_keys_check, &should_contains](int index, int rnd){
+								int cs = index%8;
+								if(cs == 1){
+									auto it = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
+									vector<string> keys;
+									do{
+										keys.push_back(it->key());
+									}while(it->move_forward());
+									lock_guard<mutex> lock(m);
+									tree_keys_check.push_back(keys);
+								}
+								else if(cs == 2){
+									auto it = forest::find_leaf("test", forest::RECORD_POSITION::END);
+									vector<string> keys;
+									do{
+										keys.push_back(it->key());
+									}while(it->move_back());
+									lock_guard<mutex> lock(m);
+									tree_keys_check.push_back(keys);
+								}
+								else if(cs == 3){
+									auto it = forest::find_leaf("test", forest::RECORD_POSITION::END);
+									do{
+										it->val();
+									}while(it->move_forward());
+								}
+								else if(cs == 4){
+									int p;
+									{
+										lock_guard<mutex> lock(m);
+										p = q.front();
+										q.pop();
+									}
+									auto it = forest::find_leaf("test", "p"+std::to_string(p));
+									do{
+										it->val();
+									}while(it->move_forward());
+								}
+								else if(cs == 5){
+									int p;
+									{
+										lock_guard<mutex> lock(m);
+										p = q.front();
+										q.pop();
+									}
+									auto it = forest::find_leaf("test", "p"+std::to_string(p));
+									do{
+										it->val();
+									}while(it->move_back());
+								}
+								else if(cs == 6){
+									int p;
+									{
+										lock_guard<mutex> lock(m);
+										p = q.front();
+										q.pop();
+									}
+									forest::update_leaf("test", "p"+std::to_string(p), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
+								}
+								else if(cs == 7){
+									int p;
+									{
+										lock_guard<mutex> lock(m);
+										p = q.front();
+										q.pop();
+									}
+									forest::erase_leaf("test", "p"+std::to_string(p));
+									lock_guard<mutex> lock(m);
+									should_contains.erase("p"+std::to_string(p));
+								}
+								else{
+									{
+										lock_guard<mutex> lock(m);
+										if(check.count(rnd)){
+											return;
+										}
+										check.insert(rnd);
+									}
+									forest::insert_leaf("test", "p"+std::to_string(rnd), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
+								}
+							}, i, rnd);
+							threads.push_back(move(t));
+						}
+						for(auto& it : threads){
+							it.join();
+						}
+					});
+					
+					IT("All expected records should be iterated", {
+						for(auto& vec : tree_keys_check){
+							unordered_set<string> keys;
+							for(auto& it : vec){
+								keys.insert(it);
+							}
+							for(auto& it : should_contains){
+								EXPECT(keys.count(it)).toBe(1);
+							}
+						}
+					});
 				});
 			});
 		});

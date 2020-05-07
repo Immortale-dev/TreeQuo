@@ -92,9 +92,9 @@ forest::tree_t* forest::Tree::get_tree()
 	return this->tree;
 }
 
-void forest::Tree::insert(tree_t::key_type key, tree_t::val_type val)
+void forest::Tree::insert(tree_t::key_type key, tree_t::val_type val, bool update)
 {
-	tree->insert(make_pair(key, val));
+	tree->insert(make_pair(key, val), update);
 	tree->save_base();
 }
 
@@ -104,13 +104,13 @@ void forest::Tree::erase(tree_t::key_type key)
 	tree->save_base();
 }
 
-forest::file_data_ptr forest::Tree::find(tree_t::key_type key)
+forest::tree_t::iterator forest::Tree::find(tree_t::key_type key)
 {
 	auto it = tree->find(key);
 	if(it == tree->end()){
 		throw DBException(DBException::ERRORS::LEAF_DOES_NOT_EXISTS);
 	}
-	return it->second;
+	return it;
 }
 
 
@@ -134,7 +134,7 @@ forest::Tree::tree_base_read_t forest::Tree::read_base(string filename)
 {
 	/*
 	if(!DBFS::exists(filename)){
-		std::cout << "FAIL WITH NOT EXISTS!!! " << filename << std::endl;
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "FAIL WITH NOT EXISTS!!! " << filename << std::endl;
 		throw "WTF???";
 	}
 	*/
@@ -142,7 +142,7 @@ forest::Tree::tree_base_read_t forest::Tree::read_base(string filename)
 	DBFS::File* f = new DBFS::File(filename);
 	/*
 	if(f->fail()){
-		std::cout << "FAIL WITH OPEN - OTHER!!! " << filename << std::endl;
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "FAIL WITH OPEN - OTHER!!! " << filename << std::endl;
 		throw "WTF???";
 	}
 	*/
@@ -157,7 +157,7 @@ forest::Tree::tree_base_read_t forest::Tree::read_base(string filename)
 	ret.branch_type = NODE_TYPES(lt);
 	/*
 	if(f->fail()){
-		std::cout << "FAIL WITH OPEN (READ_BASE)!!! " << filename << std::endl;
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "FAIL WITH OPEN (READ_BASE)!!! " << filename << std::endl;
 		throw "WTF???";
 	}
 	*/
@@ -229,7 +229,7 @@ forest::Tree::tree_leaf_read_t forest::Tree::read_leaf(string filename)
 	return t;
 }
 
-void forest::Tree::materialize_intr(tree_t::node_ptr& node)
+void forest::Tree::materialize_intr(tree_t::node_ptr node)
 {
 	tree_t::node_ptr n;
 	node_data_ptr data;
@@ -238,6 +238,7 @@ void forest::Tree::materialize_intr(tree_t::node_ptr& node)
 	if(!has_data(node)){
 		
 		string temp_path = DBFS::random_filename();
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "TEMP_FILE_CREATED_INTR=" + temp_path + "\n";
 		
 		cache::intr_cache_m.lock();
 		
@@ -256,7 +257,7 @@ void forest::Tree::materialize_intr(tree_t::node_ptr& node)
 		node->data.owner_locks.m.unlock();
 		// Get node data
 		data = get_node_data(node);
-		string& path = data->path;
+		string path = data->path;
 		
 		cache::intr_cache_m.lock();
 		n = get_intr(path);
@@ -283,7 +284,7 @@ void forest::Tree::materialize_intr(tree_t::node_ptr& node)
 	node->data.owner_locks.m.unlock();
 }
 
-void forest::Tree::materialize_leaf(tree_t::node_ptr& node)
+void forest::Tree::materialize_leaf(tree_t::node_ptr node)
 {
 	node->data.owner_locks.m.lock();
 	
@@ -293,6 +294,7 @@ void forest::Tree::materialize_leaf(tree_t::node_ptr& node)
 	if(!has_data(node)){
 		
 		string temp_path = DBFS::random_filename();
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "TEMP_FILE_CREATED_LEAF=" + temp_path + "\n";
 		
 		cache::leaf_cache_m.lock();
 		
@@ -312,7 +314,7 @@ void forest::Tree::materialize_leaf(tree_t::node_ptr& node)
 	
 		// Get node data
 		data = get_node_data(node);
-		string& path = data->path;
+		string path = data->path;
 		
 		cache::leaf_cache_m.lock();
 		n = get_leaf(path);
@@ -360,7 +362,7 @@ void forest::Tree::materialize_leaf(tree_t::node_ptr& node)
 	node->data.owner_locks.m.unlock();
 }
 
-void forest::Tree::unmaterialize_intr(tree_t::node_ptr& node)
+void forest::Tree::unmaterialize_intr(tree_t::node_ptr node)
 {
 	if(!has_data(node)){
 		assert(false);
@@ -372,7 +374,7 @@ void forest::Tree::unmaterialize_intr(tree_t::node_ptr& node)
 	
 	// Get node data
 	node_data_ptr data = get_node_data(node);
-	string& path = data->path;
+	string path = data->path;
 	
 	// Unlock original node if it was not already deleted
 	cache::intr_cache_m.lock();
@@ -406,7 +408,7 @@ void forest::Tree::unmaterialize_intr(tree_t::node_ptr& node)
 	cache::intr_cache_m.unlock();
 }
 
-void forest::Tree::unmaterialize_leaf(tree_t::node_ptr& node)
+void forest::Tree::unmaterialize_leaf(tree_t::node_ptr node)
 {
 	if(!has_data(node)){
 		assert(false);
@@ -418,7 +420,7 @@ void forest::Tree::unmaterialize_leaf(tree_t::node_ptr& node)
 	
 	// Get node data
 	node_data_ptr data = get_node_data(node);
-	string& path = data->path;
+	string path = data->path;
 	
 	// Unlock original node if it was not already deleted
 	cache::leaf_cache_m.lock();
@@ -594,6 +596,7 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	// Create and lock node
 	leaf_data = node_ptr(new typename tree_t::LeafNode());
 	lock_write(leaf_data);
+	leaf_data->data.change_locks.m.lock();
 	
 	// Put it into the cache
 	cache::leaf_cache_r[path] = std::make_pair(leaf_data,1);
@@ -628,6 +631,7 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	}
 	assert(cache::leaf_cache_r[path].second > 0);
 	cache::leaf_cache_r[path].second--;
+	leaf_data->data.change_locks.m.unlock();
 	unlock_write(leaf_data);
 	
 	// Return
@@ -690,8 +694,8 @@ void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val
 			file->write(buf, rsz);
 		}
 	} catch(...){
-		//std::cout << "ERROR WHEN WRITE LEAF ITEM" << std::endl;
-		//throw "error";
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "ERROR WHEN WRITE LEAF ITEM\n";
+		throw "error";
 	}
 	delete[] buf;
 	data->set_start(start_data);
@@ -824,19 +828,20 @@ forest::driver_t* forest::Tree::init_driver()
 		,[this](tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_leave(node, type, tree); }
 		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_insert(node, tree); }
 		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_remove(node, tree); }
-		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_reserve(node, tree); }
-		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_release(node, tree); }
 		,[this](tree_t::child_item_type_ptr item, int_t step, tree_t* tree){ this->d_before_move(item, step, tree); }
 		,[this](tree_t::child_item_type_ptr item, int_t step, tree_t* tree){ this->d_after_move(item, step, tree); }
 		,[this](tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_item_reserve(item, type, tree); }
 		,[this](tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_item_release(item, type, tree); }
 		,[this](tree_t::node_ptr node, bool release, tree_t* tree){ this->d_item_move(node, release, tree); }
-		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_leaf_insert(node, tree); }
+		,[this](tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_reserve(node, type, tree); }
+		,[this](tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_release(node, type, tree); }
+		,[this](tree_t::node_ptr node, tree_t::child_item_type_ptr item, tree_t* tree){ this->d_leaf_insert(node, item, tree); }
 		,[this](tree_t::node_ptr node, tree_t::child_item_type_ptr item, tree_t* tree){ this->d_leaf_delete(node, item, tree); }
 		,[this](tree_t::node_ptr node, tree_t::node_ptr new_node, tree_t::node_ptr link_node, tree_t* tree){ this->d_leaf_split(node, new_node, link_node, tree); }
 		,[this](tree_t::node_ptr node, tree_t::node_ptr join_node, tree_t::node_ptr link_node, tree_t* tree){ this->d_leaf_join(node, join_node, link_node, tree); }
 		,[this](tree_t::node_ptr node, tree_t::node_ptr shift_node, tree_t* tree){ this->d_leaf_shift(node, shift_node, tree); }
 		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_leaf_free(node, tree); }
+		,[this](tree_t::node_ptr node, tree_t::node_ptr ref_node, tree_t::LEAF_REF ref, tree_t* tree){ this->d_leaf_ref(node, ref_node, ref, tree); }
 		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_save_base(node, tree); }
 	);
 }
@@ -846,14 +851,14 @@ forest::driver_t* forest::Tree::init_driver()
 // Proceed
 void forest::Tree::d_enter(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
-	//std::cout << "ENTER_START" << std::endl;
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "ENTER_START\n";
 		
 	// Lock node mutex
 	lock_type(node, type);
 	
 	// Nothing to do with stem
 	if(tree->is_stem_pub(node)){
-		//std::cout << "ENTER_END - STEM" << std::endl;
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "ENTER_END - STEM\n";
 		return;
 	}
 		
@@ -864,18 +869,30 @@ void forest::Tree::d_enter(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tre
 		materialize_leaf(node);
 	}
 	
-	//std::cout << "ENTER_END" << std::endl;
+	if(node->is_leaf()){
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "--ENTER_LEAF-" + get_node_data(node)->path + "\n";
+	} else {
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "--ENTER_INTR-" + get_node_data(node)->path + "\n";
+	}
+	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "ENTER_END\n";
 }
 
 void forest::Tree::d_leave(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
-	//std::cout << "LEAVE_START" << std::endl;
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "LEAVE_START\n";
 	
 	// Nothing to do with stem
 	if(tree->is_stem_pub(node)){
 		unlock_type(node, type);
-		//std::cout << "LEAVE_END - STEM" << std::endl;
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "LEAVE_END - STEM\n";
 		return;
+	}
+	
+	if(node->is_leaf()){
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "--LEAVE_LEAF-" + get_node_data(node)->path + "\n";
+	} else {
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "--LEAVE_INTR-" + get_node_data(node)->path + "\n";
 	}
 	
 	if(!node->is_leaf()){
@@ -886,12 +903,12 @@ void forest::Tree::d_leave(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tre
 	}
 	unlock_type(node, type);
 	
-	//std::cout << "LEAVE_END" << std::endl;
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "LEAVE_END\n";
 }
 
 void forest::Tree::d_insert(tree_t::node_ptr node, tree_t* tree)
 {
-	//std::cout << "INSERT_START" << std::endl;
+	////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "INSERT_START" << std::endl;
 	
 	if(tree->is_stem_pub(node)){
 		assert(false);
@@ -921,6 +938,7 @@ void forest::Tree::d_insert(tree_t::node_ptr node, tree_t* tree)
 		
 		DBFS::remove(cur_name);
 		DBFS::move(new_name, cur_name);
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "SAVED_FILE_INTR=" + cur_name + "\n";
 	} else {
 		tree_leaf_read_t leaf_d;
 		auto* keys = new std::vector<tree_t::key_type>();
@@ -971,25 +989,27 @@ void forest::Tree::d_insert(tree_t::node_ptr node, tree_t* tree)
 		
 		assert(n->get_childs() == node->get_childs());
 		
-		node_data_ptr c_data = get_node_data(n);
-		c_data->prev = leaf_d.left_leaf;
-		c_data->next = leaf_d.right_leaf;
+		///node_data_ptr c_data = get_node_data(n);
+		///c_data->prev = leaf_d.left_leaf;
+		///c_data->next = leaf_d.right_leaf;
 		
 		cache::leaf_cache_m.unlock();
 		
 		DBFS::remove(cur_name);
 		fp->move(cur_name);
+		
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "SAVED_FILE_LEAF=" + cur_name + "\n";
 	}
 	
-	//std::cout << "INSERT_END" << std::endl;
+	////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "INSERT_END" << std::endl;
 }
 
 void forest::Tree::d_remove(tree_t::node_ptr node, tree_t* tree)
 {
-	//std::cout << "REMOVE_START" << std::endl;
+	////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "REMOVE_START" << std::endl;
 	
 	if(!has_data(node)){
-		//std::cout << "REMOVE_END - NODATA" << std::endl;
+		////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "REMOVE_END - NODATA" << std::endl;
 		return;
 	}
 	
@@ -1005,103 +1025,516 @@ void forest::Tree::d_remove(tree_t::node_ptr node, tree_t* tree)
 	
 	///clear_node_cache(node);
 	
-	//std::cout << "REMOVE_END" << std::endl;
+	////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "REMOVE_END" << std::endl;
 }
 
-void forest::Tree::d_reserve(tree_t::node_ptr node, tree_t* tree)
+void forest::Tree::d_reserve(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree)
 {	
 	assert(has_data(node));
-
-	node_data_ptr data = get_node_data(node);
-	string& path = data->path;
+	
+	string path = get_node_data(node)->path;
 	
 	cache::leaf_cache_m.lock();
-	assert(cache::leaf_cache_r.count(path));
-	assert(cache::leaf_cache_r[path].second > 0);
+	node = get_leaf(path);
 	cache::leaf_cache_r[path].second++;
 	cache::leaf_cache_m.unlock();
+	
+	auto& ch_node = node->data.change_locks;
+	if(type == tree_t::PROCESS_TYPE::READ){
+		ch_node.g.lock();
+		if(ch_node.c++ == 0){
+			ch_node.m.lock();
+		}
+		ch_node.g.unlock();
+	} else {
+		ch_node.m.lock();
+	}
 }
 
-void forest::Tree::d_release(tree_t::node_ptr node, tree_t* tree)
+void forest::Tree::d_release(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree)
 {	
 	assert(has_data(node));
 	
-	node_data_ptr data = get_node_data(node);
-	string& path = data->path;
+	string path = get_node_data(node)->path;
 	
 	cache::leaf_cache_m.lock();
-	assert(cache::leaf_cache_r.count(path));
-	assert(cache::leaf_cache_r[path].second > 0);
+	node = get_leaf(path);
 	cache::leaf_cache_r[path].second--;
 	cache::check_leaf_ref(path);
 	cache::leaf_cache_m.unlock();
+	
+	auto& ch_node = node->data.change_locks;
+	if(type == tree_t::PROCESS_TYPE::READ){
+		ch_node.g.lock();
+		if(--ch_node.c == 0){
+			ch_node.m.unlock();
+		}
+		ch_node.g.unlock();
+	} else {
+		ch_node.m.unlock();
+	}
 }
 
 void forest::Tree::d_before_move(tree_t::child_item_type_ptr item, int_t step, tree_t* tree)
 {
-	//std::cout << "BEFORE_MOVE" << std::endl;
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move Start\n";
+
+	if(!item){
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move END - NOTITEM\n";
+		return;
+	}
+	
+	tree_t::node_ptr node;
+	
+	// Make sure to lock the right node
+	do{	
+		item->item->second->o.lock();
+		node = item->node;
+		item->item->second->o.unlock();
+		
+		assert(bool(node));
+		assert(has_data(node));
+		
+		string path = get_node_data(node)->path;
+		
+		cache::leaf_cache_m.lock();
+		node = get_leaf(path);
+		cache::leaf_cache_m.unlock();
+		
+		auto& ch_node = node->data.change_locks;
+		
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move before first lock\n";
+		std::unique_lock<std::mutex> lock(ch_node.g);
+		////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move after first lock\n";
+		
+		/*
+		// Make sure this node is not priored
+		if(ch_node.shared_lock && *ch_node.shared_lock){
+			ch_node.cond.wait(lock);
+		}
+		*/
+		
+		////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move after wait\n";
+		
+		// Readers-writer lock
+		if(ch_node.c++ == 0){
+			//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_READ-" + path + "\n";
+			ch_node.m.lock();
+		}
+		
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move after first lock m\n";
+		
+		// If it is still the same node - break the loop
+		if(path == get_node_data(item->node)->path){
+			break;
+		}
+		
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move retry\n";
+		
+		// Readers-writer unlock
+		if(--ch_node.c == 0){
+			//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-UNLOCK_CHANGE_READ-" + path + "\n";
+			ch_node.m.unlock();
+		}
+		
+	}while(true);
+	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move MIDDLE\n";
+	
+	//auto& ch_node = node->data.change_locks;
+	
+	cache::leaf_cache_m.lock();
+	assert(cache::leaf_cache_r[get_node_data(node)->path].second > 0);
+	cache::leaf_cache_r[get_node_data(node)->path].second++;
+	cache::leaf_cache_m.unlock();
+	
+	if( (step < 0 && item->pos == 0) || (step > 0 && item->pos+1 == node->childs_size()) ){
+		
+		tree_t::node_ptr new_node;
+		
+		string new_path = (step > 0) ? get_node_data(node)->next : get_node_data(node)->prev;
+		
+		// If no next node - break
+		if(new_path != LEAF_NULL){
+			
+			// Reserve node (anti rc)
+			cache::leaf_cache_m.lock();
+			new_node = get_leaf(new_path);
+			assert((bool)new_node);
+			cache::leaf_cache_r[new_path].second++;
+			cache::leaf_cache_m.unlock();
+			
+			auto& ch_new_node = new_node->data.change_locks;
+			
+			// Start read lock
+			//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move before second lock\n";
+			std::unique_lock<std::mutex> lock(ch_new_node.g);
+			////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move after second lock\n";
+			
+			// Make sure new node is not priored
+			/*if( 
+				(ch_new_node.shared_lock && *ch_new_node.shared_lock)
+				&& (ch_node.shared_lock && *ch_node.shared_lock) 
+				&& (ch_new_node.shared_lock.get() != ch_node.shared_lock.get()) 
+			){
+				ch_new_node.cond.wait(lock);
+			}*/
+			
+			// Complete read lock
+			if(ch_new_node.c++ == 0){
+				//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_READ-" + new_path + "\n";
+				ch_new_node.m.lock();
+			}
+			
+			node->data.owner_locks.m.lock();
+			if(step > 0){
+				if(!node->next_leaf() || node->next_leaf().get() != new_node.get())
+					node->set_next_leaf(new_node);
+			}
+			else{
+				if(!node->prev_leaf() || node->prev_leaf().get() != new_node.get())
+					node->set_prev_leaf(new_node);
+			}
+			node->data.owner_locks.m.unlock();
+		} else {
+			node->data.owner_locks.m.lock();
+			if(step > 0){
+				if(node->next_leaf())
+					node->set_next_leaf(nullptr);
+			}
+			else{
+				if(node->prev_leaf())
+					node->set_prev_leaf(nullptr);
+			}
+			node->data.owner_locks.m.unlock();
+		}
+		
+		/*
+		// Read unlock previous node
+		ch_node.g.lock();
+		if(--ch_node.c == 0){
+			ch_node.m.unlock();
+		}
+		ch_node.g.unlock();
+		*/
+	}
+
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move END\n";
 }
 
 void forest::Tree::d_after_move(tree_t::child_item_type_ptr item, int_t step, tree_t* tree)
 {
-	//std::cout << "AFTER_MOVE" << std::endl;
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "After Move START\n";
+	
+	if(!item || !step){
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "After Move END - NOTITEM\n";
+		return;
+	}
+	
+	item->item->second->o.lock();
+	tree_t::node_ptr node = item->node;
+	item->item->second->o.unlock();
+	
+	tree_t::node_ptr node_old;
+	
+	assert((bool)node);
+	assert(has_data(node));
+	
+	cache::leaf_cache_m.lock();
+	string path = get_node_data(node)->path;
+	string path_old;
+	
+	node = get_leaf(path);
+	
+	if( (step > 0 && item->pos == 0) || (step < 0 && item->pos+1 == node->childs_size()) ){
+		path_old = (step > 0) ? get_node_data(node)->prev : get_node_data(node)->next;
+		if(path_old != LEAF_NULL){
+			node_old = get_leaf(path_old);
+		}
+	}
+	//cache::leaf_cache_m.unlock();
+	
+	//cache::leaf_cache_m.lock();
+	assert(cache::leaf_cache_r.count(path));
+	assert(cache::leaf_cache_r[path].second > 1);
+	
+	if(node_old){
+		assert(cache::leaf_cache_r.count(path_old));
+		assert(cache::leaf_cache_r[path_old].second > 0);
+	}
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-AFTER_NODE_RESERVED-" + path + "\n";
+	
+	if(node_old){
+		cache::leaf_cache_r[path_old].second--;
+		cache::check_leaf_ref(path_old);
+	}
+	
+	cache::leaf_cache_r[path].second--;
+	cache::check_leaf_ref(path);
+		
+	cache::leaf_cache_m.unlock();
+	
+	if(node_old){
+		// Unlock old node
+		auto& ch_node_old = node_old->data.change_locks;
+		ch_node_old.g.lock();
+		if(--ch_node_old.c == 0){
+			//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-UNLOCK_CHANGE_READ-" + path + "\n";
+			ch_node_old.m.unlock();
+		}
+		ch_node_old.g.unlock();
+	}
+	
+	// unlock curr node
+	auto& ch_node = node->data.change_locks;
+	ch_node.g.lock();
+	if(--ch_node.c == 0){
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-UNLOCK_CHANGE_READ-" + path + "\n";
+		ch_node.m.unlock();
+	}
+	ch_node.g.unlock();
+	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "After Move END\n";
 }
 
 void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
-	// std::cout << "ITER_RESERVE" << std::endl;
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "ITER_RESERVE_START\n";
 	
-	cache::leaf_cache_m.lock();
+	tree_t::node_ptr node;
+	string path;
 	
-	// We assume that node already locked for travel
-	tree_t::node_ptr node = item->node;
-	if(has_data(node)){
-		node = get_leaf(get_node_data(node)->path);
-	}
-	
-	cache::insert_item(node, item->pos);
-	cache::leaf_cache_m.unlock();
-	
-	// Lock item
-	auto& it = item->item->second;
 	if(type == tree_t::PROCESS_TYPE::WRITE){
-		it->m.lock();
+		cache::leaf_cache_m.lock();
+		node = item->node;
+		path = get_node_data(node)->path;
+		node = get_leaf(path);
+		cache::leaf_cache_m.unlock();
 	}
 	else{
+		// Make sure to lock the right node
+		
+		bool wasret = false;
+		
+		do{	
+			item->item->second->o.lock();
+			node = item->node;
+			item->item->second->o.unlock();
+			
+			if(wasret && !node){
+				//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "ERR: " + path + "\n";
+				assert((bool)node);
+			}
+			
+			if(!node){
+				//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-assert_error-" + item->item->first + "\n";
+				assert(false);
+			}
+			assert(has_data(node));
+			
+			path = get_node_data(node)->path;
+			
+			cache::leaf_cache_m.lock();
+			node = get_leaf(path);
+			cache::leaf_cache_m.unlock();
+			
+			auto& ch_node = node->data.change_locks;
+			
+			////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move before first lock" << std::endl;
+			std::unique_lock<std::mutex> lock(ch_node.g);
+			////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move after first lock" << std::endl;
+			
+			/*
+			// Make sure this node is not priored
+			if(ch_node.shared_lock && *ch_node.shared_lock){
+				ch_node.cond.wait(lock);
+			}
+			*/
+			
+			////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move after wait" << std::endl;
+			
+			// Readers-writer lock
+			if(ch_node.c++ == 0){
+				ch_node.m.lock();
+			}
+			
+			////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move after first lock m" << std::endl;
+			
+			// If it is still the same node - break the loop
+			if(path == get_node_data(item->node)->path){
+				break;
+			}
+			
+			////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move retry" << std::endl;
+			
+			// Readers-writer unlock
+			if(--ch_node.c == 0){
+				ch_node.m.unlock();
+			}
+			
+			wasret = true;
+			//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "RESERVE_RETRY\n";
+			
+		}while(true);
+	}
+	
+	cache::leaf_cache_m.lock();
+	assert(cache::leaf_cache_r.count(path));
+	assert(cache::leaf_cache_r[path].second > 0);
+	
+	cache::leaf_cache_r[path].second++;
+	
+	//===std::cout << convert_to_string(std::this_thread::get_id()) + "--RSRV--Reserve-" + path + "-" + std::to_string(item->pos) + "\n";
+	
+	cache::insert_item(path, item->pos);
+	cache::leaf_cache_m.unlock();
+	
+	//item->item->second->m.lock();
+	//return;
+	
+	// Lock item
+	auto it = item->item->second;
+	if(type == tree_t::PROCESS_TYPE::WRITE){
+		it->m.lock();
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_ITEM_WRITE-" + item->item->first + "\n";
+	}
+	else{
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_ITEM_READ-" + item->item->first + "\n";
 		it->g.lock();
 		if(it->c++ == 0){
 			it->m.lock();
 		}
 		it->g.unlock();
 	}
+	
+	auto& ch_node = node->data.change_locks;
+	if(type == tree_t::PROCESS_TYPE::READ){
+		ch_node.g.lock();
+		if(--ch_node.c == 0){
+			ch_node.m.unlock();
+		}
+		ch_node.g.unlock();
+	}
+	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "ITER_RESERVE_END\n";
 }
 
 void forest::Tree::d_item_release(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree)
 {
-	// std::cout << ITEM_RELEASE << std::endl;
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "ITEM_RELEASE_START\n";
+	
+	/////////////////////////////////
+	//TODO: IF RC HAPPEND LOOK HERE//
+	/////////////////////////////////
+	
+	
+	tree_t::node_ptr node;
+	string path;
+	
+	if(type == tree_t::PROCESS_TYPE::WRITE){
+		cache::leaf_cache_m.lock();
+		node = item->node;
+		path = get_node_data(node)->path;
+		node = get_leaf(path);
+		cache::leaf_cache_m.unlock();
+	}
+	else{
+		// Make sure to lock the right node
+		do{	
+			item->item->second->o.lock();
+			node = item->node;
+			item->item->second->o.unlock();
+			
+			assert(bool(node));
+			assert(has_data(node));
+			
+			path = get_node_data(node)->path;
+			
+			cache::leaf_cache_m.lock();
+			node = get_leaf(path);
+			cache::leaf_cache_m.unlock();
+			
+			auto& ch_node = node->data.change_locks;
+			
+			////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move before first lock" << std::endl;
+			std::unique_lock<std::mutex> lock(ch_node.g);
+			////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move after first lock" << std::endl;
+			
+			/*
+			// Make sure this node is not priored
+			if(ch_node.shared_lock && *ch_node.shared_lock){
+				ch_node.cond.wait(lock);
+			}
+			*/
+			
+			////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move after wait" << std::endl;
+			
+			// Readers-writer lock
+			if(ch_node.c++ == 0){
+				ch_node.m.lock();
+			}
+			
+			////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move after first lock m" << std::endl;
+			
+			// If it is still the same node - break the loop
+			if(path == get_node_data(item->node)->path){
+				break;
+			}
+			
+			////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move retry" << std::endl;
+			
+			// Readers-writer unlock
+			if(--ch_node.c == 0){
+				ch_node.m.unlock();
+			}
+		}while(true);
+	}
+	
 	
 	cache::leaf_cache_m.lock();
 	
-	// We assume that node already locked for travel
-	tree_t::node_ptr node = item->node;
-	if(has_data(node)){
-		node = get_leaf(get_node_data(node)->path);
+	if(type == tree_t::PROCESS_TYPE::READ){
+		//===std::cout << convert_to_string(std::this_thread::get_id()) + "--RSRV--Release-" + path + "-" + std::to_string(item->pos) + "\n";
+		assert(node.get() == item->node.get());
+		cache::remove_item(path, item->pos);
 	}
 	
-	cache::remove_item(node, item->pos);
-	cache::leaf_cache_m.unlock();
+	//cache::leaf_cache_m.unlock();
 	
-	auto& it = item->item->second;
+	// Unlock item
+	auto it = item->item->second;
 	if(type == tree_t::PROCESS_TYPE::WRITE){
-		item->item->second->m.unlock();
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-UNLOCK_ITEM_WRITE-" + item->item->first + "\n";
+		it->m.unlock();
 	}
 	else{
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-UNLOCK_ITEM_READ-" + item->item->first + "\n";
 		it->g.lock();
 		if(--it->c == 0){
 			it->m.unlock();
 		}
 		it->g.unlock();
 	}
+	
+	//cache::leaf_cache_m.lock();
+	
+	assert(cache::leaf_cache_r.count(path));
+	assert(cache::leaf_cache_r[path].second > 0);
+	cache::leaf_cache_r[path].second--;
+	cache::check_leaf_ref(path);
+	
+	cache::leaf_cache_m.unlock();
+	
+	auto& ch_node = node->data.change_locks;
+	if(type == tree_t::PROCESS_TYPE::READ){
+		ch_node.g.lock();
+		if(--ch_node.c == 0){
+			ch_node.m.unlock();
+		}
+		ch_node.g.unlock();
+	}
+	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "ITEM_RELEASE_END\n";
 }
 
 void forest::Tree::d_item_move(tree_t::node_ptr node, bool release, tree_t* tree)
@@ -1110,7 +1543,7 @@ void forest::Tree::d_item_move(tree_t::node_ptr node, bool release, tree_t* tree
 		return;
 	}
 	
-	//std::cout << "ITEM_MOVE" << std::endl;
+	////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "ITEM_MOVE" << std::endl;
 	cache::leaf_cache_m.lock();
 	
 	auto childs = node->get_childs();
@@ -1122,17 +1555,18 @@ void forest::Tree::d_item_move(tree_t::node_ptr node, bool release, tree_t* tree
 		node = nullptr;
 	}
 	
-	intptr_t nptr;
+	//uintptr_t nptr;
 	
 	string npath;
+	
 	if(node && has_data(node)){
 		npath = get_node_data(node)->path;
 		node = get_leaf(npath);	
 	}
 	
-	if(node){
-		nptr = reinterpret_cast<intptr_t>(node.get());
-	}
+	//if(node){
+	//	nptr = reinterpret_cast<uintptr_t>(node.get());
+	//}
 	
 	for(int i=0;i<childs_size;i++){
 		tree_t::child_item_type_ptr it = (*childs)[i];
@@ -1140,16 +1574,17 @@ void forest::Tree::d_item_move(tree_t::node_ptr node, bool release, tree_t* tree
 			continue;
 		}
 		node_ptr n = it->node;
-		if(has_data(n)){
-			n = get_leaf(get_node_data(n)->path);
-		}
-		intptr_t ptr = reinterpret_cast<intptr_t>(n.get());
-		if(!cache::leaf_cache_i.count(ptr) || !cache::leaf_cache_i[ptr].count(it->pos)){
+		string path = get_node_data(n)->path;
+		//if(has_data(n)){
+		//	n = get_leaf(get_node_data(n)->path);
+		//}
+		//uintptr_t ptr = reinterpret_cast<uintptr_t>(n.get());
+		if(!cache::leaf_cache_i.count(path) || !cache::leaf_cache_i[path].count(it->pos)){
 			continue;
 		}
 		
 		assert(has_data(n));
-		int cnt = cache::leaf_cache_i[ptr][it->pos];
+		int cnt = cache::leaf_cache_i[path][it->pos];
 		new_vals[i] = cnt;
 		
 		if(node.get() != n.get()){
@@ -1159,12 +1594,14 @@ void forest::Tree::d_item_move(tree_t::node_ptr node, bool release, tree_t* tree
 			assert(cache::leaf_cache_r[path].second >= cnt);
 			assert(cache::leaf_cache_r.count(npath));
 			
+			//===std::cout << convert_to_string(std::this_thread::get_id()) + "--RSRV--Move-" + path + "-" + npath + "-" + to_string(cnt) + "\n";
+			
 			cache::leaf_cache_r[path].second -= cnt;
 			cache::leaf_cache_r[npath].second += cnt;
 			
-			cache::leaf_cache_i[ptr].erase(it->pos);
-			if(!cache::leaf_cache_i[ptr].size()){
-				cache::leaf_cache_i.erase(ptr);
+			cache::leaf_cache_i[path].erase(it->pos);
+			if(!cache::leaf_cache_i[path].size()){
+				cache::leaf_cache_i.erase(path);
 			}
 			
 			cache::check_leaf_ref(path);
@@ -1173,29 +1610,72 @@ void forest::Tree::d_item_move(tree_t::node_ptr node, bool release, tree_t* tree
 	
 	for(int i=0;i<childs_size;i++){
 		tree_t::child_item_type_ptr it = (*childs)[i];
+		it->item->second->o.lock();
 		it->node = node;
 		it->pos = i;
+		it->item->second->o.unlock();
 	}
 	if(new_vals.size()){
-		cache::leaf_cache_i[nptr] = new_vals;
+		cache::leaf_cache_i[npath] = new_vals;
 	}
 	
 	cache::leaf_cache_m.unlock();
 }
 
-void forest::Tree::d_leaf_insert(tree_t::node_ptr node, tree_t* tree)
+void forest::Tree::d_leaf_insert(tree_t::node_ptr node, tree_t::child_item_type_ptr item, tree_t* tree)
 {
 	assert(has_data(node));
 	
 	cache::leaf_cache_m.lock();
 	node = get_leaf(get_node_data(node)->path);
+	
+	if(item){
+		string path = get_node_data(node)->path;
+		assert(cache::leaf_cache_r.count(path));
+		assert(cache::leaf_cache_r[path].second > 0);
+		cache::leaf_cache_r[path].second++;
+		
+		/*if(item && !item->node){
+			
+		} 
+		else {
+			cache::insert_item(node, item->pos);
+		} */
+	}
+	
 	cache::leaf_cache_m.unlock();
 	
-	node->data.change_locks.m.lock();
+	// Prepare flag
+	//std::shared_ptr<bool> b = std::shared_ptr<bool>(new bool(true));
+	
+	// Quick-access
+	auto& ch_node = node->data.change_locks;
+	
+	// Assign flag
+	//ch_node.shared_lock = b;
+	
+	// Lock
+	if(item){
+		std::lock(item->item->second->m, ch_node.m);
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_ITEM_WRITE-" + item->item->first + "\n";
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_WRITE-" + get_node_data(node)->path + "\n";
+		
+	}
+	else{
+		ch_node.m.lock();	
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_WRITE-" + get_node_data(node)->path + "\n";
+	}
+	
+	// Cleanup
+	//ch_node.shared_lock = nullptr;
+	
+	// Notify threads
+	//ch_node.cond.notify_all();
 }
 
 void forest::Tree::d_leaf_delete(tree_t::node_ptr node, tree_t::child_item_type_ptr item, tree_t* tree)
 {
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "delete_start\n";
 	assert(has_data(node));
 	
 	// Get orig node, remember reserved item
@@ -1204,31 +1684,45 @@ void forest::Tree::d_leaf_delete(tree_t::node_ptr node, tree_t::child_item_type_
 	if(has_data(node)){
 		node = get_leaf(get_node_data(node)->path);
 	}
-	cache::insert_item(node, item->pos);
+	
+	string path = get_node_data(node)->path;
+	assert(cache::leaf_cache_r.count(path));
+	assert(cache::leaf_cache_r[path].second > 0);
+	cache::leaf_cache_r[path].second++;
+	
+	//cache::insert_item(node, item->pos);
 	cache::leaf_cache_m.unlock();
 	
 	// Prepare flag
-	std::shared_ptr<bool> b = std::shared_ptr<bool>(new bool(true));
+	//std::shared_ptr<bool> b = std::shared_ptr<bool>(new bool(true));
 	
 	// Quick-access
 	auto& ch_node = node->data.change_locks;
 	
 	// Assign flag
-	ch_node.shared_lock = b;
+	//ch_node.shared_lock = b;
 	
 	// Lock
 	std::lock(item->item->second->m, ch_node.m);
 	
+	item->item->second->set_file(nullptr);
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_ITEM_WRITE-" + item->item->first + "\n";
+	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_WRITE-" + path + "\n";
+	
 	// Cleanup
-	ch_node.shared_lock = nullptr;
+	//ch_node.shared_lock = nullptr;
 	
 	// Notify threads
-	ch_node.cond.notify_all();
+	//ch_node.cond.notify_all();
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "delete_ends\n";
 }
 
 void forest::Tree::d_leaf_split(tree_t::node_ptr node, tree_t::node_ptr new_node, tree_t::node_ptr link_node, tree_t* tree)
 {
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "join_start\n";
 	if(!link_node){
+		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "join_ends\n";
 		d_leaf_shift(node, new_node, tree);
 		return;
 	}
@@ -1238,12 +1732,17 @@ void forest::Tree::d_leaf_split(tree_t::node_ptr node, tree_t::node_ptr new_node
 	assert(has_data(new_node));
 	assert(has_data(link_node));
 	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "join_start_get_before_gets\n";
+	
 	// Get the original nodes
 	cache::leaf_cache_m.lock();
 	node = get_leaf(get_node_data(node)->path);
 	new_node = get_leaf(get_node_data(new_node)->path);
 	link_node = get_leaf(get_node_data(link_node)->path);
 	cache::leaf_cache_m.unlock();
+	
+	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "join_start_get_leafs\n";
 	
 	// Prepare flag
 	std::shared_ptr<bool> b = std::shared_ptr<bool>(new bool(false));
@@ -1264,6 +1763,12 @@ void forest::Tree::d_leaf_split(tree_t::node_ptr node, tree_t::node_ptr new_node
 	// Lock nodes
 	std::lock(ch_node.m, ch_new_node.m, ch_link_node.m);
 	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_WRITE-" + get_node_data(node)->path + "\n";
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_WRITE-" + get_node_data(new_node)->path + "\n";
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_WRITE-" + get_node_data(link_node)->path + "\n";
+	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "join_start_lock_nodes\n";
+	
 	// Cleanup
 	ch_node.shared_lock = nullptr;
 	ch_new_node.shared_lock = nullptr;
@@ -1273,6 +1778,7 @@ void forest::Tree::d_leaf_split(tree_t::node_ptr node, tree_t::node_ptr new_node
 	ch_node.cond.notify_all();
 	ch_new_node.cond.notify_all();
 	ch_link_node.cond.notify_all();
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "join_ends\n";
 }
 
 void forest::Tree::d_leaf_join(tree_t::node_ptr node, tree_t::node_ptr join_node, tree_t::node_ptr link_node, tree_t* tree)
@@ -1282,6 +1788,7 @@ void forest::Tree::d_leaf_join(tree_t::node_ptr node, tree_t::node_ptr join_node
 
 void forest::Tree::d_leaf_shift(tree_t::node_ptr node, tree_t::node_ptr shift_node, tree_t* tree)
 {
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "shift_start\n";
 	// Make sure all is going as it should
 	assert(has_data(node));
 	assert(has_data(shift_node));
@@ -1303,7 +1810,10 @@ void forest::Tree::d_leaf_shift(tree_t::node_ptr node, tree_t::node_ptr shift_no
 	*b = true;
 	
 	// Lock
-	std::lock(node->data.change_locks.m, shift_node->data.change_locks.m);
+	std::lock(ch_node.m, ch_shift_node.m);
+	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_WRITE-" + get_node_data(node)->path + "\n";
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_WRITE-" + get_node_data(shift_node)->path + "\n";
 	
 	// Cleanup
 	ch_node.shared_lock = nullptr;
@@ -1312,6 +1822,7 @@ void forest::Tree::d_leaf_shift(tree_t::node_ptr node, tree_t::node_ptr shift_no
 	// Notify threads
 	ch_node.cond.notify_all();
 	ch_shift_node.cond.notify_all();
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "shift_ends\n";
 }
 
 void forest::Tree::d_leaf_free(tree_t::node_ptr node, tree_t* tree)
@@ -1325,12 +1836,54 @@ void forest::Tree::d_leaf_free(tree_t::node_ptr node, tree_t* tree)
 	cache::leaf_cache_m.lock();
 	node = get_leaf(get_node_data(node)->path);
 	cache::leaf_cache_m.unlock();
+	
+	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-UNLOCK_CHANGE_WRITE-" + get_node_data(node)->path + "\n";
 	node->data.change_locks.m.unlock();
+}
+
+void forest::Tree::d_leaf_ref(tree_t::node_ptr node, tree_t::node_ptr ref_node, tree_t::LEAF_REF ref, tree_t* tree)
+{
+	/*if(ref == tree_t::LEAF_REF::NEXT){
+		node->set_next_leaf(ref_node);
+	} else {
+		node->set_prev_leaf(ref_node);
+	}
+	return;*/
+	//assert(has_data(node));
+	string ref_path = "-";
+	if(ref_node){
+		assert(has_data(ref_node));
+		ref_path = get_node_data(ref_node)->path;
+	}
+	node_data_ptr data; 
+	node_ptr n;
+	if(has_data(node)){
+		cache::leaf_cache_m.lock();
+		string cur_path = get_node_data(node)->path;
+		if(cache::leaf_cache_r.count(cur_path)){
+			n = cache::leaf_cache_r[cur_path].first;
+			data = get_node_data(n);
+		}
+		//n = get_leaf(get_node_data(node)->path);
+		cache::leaf_cache_m.unlock();
+		//data = get_node_data(n);
+	}
+	if(ref == tree_t::LEAF_REF::NEXT){
+		node->set_next_leaf(ref_node);
+		if(data){
+			data->next = ref_path;
+		}
+	} else {
+		node->set_prev_leaf(ref_node);
+		if(data){
+			data->prev = ref_path;
+		}
+	}
 }
 
 void forest::Tree::d_save_base(tree_t::node_ptr node, tree_t* tree)
 {
-	//std::cout << "SAVE_BASE_START" << std::endl;
+	////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "SAVE_BASE_START" << std::endl;
 	
 	// Save Base File
 	string base_file_name = this->get_name();
@@ -1351,6 +1904,6 @@ void forest::Tree::d_save_base(tree_t::node_ptr node, tree_t* tree)
 	DBFS::remove(base_file_name);
 	DBFS::move(new_base_file_name, base_file_name);
 	
-	//std::cout << "SAVE_BASE_END" << std::endl;
+	////LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "SAVE_BASE_END" << std::endl;
 }
 
