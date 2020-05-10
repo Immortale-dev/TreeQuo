@@ -5,7 +5,7 @@ namespace forest{
 	int ROOT_FACTOR = 3;
 	int DEFAULT_FACTOR = 3;
 	int INTR_CACHE_LENGTH = 3;
-	int LEAF_CACHE_LENGTH = 1;
+	int LEAF_CACHE_LENGTH = 3;
 	int TREE_CACHE_LENGTH = 100;
 	
 	namespace cache{

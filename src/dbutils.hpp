@@ -55,6 +55,7 @@ namespace forest{
 			
 			file_ptr file;
 			std::mutex m,g,o;
+			bool shared_lock = false;
 			int c = 0;
 			
 			struct file_data_reader{

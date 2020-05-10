@@ -326,7 +326,7 @@ DESCRIBE("Test multi threads", {
 		// Leaf insertions
 		DESCRIBE("Add `test` tree to the forest", {
 			BEFORE_EACH({
-				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 3);
+				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 10);
 			});
 			
 			AFTER_EACH({
@@ -501,13 +501,13 @@ DESCRIBE("Test multi threads", {
 					vector<thread> threads;
 					
 					unordered_set<string> should_contains;
-					
 					queue<int> q;
 					
+					vector<string> complete;
 					
+					bool num_assert = true;
 					
 					BEFORE_ALL({
-						
 						for(auto& it : check){
 							q.push(it);
 							should_contains.insert("p"+std::to_string(it));
@@ -516,31 +516,66 @@ DESCRIBE("Test multi threads", {
 						
 						for(int i=0;i<tests_count;i++){
 							int rnd = rand()%10000 + 11200;
-							thread t([&m, &q, &check, &tree_keys_check, &should_contains](int index, int rnd){
+							thread t([&m, &q, &check, &tree_keys_check, &should_contains, &complete, &num_assert](int index, int rnd){
 								int cs = index%8;
 								if(cs == 1){
 									auto it = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
 									vector<string> keys;
 									do{
-										keys.push_back(it->key());
+										string key = it->key();
+										keys.push_back(key);
+										auto val = it->val();
+										string sval = forest::read_leaf_item(val);
+										
+										if(sval.substr(0,3) == "new"){
+											continue;
+										}
+										int k, v;
+										try{
+											k = std::stoi(key.substr(1));
+											v = std::stoi(sval.substr(4));
+										} catch (std::invalid_argument const &e) {
+											std::cout << "K: " + key + " " + sval + "\n";
+											assert(false);
+										}
+										if(k*k != v){
+											num_assert = false;
+										}
 									}while(it->move_forward());
 									lock_guard<mutex> lock(m);
 									tree_keys_check.push_back(keys);
+									complete.push_back("move");
 								}
 								else if(cs == 2){
 									auto it = forest::find_leaf("test", forest::RECORD_POSITION::END);
 									vector<string> keys;
 									do{
-										keys.push_back(it->key());
+										string key = it->key();
+										keys.push_back(key);
+										auto val = it->val();
+										string sval = forest::read_leaf_item(val);
+										
+										if(sval.substr(0,3) == "new"){
+											continue;
+										}
+										int k, v;
+										try{
+											k = std::stoi(key.substr(1));
+											v = std::stoi(sval.substr(4));
+										} catch (std::invalid_argument const &e) {
+											std::cout << "K: " + key + " " + sval + "\n";
+											assert(false);
+										}
+										if(k*k != v){
+											num_assert = false;
+										}
 									}while(it->move_back());
 									lock_guard<mutex> lock(m);
 									tree_keys_check.push_back(keys);
+									complete.push_back("move");
 								}
 								else if(cs == 3){
-									auto it = forest::find_leaf("test", forest::RECORD_POSITION::END);
-									do{
-										it->val();
-									}while(it->move_forward());
+									// doesn't matter
 								}
 								else if(cs == 4){
 									int p;
@@ -573,7 +608,7 @@ DESCRIBE("Test multi threads", {
 										p = q.front();
 										q.pop();
 									}
-									forest::update_leaf("test", "p"+std::to_string(p), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
+									forest::update_leaf("test", "p"+std::to_string(p), forest::leaf_value("new_" + std::to_string(rnd*rnd)));
 								}
 								else if(cs == 7){
 									int p;
@@ -585,6 +620,7 @@ DESCRIBE("Test multi threads", {
 									forest::erase_leaf("test", "p"+std::to_string(p));
 									lock_guard<mutex> lock(m);
 									should_contains.erase("p"+std::to_string(p));
+									complete.push_back("erase");
 								}
 								else{
 									{
@@ -595,6 +631,8 @@ DESCRIBE("Test multi threads", {
 										check.insert(rnd);
 									}
 									forest::insert_leaf("test", "p"+std::to_string(rnd), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
+									lock_guard<mutex> lock(m);
+									complete.push_back("insert");
 								}
 							}, i, rnd);
 							threads.push_back(move(t));
@@ -614,6 +652,69 @@ DESCRIBE("Test multi threads", {
 								EXPECT(keys.count(it)).toBe(1);
 							}
 						}
+						EXPECT(num_assert).toBe(true);
+					});
+				});
+				
+				DESCRIBE("Comparing time for insert on free and busy tree", {
+					
+					int time_busy, time_free;
+					
+					DESCRIBE("For free tree", {
+						IT("should quickly insert all values", {
+							chrono::time_point p1 = chrono::system_clock::now();				
+							for(int i=0;i<10;i++){
+								int rnd = rand()%10000 + 11200;
+								forest::insert_leaf("test", "c"+std::to_string(rnd), forest::leaf_value("val111"));
+							}
+							chrono::time_point p2 = chrono::system_clock::now();
+							time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
+							TEST_SUCCEED();
+							INFO_PRINT("Time For Insert: " + to_string(time_free));
+						});
+					});
+					
+					DESCRIBE("For busy tree", {
+						vector<thread> threads;
+						bool finish = false;
+						
+						BEFORE_ALL({						
+							for(int i=0;i<10;i++){
+								thread t([&finish](int index){
+									int dir = index%2;
+									auto it = forest::find_leaf("test", dir ? forest::RECORD_POSITION::BEGIN : forest::RECORD_POSITION::END);
+									while(!finish){
+										while( (dir && it->move_forward()) || (!dir && it->move_back()) ){
+											// ok
+										}
+										this_thread::sleep_for(chrono::milliseconds(1));
+									}
+								}, i);
+								threads.push_back(move(t));
+							}
+						});
+						
+						IT("should quickly insert all values", {
+							chrono::time_point p1 = chrono::system_clock::now();				
+							for(int i=0;i<10;i++){
+								int rnd = rand()%10000 + 11200;
+								forest::insert_leaf("test", "c"+std::to_string(rnd), forest::leaf_value("val111"));
+							}
+							chrono::time_point p2 = chrono::system_clock::now();
+							time_busy = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
+							finish = true;
+							for(auto& it : threads){
+								it.join();
+							}
+							TEST_SUCCEED();
+							INFO_PRINT("Time For Insert: " + to_string(time_busy));
+						});
+					});
+					
+					DESCRIBE("Analyzing the difference", {
+						IT("The difference should not be significant", {
+							EXPECT(time_free*2).toBeGreaterThan(time_busy);
+						});
 					});
 				});
 			});

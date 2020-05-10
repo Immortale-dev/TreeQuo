@@ -685,10 +685,12 @@ void forest::Tree::write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t
 void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data)
 {
 	int_t start_data = file->tell();
+	
 	int read_size = 4*1024;
 	char* buf = new char[read_size];
 	int rsz;
 	auto reader = data->get_reader();
+	
 	try{
 		while( (rsz = reader.read(buf, read_size)) ){
 			file->write(buf, rsz);
@@ -697,6 +699,7 @@ void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val
 		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "ERROR WHEN WRITE LEAF ITEM\n";
 		throw "error";
 	}
+	
 	delete[] buf;
 	data->set_start(start_data);
 	data->set_file(file);
@@ -971,6 +974,9 @@ void forest::Tree::d_insert(tree_t::node_ptr node, tree_t* tree)
 		leaf_d.child_lengths = lengths;
 		std::shared_ptr<DBFS::File> fp(f);
 		write_leaf(fp, leaf_d);
+		
+		auto lock = fp->get_lock();
+		
 		for(auto& it : *(node->get_childs()) ){
 			write_leaf_item(fp, it->item->second);
 		}
@@ -1088,6 +1094,9 @@ void forest::Tree::d_before_move(tree_t::child_item_type_ptr item, int_t step, t
 	
 	// Make sure to lock the right node
 	do{	
+		
+		cache::leaf_cache_m.lock();
+		
 		item->item->second->o.lock();
 		node = item->node;
 		item->item->second->o.unlock();
@@ -1097,11 +1106,20 @@ void forest::Tree::d_before_move(tree_t::child_item_type_ptr item, int_t step, t
 		
 		string path = get_node_data(node)->path;
 		
-		cache::leaf_cache_m.lock();
 		node = get_leaf(path);
+		
 		cache::leaf_cache_m.unlock();
 		
 		auto& ch_node = node->data.change_locks;
+		
+		{
+			// Check for priority
+			std::unique_lock<std::mutex> plock(ch_node.p);
+			while(ch_node.shared_lock && !item->item->second->shared_lock){
+				ch_node.cond.wait(plock);
+			}
+		}
+		
 		
 		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "Before Move before first lock\n";
 		std::unique_lock<std::mutex> lock(ch_node.g);
@@ -1231,6 +1249,8 @@ void forest::Tree::d_after_move(tree_t::child_item_type_ptr item, int_t step, tr
 		return;
 	}
 	
+	cache::leaf_cache_m.lock();
+	
 	item->item->second->o.lock();
 	tree_t::node_ptr node = item->node;
 	item->item->second->o.unlock();
@@ -1240,7 +1260,6 @@ void forest::Tree::d_after_move(tree_t::child_item_type_ptr item, int_t step, tr
 	assert((bool)node);
 	assert(has_data(node));
 	
-	cache::leaf_cache_m.lock();
 	string path = get_node_data(node)->path;
 	string path_old;
 	
@@ -1317,6 +1336,8 @@ void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROC
 		bool wasret = false;
 		
 		do{	
+			cache::leaf_cache_m.lock();
+			
 			item->item->second->o.lock();
 			node = item->node;
 			item->item->second->o.unlock();
@@ -1334,7 +1355,6 @@ void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROC
 			
 			path = get_node_data(node)->path;
 			
-			cache::leaf_cache_m.lock();
 			node = get_leaf(path);
 			cache::leaf_cache_m.unlock();
 			
@@ -1441,6 +1461,8 @@ void forest::Tree::d_item_release(tree_t::child_item_type_ptr item, tree_t::PROC
 	else{
 		// Make sure to lock the right node
 		do{	
+			cache::leaf_cache_m.lock();
+			
 			item->item->second->o.lock();
 			node = item->node;
 			item->item->second->o.unlock();
@@ -1450,7 +1472,6 @@ void forest::Tree::d_item_release(tree_t::child_item_type_ptr item, tree_t::PROC
 			
 			path = get_node_data(node)->path;
 			
-			cache::leaf_cache_m.lock();
 			node = get_leaf(path);
 			cache::leaf_cache_m.unlock();
 			
@@ -1654,6 +1675,13 @@ void forest::Tree::d_leaf_insert(tree_t::node_ptr node, tree_t::child_item_type_
 	// Assign flag
 	//ch_node.shared_lock = b;
 	
+	ch_node.p.lock();
+	ch_node.shared_lock = true;
+	if(item){
+		item->item->second->shared_lock = true;
+	}
+	ch_node.p.unlock();
+	
 	// Lock
 	if(item){
 		std::lock(item->item->second->m, ch_node.m);
@@ -1665,6 +1693,14 @@ void forest::Tree::d_leaf_insert(tree_t::node_ptr node, tree_t::child_item_type_
 		ch_node.m.lock();	
 		//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_WRITE-" + get_node_data(node)->path + "\n";
 	}
+	
+	ch_node.p.lock();
+	ch_node.shared_lock = false;
+	if(item){
+		item->item->second->shared_lock = false;
+	}
+	ch_node.cond.notify_all();
+	ch_node.p.unlock();
 	
 	// Cleanup
 	//ch_node.shared_lock = nullptr;
@@ -1702,8 +1738,19 @@ void forest::Tree::d_leaf_delete(tree_t::node_ptr node, tree_t::child_item_type_
 	// Assign flag
 	//ch_node.shared_lock = b;
 	
+	ch_node.p.lock();
+	ch_node.shared_lock = true;
+	item->item->second->shared_lock = true;
+	ch_node.p.unlock();
+	
 	// Lock
 	std::lock(item->item->second->m, ch_node.m);
+	
+	ch_node.p.lock();
+	ch_node.shared_lock = false;
+	item->item->second->shared_lock = false;
+	ch_node.cond.notify_all();
+	ch_node.p.unlock();
 	
 	item->item->second->set_file(nullptr);
 	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_ITEM_WRITE-" + item->item->first + "\n";
@@ -1744,21 +1791,25 @@ void forest::Tree::d_leaf_split(tree_t::node_ptr node, tree_t::node_ptr new_node
 	
 	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "join_start_get_leafs\n";
 	
-	// Prepare flag
-	std::shared_ptr<bool> b = std::shared_ptr<bool>(new bool(false));
-	
 	// quick-access
 	auto& ch_node = node->data.change_locks;
 	auto& ch_new_node = new_node->data.change_locks;
 	auto& ch_link_node = link_node->data.change_locks; 
 	
-	// assing flag
-	ch_node.shared_lock = b;
-	ch_new_node.shared_lock = b;
-	ch_link_node.shared_lock = b;
+	// Priority lock
+	ch_node.p.lock();
+	ch_new_node.p.lock();
+	ch_link_node.p.lock();
 	
-	// Activate priority
-	*b = true;
+	// assing flag
+	ch_node.shared_lock = true;
+	ch_new_node.shared_lock = true;
+	ch_link_node.shared_lock = true;
+	
+	// Priority unlock
+	ch_node.p.unlock();
+	ch_new_node.p.unlock();
+	ch_link_node.p.unlock();
 	
 	// Lock nodes
 	std::lock(ch_node.m, ch_new_node.m, ch_link_node.m);
@@ -1769,15 +1820,25 @@ void forest::Tree::d_leaf_split(tree_t::node_ptr node, tree_t::node_ptr new_node
 	
 	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "join_start_lock_nodes\n";
 	
+	// Priority lock
+	ch_node.p.lock();
+	ch_new_node.p.lock();
+	ch_link_node.p.lock();
+	
 	// Cleanup
-	ch_node.shared_lock = nullptr;
-	ch_new_node.shared_lock = nullptr;
-	ch_link_node.shared_lock = nullptr;
+	ch_node.shared_lock = false;
+	ch_new_node.shared_lock = false;
+	ch_link_node.shared_lock = false;
 	
 	// Notify threads
 	ch_node.cond.notify_all();
 	ch_new_node.cond.notify_all();
 	ch_link_node.cond.notify_all();
+	
+	// Priority unlock
+	ch_node.p.unlock();
+	ch_new_node.p.unlock();
+	ch_link_node.p.unlock();
 	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "join_ends\n";
 }
 
@@ -1799,15 +1860,21 @@ void forest::Tree::d_leaf_shift(tree_t::node_ptr node, tree_t::node_ptr shift_no
 	shift_node = get_leaf(get_node_data(shift_node)->path);
 	cache::leaf_cache_m.unlock();
 	
-	// Prepare flag
-	std::shared_ptr<bool> b = std::shared_ptr<bool>(new bool(false));
-	
 	// quick-access
 	auto& ch_node = node->data.change_locks;
 	auto& ch_shift_node = shift_node->data.change_locks;
 	
-	// Activate priority
-	*b = true;
+	// Priority lock
+	ch_node.p.lock();
+	ch_shift_node.p.lock();
+	
+	// Assign flag
+	ch_node.shared_lock = true;
+	ch_shift_node.shared_lock = true;
+	
+	// Priority unlock
+	ch_node.p.unlock();
+	ch_shift_node.p.unlock();
 	
 	// Lock
 	std::lock(ch_node.m, ch_shift_node.m);
@@ -1815,13 +1882,22 @@ void forest::Tree::d_leaf_shift(tree_t::node_ptr node, tree_t::node_ptr shift_no
 	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_WRITE-" + get_node_data(node)->path + "\n";
 	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "-LOCK_CHANGE_WRITE-" + get_node_data(shift_node)->path + "\n";
 	
+	// Priority lock
+	ch_node.p.lock();
+	ch_shift_node.p.lock();
+	
 	// Cleanup
-	ch_node.shared_lock = nullptr;
-	ch_shift_node.shared_lock = nullptr;
+	ch_node.shared_lock = false;
+	ch_shift_node.shared_lock = false;
 	
 	// Notify threads
 	ch_node.cond.notify_all();
 	ch_shift_node.cond.notify_all();
+	
+	// Priority unlock
+	ch_node.p.unlock();
+	ch_shift_node.p.unlock();
+	
 	//LOGS// std::cout << convert_to_string(std::this_thread::get_id()) + "shift_ends\n";
 }
 
