@@ -254,6 +254,27 @@ void forest::cache::leaf_insert(tree_t::node_ptr node, bool w_lock)
 	}
 }
 
+void forest::cache::clear_node_cache(tree_t::node_ptr node)
+{
+	node_data_ptr data = get_node_data(node);
+	string& path = data->path;
+	if(node->is_leaf()){
+		cache::leaf_lock();
+		if(cache::leaf_cache.has(path)){
+			cache::leaf_cache.remove(path);
+		}
+		cache::leaf_unlock();
+	}
+	else{
+		cache::intr_lock();
+		if(cache::intr_cache.has(path)){
+			cache::intr_cache.remove(path);
+		}
+		cache::intr_unlock();
+	}
+}
+
+
 void forest::cache::_intr_insert(tree_t::node_ptr node)
 {
 	string& path = get_node_data(node)->path;
@@ -267,4 +288,3 @@ void forest::cache::_leaf_insert(tree_t::node_ptr node)
 	cache::leaf_cache_r[path] = std::make_pair(node, 0);
 	cache::leaf_cache.push(path, node);
 }
-

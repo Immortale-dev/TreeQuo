@@ -40,10 +40,11 @@ namespace forest{
 		
 		void with_lock(NODE_TYPES type, std::function<void()> fn);
 		
+		void clear_node_cache(tree_t::node_ptr node);
+		
 		
 		void _intr_insert(tree_t::node_ptr node);
 		void _leaf_insert(tree_t::node_ptr node);
-		
 		
 		extern ListCache<string, tree_ptr> tree_cache;
 		extern ListCache<string, tree_t::node_ptr> leaf_cache, intr_cache;

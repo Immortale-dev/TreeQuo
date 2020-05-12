@@ -1,4 +1,5 @@
 **/*.o
 **/*.exe
+**/*.txt
 tmp/
 other/

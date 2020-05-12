@@ -120,8 +120,6 @@ namespace forest{
 			void write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data);
 			
 			// Other
-			//tree_t::node_ptr unvoid_node(void_shared node);
-			void clear_node_cache(tree_t::node_ptr node);
 			driver_t* init_driver();
 			tree_t::node_ptr create_node(string path, NODE_TYPES node_type);
 			TREE_TYPES get_type();

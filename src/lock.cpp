@@ -116,3 +116,63 @@ int forest::own_dec(tree_t::node_ptr node)
 	assert(node->data.owner_locks.c > 0);
 	return --node->data.owner_locks.c;
 }
+
+void forest::change_lock_read(tree_t::node_ptr node)
+{
+	change_lock_read(node.get());
+}
+
+void forest::change_lock_read(tree_t::Node* node)
+{
+	auto& ch_node = node->data.change_locks;
+	ch_node.g.lock();
+	if(ch_node.c++ == 0){
+		ch_node.m.lock();
+	}
+	ch_node.g.unlock();
+}
+
+void forest::change_unlock_read(tree_t::node_ptr node)
+{
+	change_unlock_read(node.get());
+}
+
+void forest::change_unlock_read(tree_t::Node* node)
+{
+	auto& ch_node = node->data.change_locks;
+	ch_node.g.lock();
+	if(--ch_node.c == 0){
+		ch_node.m.unlock();
+	}
+	ch_node.g.unlock();
+}
+
+void forest::change_lock_write(tree_t::node_ptr node)
+{
+	change_lock_write(node.get());
+}
+
+void forest::change_lock_write(tree_t::Node* node)
+{
+	node->data.change_locks.m.lock();
+}
+
+void forest::change_unlock_write(tree_t::node_ptr node)
+{
+	change_unlock_write(node.get());
+}
+
+void forest::change_unlock_write(tree_t::Node* node)
+{
+	node->data.change_locks.m.unlock();
+}
+
+void forest::change_lock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type)
+{
+	(type == tree_t::PROCESS_TYPE::WRITE) ? change_lock_write(node) : change_lock_read(node);
+}
+
+void forest::change_unlock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type)
+{
+	(type == tree_t::PROCESS_TYPE::WRITE) ? change_unlock_write(node) : change_unlock_read(node);
+}
