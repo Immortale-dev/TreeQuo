@@ -10,12 +10,21 @@
 #include <utility>
 #include <unordered_map>
 #include <cstdint>
+#include <iostream> //for debug
 #include "dbfs.hpp"
 #include "bplustree.hpp"
 #include "dbdriver.hpp"
 #include "dbexception.hpp"
 
 namespace forest{
+	
+	enum class TREE_TYPES { KEY_STRING };
+	enum class RECORD_POSITION{ BEGIN, END };
+	enum class KEY_TYPES { STRING };
+	enum class NODE_TYPES { INTR, LEAF };
+	
+	class Tree;
+	class file_data_t;
 	
 	using string = std::string;
 	using int_t = long long int;
@@ -26,17 +35,17 @@ namespace forest{
 	using int_a = std::atomic<int>;
 	using uintptr_t = std::uintptr_t;
 	
-	enum class TREE_TYPES { KEY_STRING };
-	class file_data_t;
-	
 	using file_data_ptr = std::shared_ptr<file_data_t>;
 	
 	using driver_t = DBDriver<string, file_data_ptr>;
 	using tree_t = BPlusTree<string, file_data_ptr, driver_t>;
+	
+	using tree_ptr = std::shared_ptr<Tree>;
+	using node_ptr = tree_t::node_ptr;
+	
+	
 
 	////////////////////////////////////////////////////////////////
-	
-	enum class RECORD_POSITION{ BEGIN, END };
 	
 	class file_data_t{
 		

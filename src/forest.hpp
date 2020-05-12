@@ -2,6 +2,8 @@
 #define FOREST_H
 
 
+#include "variables.hpp"
+#include "cache.hpp"
 #include "dbfs.hpp"
 #include "listcache.hpp"
 #include "dbexception.hpp"
@@ -34,7 +36,6 @@ namespace forest{
 	// Other
 	string read_leaf_item(file_data_ptr item);
 	
-	
 	// Root methods
 	void open_root();
 	void close_root();
@@ -44,40 +45,6 @@ namespace forest{
 	void insert_tree(string name, string path);
 	void erase_tree(string path);
 	tree_ptr get_tree(string path);
-	
-	// Cache
-	namespace cache{
-		void init_cache();
-		void release_cache();
-		void check_leaf_ref(string key);
-		void check_intr_ref(string key);
-		void check_tree_ref(string key);
-		void set_tree_cache_length(int length);
-		void set_intr_cache_length(int length);
-		void set_leaf_cache_length(int length);
-		void insert_item(string path, int pos);
-		void remove_item(string path, int pos);
-		
-		extern ListCache<string, tree_ptr> tree_cache;
-		extern ListCache<string, tree_t::node_ptr> leaf_cache, intr_cache;
-		extern mutex tree_cache_m, leaf_cache_m, intr_cache_m;
-		extern std::unordered_map<string, std::shared_future<tree_ptr> > tree_cache_q;
-		extern std::unordered_map<string, std::shared_future<tree_t::node_ptr> > intr_cache_q, leaf_cache_q;
-		extern std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
-		extern std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r, leaf_cache_r;
-		extern std::unordered_map<int_t, string> tree_cache_f;
-		extern std::unordered_map<string, std::unordered_map<int, int> > leaf_cache_i;
-	}
-	
-	// Constants
-	extern tree_ptr FOREST;
-	extern bool blossomed;
-	extern int DEFAULT_FACTOR;
-	extern int INTR_CACHE_LENGTH;
-	extern int LEAF_CACHE_LENGTH;
-	extern int TREE_CACHE_LENGTH;
-	extern string ROOT_TREE;
-	extern int ROOT_FACTOR;
 }
 
 #endif //FOREST_H

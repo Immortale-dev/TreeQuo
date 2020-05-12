@@ -16,15 +16,16 @@
 #include <atomic>
 #include <sstream>
 #include <cassert>
+
+#include "dbutils.hpp"
+#include "variables.hpp"
+#include "cache.hpp"
 #include "dbfs.hpp"
 #include "listcache.hpp"
-#include "dbutils.hpp"
+#include "node_data.hpp"
+#include "lock.hpp"
 
 namespace forest{
-	
-	class Tree;
-	using tree_ptr = std::shared_ptr<Tree>;
-	using node_ptr = tree_t::node_ptr;
 	
 	class Tree{
 		
@@ -32,9 +33,6 @@ namespace forest{
 		using child_keys_vec_ptr = std::vector<tree_t::key_type>*;
 		using child_values_vec_ptr = std::vector<tree_t::val_type>*;
 		using child_nodes_vec_ptr = std::vector<string>*;
-		
-		enum class KEY_TYPES { STRING };
-		enum class NODE_TYPES { INTR, LEAF };
 		
 		struct tree_leaf_read_t {
 			child_keys_vec_ptr child_keys;
@@ -55,14 +53,6 @@ namespace forest{
 			int factor;
 			string branch;
 		};
-		struct node_data_t {
-			bool ghost = true;
-			string path = "";
-			string prev = "-";
-			string next = "-";
-			node_data_t(bool ghost, string path) : ghost(ghost), path(path) {};
-		};
-		using node_data_ptr = std::shared_ptr<node_data_t>;
 		
 		
 		public:
@@ -95,15 +85,6 @@ namespace forest{
 			// Tree base methods
 			tree_base_read_t read_base(string filename);
 			static void seed_tree(DBFS::File* file, TREE_TYPES type, int factor);
-			
-			// Node data
-			node_data_ptr create_node_data(bool ghost, string path);
-			node_data_ptr create_node_data(bool ghost, string path, string prev, string next);
-			node_data_ptr get_node_data(tree_t::node_ptr node);
-			void set_node_data(tree_t::node_ptr node, node_data_ptr d);
-			void set_node_data(tree_t::Node* node, node_data_ptr d);
-			bool has_data(tree_t::node_ptr node);
-			bool has_data(tree_t::Node* node);
 		
 			// Proceed
 			void d_enter(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree);
@@ -127,8 +108,9 @@ namespace forest{
 			void d_save_base(tree_t::node_ptr node, tree_t* tree);
 			
 			// Getters
-			node_ptr get_intr(string path);
-			node_ptr get_leaf(string path);
+			tree_t::node_ptr get_intr(string path);
+			tree_t::node_ptr get_leaf(string path);
+			tree_t::node_ptr get_original(tree_t::node_ptr node);
 			//tree_ptr get_tree(string path);
 			
 			// Writers
@@ -137,25 +119,11 @@ namespace forest{
 			void write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t data);
 			void write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data);
 			
-			// Locks
-			void lock_read(tree_t::node_ptr node);
-			void lock_read(tree_t::Node* node);
-			void unlock_read(tree_t::node_ptr node);
-			void unlock_read(tree_t::Node* node);
-			void lock_write(tree_t::node_ptr node);
-			void lock_write(tree_t::Node* node);
-			void unlock_write(tree_t::node_ptr node);
-			void unlock_write(tree_t::Node* node);
-			void lock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type);
-			void lock_type(tree_t::Node* node, tree_t::PROCESS_TYPE type);
-			void unlock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type);
-			void unlock_type(tree_t::Node* node, tree_t::PROCESS_TYPE type);
-			
 			// Other
 			//tree_t::node_ptr unvoid_node(void_shared node);
 			void clear_node_cache(tree_t::node_ptr node);
 			driver_t* init_driver();
-			node_ptr create_node(string path, NODE_TYPES node_type);
+			tree_t::node_ptr create_node(string path, NODE_TYPES node_type);
 			TREE_TYPES get_type();
 			
 			tree_t* tree;
@@ -163,29 +131,6 @@ namespace forest{
 			mutex tree_m;
 			string name;
 	};
-	
-	
-	namespace cache{
-		void init_cache();
-		void release_cache();
-		void check_leaf_ref(string key);
-		void check_intr_ref(string key);
-		void check_tree_ref(string key);
-		void insert_item(string path, int pos);
-		void remove_item(string path, int pos);
-		
-		extern ListCache<string, tree_ptr> tree_cache;
-		extern ListCache<string, node_ptr> leaf_cache, intr_cache;
-		extern mutex tree_cache_m, leaf_cache_m, intr_cache_m;
-		extern std::unordered_map<string, std::shared_future<tree_ptr> > tree_cache_q;
-		extern std::unordered_map<string, std::shared_future<node_ptr> > intr_cache_q, leaf_cache_q;
-		extern std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
-		extern std::unordered_map<string, std::pair<node_ptr, int_a> > intr_cache_r, leaf_cache_r;
-		extern std::unordered_map<string, std::unordered_map<int, int> > leaf_cache_i;
-	}
-	
-	extern const string LEAF_NULL;
-	extern int DEFAULT_FACTOR;
 }
 
 #endif //FOREST_TREE_H
