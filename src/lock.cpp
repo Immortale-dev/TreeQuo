@@ -9,9 +9,6 @@ void forest::lock_read(tree_t::Node* node)
 {
 	auto& tl = node->data.travel_locks;
 	
-	//tl.m.lock();
-	//return;
-	
 	tl.m.lock();
 	if(tl.c++ == 0){
 		tl.g.lock();
@@ -27,9 +24,6 @@ void forest::unlock_read(tree_t::node_ptr node)
 void forest::unlock_read(tree_t::Node* node)
 {
 	auto& tl = node->data.travel_locks;
-	
-	//tl.m.unlock();
-	//return;
 	
 	tl.m.lock();
 	if(--tl.c == 0){
@@ -47,9 +41,6 @@ void forest::lock_write(tree_t::Node* node)
 {
 	auto& tl = node->data.travel_locks;
 	
-	//tl.m.lock();
-	//return;
-	
 	tl.g.lock();
 	tl.wlock = true;
 }
@@ -62,9 +53,6 @@ void forest::unlock_write(tree_t::node_ptr node)
 void forest::unlock_write(tree_t::Node* node)
 {
 	auto& tl = node->data.travel_locks;
-	
-	//tl.m.unlock();
-	//return;
 	
 	tl.wlock = false;
 	tl.g.unlock();
@@ -93,6 +81,49 @@ void forest::unlock_type(tree_t::Node* node, tree_t::PROCESS_TYPE type)
 bool forest::is_write_locked(tree_t::node_ptr node)
 {
 	return node->data.travel_locks.wlock;
+}
+
+
+void forest::lock_read(tree_t::child_item_type_ptr item)
+{
+	auto it = item->item->second;
+	it->g.lock();
+	if(it->c++ == 0){
+		it->m.lock();
+	}
+	it->g.unlock();
+}
+
+void forest::unlock_read(tree_t::child_item_type_ptr item)
+{
+	auto it = item->item->second;
+	it->g.lock();
+	if(--it->c == 0){
+		it->m.unlock();
+	}
+	it->g.unlock();
+}
+
+void forest::lock_write(tree_t::child_item_type_ptr item)
+{
+	auto it = item->item->second;
+	it->m.lock();
+}
+
+void forest::unlock_write(tree_t::child_item_type_ptr item)
+{
+	auto it = item->item->second;
+	it->m.unlock();
+}
+
+void forest::lock_type(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type)
+{
+	(type == tree_t::PROCESS_TYPE::WRITE) ? lock_write(item) : lock_read(item);
+}
+
+void forest::unlock_type(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type)
+{
+	(type == tree_t::PROCESS_TYPE::WRITE) ? unlock_write(item) : unlock_read(item);
 }
 
 
