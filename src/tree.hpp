@@ -60,6 +60,7 @@ namespace forest{
 			~Tree();
 			
 			string get_name();
+			TREE_TYPES get_type();
 			
 			tree_t* get_tree();
 			void insert(tree_t::key_type key, tree_t::val_type val, bool update=false);
@@ -111,7 +112,8 @@ namespace forest{
 			tree_t::node_ptr get_intr(string path);
 			tree_t::node_ptr get_leaf(string path);
 			tree_t::node_ptr get_original(tree_t::node_ptr node);
-			//tree_ptr get_tree(string path);
+			tree_t::node_ptr extract_node(tree_t::child_item_type_ptr item);
+			tree_t::node_ptr extract_locked_node(tree_t::child_item_type_ptr item, bool w_prior=false);
 			
 			// Writers
 			void write_intr(DBFS::File* file, tree_intr_read_t data);
@@ -122,7 +124,6 @@ namespace forest{
 			// Other
 			driver_t* init_driver();
 			tree_t::node_ptr create_node(string path, NODE_TYPES node_type);
-			TREE_TYPES get_type();
 			
 			tree_t* tree;
 			TREE_TYPES type;
