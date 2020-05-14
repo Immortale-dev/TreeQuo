@@ -28,6 +28,11 @@ namespace forest{
 	void lock_type(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type);
 	void unlock_type(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type);
 	
+	// Bunch lock
+	void change_lock_bunch(tree_t::node_ptr node, tree_t::node_ptr c_node, bool w_prior=false);
+	void change_lock_bunch(tree_t::node_ptr node, tree_t::node_ptr m_node, tree_t::node_ptr c_node, bool w_prior=false);
+	void change_lock_bunch(tree_t::node_ptr node, tree_t::child_item_type_ptr item, bool w_prior=false);
+	
 	// Own Lock for Node
 	void own_lock(tree_t::node_ptr node);
 	void own_unlock(tree_t::node_ptr node);

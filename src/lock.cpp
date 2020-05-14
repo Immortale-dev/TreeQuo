@@ -127,6 +127,133 @@ void forest::unlock_type(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE 
 }
 
 
+void forest::change_lock_bunch(tree_t::node_ptr node, tree_t::node_ptr c_node, bool w_prior)
+{
+	// quick-access
+	auto& ch_node = node->data.change_locks;
+	auto& ch_shift_node = c_node->data.change_locks;
+	
+	if(w_prior){
+		// Priority lock
+		ch_node.p.lock();
+		ch_shift_node.p.lock();
+		/// prior_lock{
+		
+		// Assign flag
+		ch_node.shared_lock = true;
+		ch_shift_node.shared_lock = true;
+		
+		/// }prior_lock
+		ch_node.p.unlock();
+		ch_shift_node.p.unlock();
+	}
+	
+	// Lock
+	std::lock(ch_node.m, ch_shift_node.m);
+	
+	if(w_prior){
+		// Priority lock
+		ch_node.p.lock();
+		ch_shift_node.p.lock();
+		/// prior_lock{
+		
+		// Cleanup
+		ch_node.shared_lock = false;
+		ch_shift_node.shared_lock = false;
+		
+		// Notify threads
+		ch_node.cond.notify_all();
+		ch_shift_node.cond.notify_all();
+		
+		/// }prior_lock
+		ch_node.p.unlock();
+		ch_shift_node.p.unlock();
+	}
+}
+
+void forest::change_lock_bunch(tree_t::node_ptr node, tree_t::node_ptr m_node, tree_t::node_ptr c_node, bool w_prior)
+{
+	// quick-access
+	auto& ch_node = node->data.change_locks;
+	auto& ch_new_node = m_node->data.change_locks;
+	auto& ch_link_node = c_node->data.change_locks; 
+	
+	if(w_prior){
+		// Priority lock
+		ch_node.p.lock();
+		ch_new_node.p.lock();
+		ch_link_node.p.lock();
+		/// prior_lock{
+		
+		// assing flag
+		ch_node.shared_lock = true;
+		ch_new_node.shared_lock = true;
+		ch_link_node.shared_lock = true;
+		
+		/// }prior_lock
+		ch_node.p.unlock();
+		ch_new_node.p.unlock();
+		ch_link_node.p.unlock();
+	}
+	
+	// Lock nodes
+	std::lock(ch_node.m, ch_new_node.m, ch_link_node.m);
+	
+	if(w_prior){
+		// Priority lock
+		ch_node.p.lock();
+		ch_new_node.p.lock();
+		ch_link_node.p.lock();
+		/// prior_lock{
+		
+		// Cleanup
+		ch_node.shared_lock = false;
+		ch_new_node.shared_lock = false;
+		ch_link_node.shared_lock = false;
+		
+		// Notify threads
+		ch_node.cond.notify_all();
+		ch_new_node.cond.notify_all();
+		ch_link_node.cond.notify_all();
+		
+		/// }prior_lock
+		ch_node.p.unlock();
+		ch_new_node.p.unlock();
+		ch_link_node.p.unlock();
+	}
+}
+
+void forest::change_lock_bunch(tree_t::node_ptr node, tree_t::child_item_type_ptr item, bool w_prior)
+{	
+	// Quick-access
+	auto& ch_node = node->data.change_locks;
+	
+	// Set the flags
+	if(w_prior){
+		ch_node.p.lock();
+		/// prior_lock{
+		ch_node.shared_lock = true;
+		item->item->second->shared_lock = true;
+		/// }prior_lock
+		ch_node.p.unlock();
+	}
+	
+	// Lock
+	std::lock(item->item->second->m, ch_node.m);
+	
+	// Notify
+	if(w_prior){
+		ch_node.p.lock();
+		/// prior_lock{
+		ch_node.shared_lock = false;
+		item->item->second->shared_lock = false;
+		ch_node.cond.notify_all();
+		/// }prior_lock
+		ch_node.p.unlock();
+	}
+}
+
+
 void forest::own_lock(tree_t::node_ptr node)
 {
 	node->data.owner_locks.m.lock();
