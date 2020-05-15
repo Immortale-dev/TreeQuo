@@ -7,7 +7,6 @@ namespace forest{
 		ListCache<string, tree_t::node_ptr> leaf_cache(LEAF_CACHE_LENGTH), intr_cache(INTR_CACHE_LENGTH);
 		mutex tree_cache_m, leaf_cache_m, intr_cache_m;
 		std::unordered_map<string, std::shared_future<tree_ptr> > tree_cache_q;
-		std::unordered_map<string, std::shared_future<tree_t::node_ptr> > intr_cache_q, leaf_cache_q;
 		std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
 		std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r, leaf_cache_r;
 		std::unordered_map<string, std::unordered_map<int, int> > leaf_cache_i;

@@ -38,6 +38,14 @@ forest::tree_ptr forest::Tree::get(string path)
 {
 	tree_ptr t;
 	
+	// Check for future
+	if(cache::tree_cache_q.count(path)){
+		std::shared_future<tree_ptr> f = cache::tree_cache_q[path];
+		cache::tree_cache_m.unlock();
+		t = f.get();
+		cache::tree_cache_m.lock();
+	}
+	
 	// Try to get from cache
 	if(cache::tree_cache.has(path)){
 		t = cache::tree_cache.get(path);
@@ -48,19 +56,6 @@ forest::tree_ptr forest::Tree::get(string path)
 	if(cache::tree_cache_r.count(path)){
 		t = cache::tree_cache_r[path].first;
 		cache::tree_cache.push(path, t);
-		return t;
-	}
-	
-	/////////////////////////////////////////
-	// TODO: POTENTIAL_RACE_CONDITION_HERE //
-	/////////////////////////////////////////
-	
-	// Check for future
-	if(cache::tree_cache_q.count(path)){
-		std::shared_future<tree_ptr> f = cache::tree_cache_q[path];
-		cache::tree_cache_m.unlock();
-		t = f.get();
-		cache::tree_cache_m.lock();
 		return t;
 	}
 	

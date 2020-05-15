@@ -50,10 +50,8 @@ namespace forest{
 		extern ListCache<string, tree_t::node_ptr> leaf_cache, intr_cache;
 		extern mutex tree_cache_m, leaf_cache_m, intr_cache_m;
 		extern std::unordered_map<string, std::shared_future<tree_ptr> > tree_cache_q;
-		extern std::unordered_map<string, std::shared_future<tree_t::node_ptr> > intr_cache_q, leaf_cache_q;
 		extern std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
 		extern std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r, leaf_cache_r;
-		extern std::unordered_map<int_t, string> tree_cache_f;
 		extern std::unordered_map<string, std::unordered_map<int, int> > leaf_cache_i;
 	}
 }
