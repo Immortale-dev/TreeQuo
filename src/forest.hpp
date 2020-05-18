@@ -20,7 +20,7 @@ namespace forest{
 	void delete_tree(string name);
 	tree_ptr find_tree(string name);
 	tree_ptr open_tree(string path);
-	void close_tree(string path);
+	void leave_tree(string path);
 	
 	void insert_leaf(string name, tree_t::key_type key, tree_t::val_type val);
 	void update_leaf(string name, tree_t::key_type key, tree_t::val_type val);

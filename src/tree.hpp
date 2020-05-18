@@ -83,9 +83,11 @@ namespace forest{
 			void materialize_leaf(tree_t::node_ptr node);
 			void unmaterialize_leaf(tree_t::node_ptr node);
 			
-			// Tree base methods
+			// Tree methods
 			tree_base_read_t read_base(string filename);
 			static void seed_tree(DBFS::File* file, TREE_TYPES type, int factor);
+			void tree_reserve();
+			void tree_release();
 		
 			// Proceed
 			void d_enter(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree);

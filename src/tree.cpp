@@ -120,6 +120,28 @@ void forest::Tree::seed_tree(DBFS::File* f, TREE_TYPES type, int factor)
 	delete f;
 }
 
+void forest::Tree::tree_reserve()
+{
+	if(name == ROOT_TREE)
+		return;
+	cache::tree_cache_m.lock();
+	assert(cache::tree_cache_r.count(name));
+	assert(cache::tree_cache_r[name].second > 0);
+	cache::tree_cache_r[name].second++;
+	cache::tree_cache_m.unlock();
+}
+
+void forest::Tree::tree_release()
+{
+	if(name == ROOT_TREE)
+		return;
+	cache::tree_cache_m.lock();
+	assert(cache::tree_cache_r.count(name));
+	assert(cache::tree_cache_r[name].second > 0);
+	cache::tree_cache_r[name].second--;
+	cache::check_tree_ref(name);
+	cache::tree_cache_m.unlock();
+}
 
 forest::Tree::tree_base_read_t forest::Tree::read_base(string filename)
 {
@@ -955,6 +977,11 @@ void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROC
 	/// }lock
 	cache::leaf_unlock();
 	
+	// Reserve tree
+	if(type == tree_t::PROCESS_TYPE::READ){
+		tree_reserve();
+	}
+	
 	// Lock item
 	lock_type(item, type);
 	
@@ -991,6 +1018,11 @@ void forest::Tree::d_item_release(tree_t::child_item_type_ptr item, tree_t::PROC
 	cache::release_leaf_node(path);
 	/// }lock
 	cache::leaf_unlock();
+	
+	// Release tree
+	if(type == tree_t::PROCESS_TYPE::READ){
+		tree_release();
+	}
 	
 	// Change unlock if it is READ release as it was locked in `extract_locked_node`
 	if(type == tree_t::PROCESS_TYPE::READ){

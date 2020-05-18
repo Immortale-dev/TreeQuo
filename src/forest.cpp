@@ -65,7 +65,7 @@ void forest::delete_tree(string name)
 	erase_tree(path);
 }
 
-void forest::close_tree(string path)
+void forest::leave_tree(string path)
 {
 	cache::tree_cache_m.lock();
 	cache::tree_cache_r[path].second--;
@@ -100,21 +100,21 @@ void forest::insert_leaf(string name, tree_t::key_type key, tree_t::val_type val
 {
 	tree_ptr tree = find_tree(name);
 	tree->insert(key, val);
-	close_tree(tree->get_name());
+	leave_tree(tree->get_name());
 }
 
 void forest::update_leaf(string name, tree_t::key_type key, tree_t::val_type val)
 {
 	tree_ptr tree = find_tree(name);
 	tree->insert(key, val, true);
-	close_tree(tree->get_name());
+	leave_tree(tree->get_name());
 }
 
 void forest::erase_leaf(string name, tree_t::key_type key)
 {
 	tree_ptr tree = find_tree(name);
 	tree->erase(key);
-	close_tree(tree->get_name());
+	leave_tree(tree->get_name());
 }
 
 forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key)
@@ -122,11 +122,11 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key)
 	tree_ptr tree = find_tree(name);
 	try{
 		tree_t::iterator t = tree->find(key);
-		close_tree(tree->get_name());
+		leave_tree(tree->get_name());
 		return LeafRecord_ptr(new LeafRecord(t));
 	} 
 	catch(DBException& e) {
-		close_tree(tree->get_name());
+		leave_tree(tree->get_name());
 		throw e;
 	}
 }
@@ -140,14 +140,13 @@ forest::LeafRecord_ptr forest::find_leaf(string name, RECORD_POSITION position)
 			t = tree->get_tree()->begin();
 		}
 		else{
-			t = tree->get_tree()->end();
-			--t;
+			t = --tree->get_tree()->end();
 		}
-		close_tree(tree->get_name());
+		leave_tree(tree->get_name());
 		return LeafRecord_ptr(new LeafRecord(t));
 	}
 	catch(DBException& e) {
-		close_tree(tree->get_name());
+		leave_tree(tree->get_name());
 		throw e;
 	}
 }
