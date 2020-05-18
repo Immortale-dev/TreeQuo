@@ -9,7 +9,7 @@ OBJS:=$(SRCS:%.cpp=%.o)
 
 LIB_CACHE:=inc/listcache
 LIB_FS:=inc/dbfs
-LIB_BPTB:=inc/bplustreebase
+LIB_BPTB:=inc/bplustree
 
 LIBS:=$(LIB_CACHE) $(LIB_FS) $(LIB_BPTB)
 LIBS_SRC:=$(LIBS:%=%/src)
