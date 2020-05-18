@@ -7,12 +7,11 @@ SRCPATH:=src/
 SRCS:=$(wildcard $(SRCPATH)*.cpp)
 OBJS:=$(SRCS:%.cpp=%.o)
 
-LIB_BPT:=inc/bplustree
 LIB_CACHE:=inc/listcache
 LIB_FS:=inc/dbfs
-LIB_BPTB:=$(LIB_BPT)/inc/bplustreebase
+LIB_BPTB:=inc/bplustreebase
 
-LIBS:=$(LIB_BPT) $(LIB_CACHE) $(LIB_FS) $(LIB_BPTB)
+LIBS:=$(LIB_CACHE) $(LIB_FS) $(LIB_BPTB)
 LIBS_SRC:=$(LIBS:%=%/src)
 LIBS_SRC_I:=$(LIBS_SRC:%=-I%)
 LIBS_SRCPATH:=$(LIBS_SRC:%=%/)

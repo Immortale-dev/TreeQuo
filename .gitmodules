@@ -4,6 +4,3 @@
 [submodule "inc/dbfs"]
 	path = inc/dbfs
 	url = git@github.com:webdeveloperukraine/dbfs.git
-[submodule "inc/bplustree"]
-	path = inc/bplustree
-	url = git@github.com:webdeveloperukraine/BPlusTree.git
