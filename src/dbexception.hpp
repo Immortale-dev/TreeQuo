@@ -27,7 +27,7 @@ class DBException : public std::exception {
 		
 	private:
 		std::string msg;
-		const std::string error_messages[6] = {
+		static inline const std::string error_messages[6] = {
 			"Cannot create root files",
 			"Cannot create files",
 			"Not valid tree type",

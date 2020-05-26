@@ -237,7 +237,9 @@ void forest::Tree::materialize_intr(tree_t::node_ptr node)
 		
 		cache::intr_lock();
 		/// lock{
-		n = create_node(temp_path, NODE_TYPES::INTR);
+		//n = create_node(temp_path, NODE_TYPES::INTR);
+		n = tree_t::node_ptr(new tree_t::InternalNode(node->get_keys(), node->get_nodes()));
+		set_node_data(n, create_node_data(true, temp_path));
 		data = create_node_data(false, temp_path);
 		set_node_data(node, data);
 		cache::intr_insert(n);
@@ -292,7 +294,9 @@ void forest::Tree::materialize_leaf(tree_t::node_ptr node)
 		
 		cache::leaf_lock();
 		/// lock{
-		n = create_node(temp_path, NODE_TYPES::LEAF);
+		//n = create_node(temp_path, NODE_TYPES::LEAF);
+		n = tree_t::node_ptr(new tree_t::LeafNode(node->get_childs()));
+		set_node_data(n, create_node_data(true, temp_path));
 		data = create_node_data(false, temp_path);
 		set_node_data(node, data);
 		cache::leaf_insert(n);
@@ -333,8 +337,8 @@ void forest::Tree::materialize_leaf(tree_t::node_ptr node)
 	node->set_childs(n->get_childs());
 	node_data_ptr ndata = get_node_data(n);
 	
-	next_leaf = create_node(ndata->next, NODE_TYPES::LEAF);
-	prev_leaf = create_node(ndata->prev, NODE_TYPES::LEAF);
+	next_leaf = create_node(ndata->next, NODE_TYPES::LEAF, true);
+	prev_leaf = create_node(ndata->prev, NODE_TYPES::LEAF, true);
 	
 	if(ndata->prev != LEAF_NULL){
 		node->set_prev_leaf(prev_leaf);
@@ -426,6 +430,20 @@ forest::node_ptr forest::Tree::create_node(string path, NODE_TYPES node_type)
 	return node_ptr(node);
 }
 
+forest::node_ptr forest::Tree::create_node(string path, NODE_TYPES node_type, bool empty)
+{
+	tree_t::Node* node;
+	if(node_type == NODE_TYPES::INTR){
+		node = new tree_t::InternalNode(nullptr, nullptr);
+	} else {
+		node = new tree_t::LeafNode(nullptr);
+	}
+	if(path != LEAF_NULL){
+		set_node_data(node, create_node_data(true, path));
+	}
+	return node_ptr(node);
+}
+
 forest::string forest::Tree::get_name()
 {
 	return name;
@@ -471,14 +489,18 @@ forest::tree_t::node_ptr forest::Tree::get_intr(string path)
 		node_ptr n;
 		string& child_path = (*vals_ptr)[i];
 		if(intr_d.childs_type == NODE_TYPES::INTR){
-			n = node_ptr(new typename tree_t::InternalNode());
+			n = node_ptr(new typename tree_t::InternalNode(nullptr, nullptr));
 		} else {
-			n = node_ptr(new typename tree_t::LeafNode());
+			n = node_ptr(new typename tree_t::LeafNode(nullptr));
 		}
 		set_node_data(n, create_node_data(true, child_path));
 		intr_data->add_nodes(i,n);
 	}
 	set_node_data(intr_data, create_node_data(false, path));
+	
+	// Clear memory
+	delete keys_ptr;
+	delete vals_ptr;
 	
 	// Unlock node
 	cache::intr_lock();
@@ -534,6 +556,11 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 		last_len += (*vals_length)[i];
 	}
 	
+	// Clear memory
+	delete keys_ptr;
+	delete vals_length;
+	
+	// Update records positions
 	int childs_size = leaf_data->childs_size();
 	auto childs = leaf_data->get_childs();
 	for(int i=0;i<childs_size;i++){
@@ -629,6 +656,10 @@ void forest::Tree::write_intr(DBFS::File* file, tree_intr_read_t data)
 	}
 	file->write(ss.str() + "\n");
 	file->write(valsStr);
+	
+	// Clear memory
+	delete keys;
+	delete paths;
 }
 
 void forest::Tree::write_base(DBFS::File* file, tree_base_read_t data)
@@ -655,6 +686,10 @@ void forest::Tree::write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t
 	}
 	file->write(ss.str()+"\n");
 	file->write(lenStr+"\n");
+	
+	// Clear memory
+	delete keys;
+	delete lengths;
 }
 
 void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data)
@@ -765,6 +800,7 @@ void forest::Tree::d_insert(tree_t::node_ptr node, tree_t* tree)
 		write_intr(f, intr_d);
 		
 		f->close();
+		delete f;
 		
 		node_data_ptr data = get_node_data(node);
 		string cur_name = data->path;
@@ -1238,6 +1274,7 @@ void forest::Tree::d_save_base(tree_t::node_ptr node, tree_t* tree)
 	string new_base_file_name = base_f->name();
 	
 	base_f->close();
+	delete base_f;
 	DBFS::remove(base_file_name);
 	DBFS::move(new_base_file_name, base_file_name);
 }

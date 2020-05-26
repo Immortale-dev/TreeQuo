@@ -31,8 +31,12 @@ namespace forest{
 		
 		using child_lengths_vec_ptr = std::vector<uint_t>*;
 		using child_keys_vec_ptr = std::vector<tree_t::key_type>*;
+		using tree_node_type = tree_t::Node::nodes_type;
+		using tree_keys_type = tree_t::Node::keys_type;
 		using child_values_vec_ptr = std::vector<tree_t::val_type>*;
 		using child_nodes_vec_ptr = std::vector<string>*;
+		
+		
 		
 		struct tree_leaf_read_t {
 			child_keys_vec_ptr child_keys;
@@ -126,6 +130,7 @@ namespace forest{
 			// Other
 			driver_t* init_driver();
 			tree_t::node_ptr create_node(string path, NODE_TYPES node_type);
+			tree_t::node_ptr create_node(string path, NODE_TYPES node_type, bool empty);
 			
 			tree_t* tree;
 			TREE_TYPES type;

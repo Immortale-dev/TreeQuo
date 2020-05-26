@@ -720,4 +720,78 @@ DESCRIBE("Test multi threads", {
 			});
 		});
 	});
+	
+	DESCRIBE_SKIP("Initialize forest at tmp/mem", {
+		
+		AFTER_ALL({
+			int a;
+			cout << "COMPLETE" << endl;
+			cin >> a;
+		});
+		
+		DESCRIBE("TEST FOR MEMORY LEAKS", {
+		
+			BEFORE_ALL({
+				forest::bloom("tmp/mem");
+				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 10);
+			});
+			
+			IT_ONLY("Should add 10000 records, and the memory should not increase infinitely", {
+				for(int i=0;i<1000;i++){
+					forest::insert_leaf("test", "t"+std::to_string(i), forest::leaf_value("test_values"));
+					//if(i%100 == 0){
+					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << " | " << active_nodes_count << endl;
+					//}
+				}
+			});
+			
+			IT_ONLY("Should move through 10000 records, and the memory should not increase infinitely", {
+				auto it = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
+				//int i=0;
+					
+				do{					
+					string sval = forest::read_leaf_item(it->val());
+					//if(i++%100 == 0){
+					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << endl;
+					//}
+				}while(it->move_forward());
+			
+			});
+			
+			IT_ONLY("Should delete 10000 records, and the memory should not increase infinitely", {
+				for(int i=0;i<1000;i++){
+					forest::erase_leaf("test", "t"+std::to_string(i));
+					//if(i%100 == 0){
+					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << endl;
+					//}
+				}
+			});
+			
+			IT_ONLY("Should create 1000 trees, and the memory should not increase infinitely", {
+				for(int i=0;i<1000;i++){
+					forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_"+to_string(i), 10);
+					//if(i%100 == 0){
+					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << endl;
+					//}
+				}
+			});
+			
+			IT_ONLY("Should delete 1000 trees, and the memory should not increase infinitely", {
+				for(int i=0;i<1000;i++){
+					forest::delete_tree("test_"+to_string(i));
+					//if(i%100 == 0){
+					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << endl;
+					//}
+				}
+			});
+			
+			AFTER_ALL({
+				forest::delete_tree("test");
+				forest::fold();
+				// Remove dirs?
+			});
+		
+		});
+		
+	});
 });

@@ -48,6 +48,7 @@ void forest::cache::check_leaf_ref(string key)
 		for(auto& it : (*node->get_childs())){
 			it->item->second->set_file(nullptr);
 			it->item->second = nullptr;
+			it->node = nullptr;
 		}
 		node->set_next_leaf(nullptr);
 		node->set_prev_leaf(nullptr);

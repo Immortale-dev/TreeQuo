@@ -92,7 +92,7 @@ BPlusTree<Key, T, D>::BPlusTree(int factor, node_ptr node, long count, D* driver
 template <class Key, class T, typename D>
 BPlusTree<Key, T, D>::~BPlusTree() 
 {
-	
+	delete driver;
 }
 
 template <class Key, class T, typename D>
