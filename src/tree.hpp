@@ -36,8 +36,6 @@ namespace forest{
 		using child_values_vec_ptr = std::vector<tree_t::val_type>*;
 		using child_nodes_vec_ptr = std::vector<string>*;
 		
-		
-		
 		struct tree_leaf_read_t {
 			child_keys_vec_ptr child_keys;
 			child_lengths_vec_ptr child_lengths;

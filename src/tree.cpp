@@ -156,6 +156,11 @@ forest::Tree::tree_base_read_t forest::Tree::read_base(string filename)
 	f->read(t); ret.type = (TREE_TYPES)t;
 	f->read(ret.branch);
 	f->read(lt); ret.branch_type = NODE_TYPES(lt);
+	
+	if(f->fail()){
+		delete f;
+		throw DBException(DBException::ERRORS::CANNOT_READ_FILE);
+	}
 
 	f->close();
 	delete f;
@@ -180,6 +185,13 @@ forest::Tree::tree_intr_read_t forest::Tree::read_intr(string filename)
 	}
 	for(int i=0;i<c;i++){
 		f->read((*vals)[i]);
+	}
+	
+	if(f->fail()){
+		delete keys;
+		delete vals;
+		delete f;
+		throw DBException(DBException::ERRORS::CANNOT_READ_FILE);
 	}
 	
 	f->close();
@@ -214,6 +226,14 @@ forest::Tree::tree_leaf_read_t forest::Tree::read_leaf(string filename)
 		f->read((*vals_lengths)[i]);
 	}
 	start_data = f->tell()+1;
+	
+	if(f->fail()){
+		delete keys;
+		delete vals_lengths;
+		delete f;
+		throw DBException(DBException::ERRORS::CANNOT_READ_FILE);
+	}
+	
 	tree_leaf_read_t t;
 	t.child_keys = keys;
 	t.child_lengths = vals_lengths;
@@ -660,11 +680,18 @@ void forest::Tree::write_intr(DBFS::File* file, tree_intr_read_t data)
 	// Clear memory
 	delete keys;
 	delete paths;
+	
+	if(file->fail()){
+		throw DBException(DBException::ERRORS::CANNOT_WRITE_FILE);
+	}
 }
 
 void forest::Tree::write_base(DBFS::File* file, tree_base_read_t data)
 {
 	file->write( to_string(data.count) + " " + to_string(data.factor) + " " + to_string((int)data.type) + " " + data.branch + " " + to_string((int)data.branch_type) + "\n" );
+	if(file->fail()){
+		throw DBException(DBException::ERRORS::CANNOT_WRITE_FILE);
+	}
 }
 
 void forest::Tree::write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t data)
@@ -690,6 +717,10 @@ void forest::Tree::write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t
 	// Clear memory
 	delete keys;
 	delete lengths;
+	
+	if(file->fail()){
+		throw DBException(DBException::ERRORS::CANNOT_WRITE_FILE);
+	}
 }
 
 void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data)
@@ -706,7 +737,7 @@ void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val
 			file->write(buf, rsz);
 		}
 	} catch(...){
-		// TODO: throw error here
+		throw DBException(DBException::ERRORS::CANNOT_WRITE_FILE);
 	}
 	
 	delete[] buf;
