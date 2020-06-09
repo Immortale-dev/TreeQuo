@@ -43,9 +43,29 @@ namespace forest{
 	using tree_ptr = std::shared_ptr<Tree>;
 	using node_ptr = tree_t::node_ptr;
 	
-	
-
 	////////////////////////////////////////////////////////////////
+	
+	inline node_addition& get_data(node_ptr node)
+	{
+		if(node->is_leaf()){
+			auto r_node = std::static_pointer_cast<BPTLeaf<string, file_data_ptr> >(node);
+			return r_node->data;
+		} else {
+			auto r_node = std::static_pointer_cast<BPTInternal<string, file_data_ptr> >(node);
+			return r_node->data;
+		}
+	}
+	
+	inline node_addition& get_data(tree_t::Node* node)
+	{
+		if(node->is_leaf()){
+			auto r_node = static_cast<BPTLeaf<string, file_data_ptr>* >(node);
+			return r_node->data;
+		} else {
+			auto r_node = static_cast<BPTInternal<string, file_data_ptr>* >(node);
+			return r_node->data;
+		}
+	}
 	
 	class file_data_t{
 		

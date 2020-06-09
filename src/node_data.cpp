@@ -15,7 +15,7 @@ forest::node_data_ptr forest::create_node_data(bool ghost, string path, string p
 
 forest::node_data_ptr forest::get_node_data(tree_t::node_ptr node)
 {
-	return std::static_pointer_cast<node_data_t>(node->data.drive_data);
+	return std::static_pointer_cast<node_data_t>(get_data(node).drive_data);
 }
 
 void forest::set_node_data(tree_t::node_ptr node, node_data_ptr d)
@@ -25,7 +25,7 @@ void forest::set_node_data(tree_t::node_ptr node, node_data_ptr d)
 
 void forest::set_node_data(tree_t::Node* node, node_data_ptr d)
 {
-	node->data.drive_data = d;
+	get_data(node).drive_data = d;
 }
 
 bool forest::has_data(tree_t::node_ptr node)
@@ -35,5 +35,5 @@ bool forest::has_data(tree_t::node_ptr node)
 
 bool forest::has_data(tree_t::Node* node)
 {
-	return (bool)(node->data.drive_data);
+	return (bool)(get_data(node).drive_data);
 }

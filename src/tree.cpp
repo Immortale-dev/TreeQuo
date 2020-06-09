@@ -283,7 +283,7 @@ void forest::Tree::materialize_intr(tree_t::node_ptr node)
 	}
 	
 	// Lock the original node
-	if(node->data.travel_locks.wlock){
+	if(get_data(node).travel_locks.wlock){
 		lock_write(n);
 	} else {
 		lock_read(n);
@@ -340,7 +340,7 @@ void forest::Tree::materialize_leaf(tree_t::node_ptr node)
 	}
 	
 	// Lock the original node
-	if(node->data.travel_locks.wlock){
+	if(get_data(node).travel_locks.wlock){
 		lock_write(n);
 	} else {
 		lock_read(n);
@@ -621,7 +621,7 @@ forest::tree_t::node_ptr forest::Tree::get_original(tree_t::node_ptr node)
 forest::tree_t::node_ptr forest::Tree::extract_node(tree_t::child_item_type_ptr item)
 {
 	std::lock_guard<std::mutex> lock(item->item->second->o);
-	return item->node;
+	return item->node.lock();
 }
 
 forest::tree_t::node_ptr forest::Tree::extract_locked_node(tree_t::child_item_type_ptr item, bool w_prior)
@@ -640,7 +640,7 @@ forest::tree_t::node_ptr forest::Tree::extract_locked_node(tree_t::child_item_ty
 		
 		// Check for priority
 		if(w_prior){
-			auto& ch_node = node->data.change_locks;
+			auto& ch_node = get_data(node).change_locks;
 			std::unique_lock<std::mutex> plock(ch_node.p);
 			while(ch_node.shared_lock && !item->item->second->shared_lock){
 				ch_node.cond.wait(plock);
@@ -650,7 +650,7 @@ forest::tree_t::node_ptr forest::Tree::extract_locked_node(tree_t::child_item_ty
 		change_lock_read(node);
 		
 		// If it is still the same node - break the loop
-		if(path == get_node_data(item->node)->path){
+		if(path == get_node_data(item->node.lock())->path){
 			break;
 		}
 		
@@ -1065,7 +1065,7 @@ void forest::Tree::d_item_release(tree_t::child_item_type_ptr item, tree_t::PROC
 	
 	if(type == tree_t::PROCESS_TYPE::WRITE){
 		cache::leaf_lock();
-		node = item->node;
+		node = item->node.lock();
 		path = get_node_data(node)->path;
 		node = get_leaf(path);
 		cache::leaf_unlock();
@@ -1123,10 +1123,10 @@ void forest::Tree::d_item_move(tree_t::node_ptr node, bool release, tree_t* tree
 	
 	for(int i=0;i<childs_size;i++){
 		tree_t::child_item_type_ptr it = (*childs)[i];
-		if(!it->node || !node){
+		if(!it->node.lock() || !node){
 			continue;
 		}
-		node_ptr n = it->node;
+		node_ptr n = it->node.lock();
 		string path = get_node_data(n)->path;
 		if(!cache::leaf_cache_i.count(path) || !cache::leaf_cache_i[path].count(it->pos)){
 			continue;
@@ -1251,7 +1251,7 @@ void forest::Tree::d_leaf_free(tree_t::node_ptr node, tree_t* tree)
 	node = get_leaf(get_node_data(node)->path);
 	/// }lock
 	cache::leaf_unlock();
-	node->data.change_locks.m.unlock();
+	get_data(node).change_locks.m.unlock();
 }
 
 void forest::Tree::d_leaf_ref(tree_t::node_ptr node, tree_t::node_ptr ref_node, tree_t::LEAF_REF ref, tree_t* tree)

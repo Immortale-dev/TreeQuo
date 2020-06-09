@@ -14,6 +14,7 @@ namespace forest{
 	extern string ROOT_TREE;
 	extern int ROOT_FACTOR;
 	extern const string LEAF_NULL;
+	extern int LOGGER_FLAG;
 }
 
 #endif // FOREST_VARIABLES

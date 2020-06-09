@@ -7,7 +7,7 @@ void forest::lock_read(tree_t::node_ptr node)
 
 void forest::lock_read(tree_t::Node* node)
 {
-	auto& tl = node->data.travel_locks;
+	auto& tl = get_data(node).travel_locks;
 	
 	tl.m.lock();
 	if(tl.c++ == 0){
@@ -23,7 +23,7 @@ void forest::unlock_read(tree_t::node_ptr node)
 
 void forest::unlock_read(tree_t::Node* node)
 {
-	auto& tl = node->data.travel_locks;
+	auto& tl = get_data(node).travel_locks;
 	
 	tl.m.lock();
 	if(--tl.c == 0){
@@ -39,7 +39,7 @@ void forest::lock_write(tree_t::node_ptr node)
 
 void forest::lock_write(tree_t::Node* node)
 {
-	auto& tl = node->data.travel_locks;
+	auto& tl = get_data(node).travel_locks;
 	
 	tl.g.lock();
 	tl.wlock = true;
@@ -52,7 +52,7 @@ void forest::unlock_write(tree_t::node_ptr node)
 
 void forest::unlock_write(tree_t::Node* node)
 {
-	auto& tl = node->data.travel_locks;
+	auto& tl = get_data(node).travel_locks;
 	
 	tl.wlock = false;
 	tl.g.unlock();
@@ -80,7 +80,7 @@ void forest::unlock_type(tree_t::Node* node, tree_t::PROCESS_TYPE type)
 
 bool forest::is_write_locked(tree_t::node_ptr node)
 {
-	return node->data.travel_locks.wlock;
+	return get_data(node).travel_locks.wlock;
 }
 
 
@@ -130,8 +130,8 @@ void forest::unlock_type(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE 
 void forest::change_lock_bunch(tree_t::node_ptr node, tree_t::node_ptr c_node, bool w_prior)
 {
 	// quick-access
-	auto& ch_node = node->data.change_locks;
-	auto& ch_shift_node = c_node->data.change_locks;
+	auto& ch_node = get_data(node).change_locks;
+	auto& ch_shift_node = get_data(c_node).change_locks;
 	
 	if(w_prior){
 		// Priority lock
@@ -174,9 +174,9 @@ void forest::change_lock_bunch(tree_t::node_ptr node, tree_t::node_ptr c_node, b
 void forest::change_lock_bunch(tree_t::node_ptr node, tree_t::node_ptr m_node, tree_t::node_ptr c_node, bool w_prior)
 {
 	// quick-access
-	auto& ch_node = node->data.change_locks;
-	auto& ch_new_node = m_node->data.change_locks;
-	auto& ch_link_node = c_node->data.change_locks; 
+	auto& ch_node = get_data(node).change_locks;
+	auto& ch_new_node = get_data(m_node).change_locks;
+	auto& ch_link_node = get_data(c_node).change_locks; 
 	
 	if(w_prior){
 		// Priority lock
@@ -226,7 +226,7 @@ void forest::change_lock_bunch(tree_t::node_ptr node, tree_t::node_ptr m_node, t
 void forest::change_lock_bunch(tree_t::node_ptr node, tree_t::child_item_type_ptr item, bool w_prior)
 {	
 	// Quick-access
-	auto& ch_node = node->data.change_locks;
+	auto& ch_node = get_data(node).change_locks;
 	
 	// Set the flags
 	if(w_prior){
@@ -256,23 +256,23 @@ void forest::change_lock_bunch(tree_t::node_ptr node, tree_t::child_item_type_pt
 
 void forest::own_lock(tree_t::node_ptr node)
 {
-	node->data.owner_locks.m.lock();
+	get_data(node).owner_locks.m.lock();
 }
 
 void forest::own_unlock(tree_t::node_ptr node)
 {
-	node->data.owner_locks.m.unlock();
+	get_data(node).owner_locks.m.unlock();
 }
 
 int forest::own_inc(tree_t::node_ptr node)
 {
-	return node->data.owner_locks.c++;
+	return get_data(node).owner_locks.c++;
 }
 
 int forest::own_dec(tree_t::node_ptr node)
 {
-	assert(node->data.owner_locks.c > 0);
-	return --node->data.owner_locks.c;
+	assert(get_data(node).owner_locks.c > 0);
+	return --get_data(node).owner_locks.c;
 }
 
 void forest::change_lock_read(tree_t::node_ptr node)
@@ -282,7 +282,7 @@ void forest::change_lock_read(tree_t::node_ptr node)
 
 void forest::change_lock_read(tree_t::Node* node)
 {
-	auto& ch_node = node->data.change_locks;
+	auto& ch_node = get_data(node).change_locks;
 	ch_node.g.lock();
 	if(ch_node.c++ == 0){
 		ch_node.m.lock();
@@ -297,7 +297,7 @@ void forest::change_unlock_read(tree_t::node_ptr node)
 
 void forest::change_unlock_read(tree_t::Node* node)
 {
-	auto& ch_node = node->data.change_locks;
+	auto& ch_node = get_data(node).change_locks;
 	ch_node.g.lock();
 	if(--ch_node.c == 0){
 		ch_node.m.unlock();
@@ -312,7 +312,7 @@ void forest::change_lock_write(tree_t::node_ptr node)
 
 void forest::change_lock_write(tree_t::Node* node)
 {
-	node->data.change_locks.m.lock();
+	get_data(node).change_locks.m.lock();
 }
 
 void forest::change_unlock_write(tree_t::node_ptr node)
@@ -322,7 +322,7 @@ void forest::change_unlock_write(tree_t::node_ptr node)
 
 void forest::change_unlock_write(tree_t::Node* node)
 {
-	node->data.change_locks.m.unlock();
+	get_data(node).change_locks.m.unlock();
 }
 
 void forest::change_lock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type)

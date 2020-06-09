@@ -7,31 +7,82 @@
 #include <condition_variable>
 #include "BPlusTreeBase.hpp"
 
-struct node_addition{
-	struct{
-		std::mutex m,g;
-		int c = 0;
-		bool wlock = false;
-	} travel_locks;
-	struct{
-		std::mutex m;
-		int c = 0;
-	} owner_locks;
-	struct{
-		std::mutex m,g,p;
-		bool wlock = false;
-		int c = 0;
-		std::condition_variable cond;
-		bool shared_lock = false;
-	} change_locks;
-	std::shared_ptr<void> drive_data;
+namespace forest{
+	struct node_addition{
+		struct{
+			std::mutex m,g;
+			int c = 0;
+			bool wlock = false;
+		} travel_locks;
+		struct{
+			std::mutex m;
+			int c = 0;
+		} owner_locks;
+		struct{
+			std::mutex m,g,p;
+			bool wlock = false;
+			int c = 0;
+			std::condition_variable cond;
+			bool shared_lock = false;
+		} change_locks;
+		std::shared_ptr<void> drive_data;
+	};
+}
+
+template <class Key, class T>
+class BPTInternal : public BPlusTreeBaseInternalNode<Key, T>{
+	public:
+		forest::node_addition data;
+		using BPlusTreeBaseInternalNode<Key, T>::BPlusTreeBaseInternalNode;
 };
 
+template <class Key, class T>
+class BPTLeaf : public BPlusTreeBaseLeafNode<Key, T>{
+	public:
+		using BPlusTreeBaseLeafNode<Key, T>::BPlusTreeBaseLeafNode;
+		
+		typedef BPlusTreeBaseNode<Key, T> Node;
+		typedef std::shared_ptr<Node> node_ptr;
+		
+		void set_prev_leaf(node_ptr node);
+		void set_next_leaf(node_ptr node);
+		node_ptr prev_leaf();
+		node_ptr next_leaf();
+		
+		forest::node_addition data;
+		node_ptr p_prev_leaf;
+		node_ptr p_next_leaf;
+};
+
+template <class Key, class T>
+void BPTLeaf<Key, T>::set_prev_leaf(node_ptr node)
+{
+	p_prev_leaf = node;
+}
+
+template <class Key, class T>
+void BPTLeaf<Key, T>::set_next_leaf(node_ptr node)
+{
+	p_next_leaf = node;
+}
+
+template <class Key, class T>
+typename BPTLeaf<Key,T>::node_ptr BPTLeaf<Key,T>::prev_leaf()
+{
+	return p_prev_leaf;
+}
+
+template <class Key, class T>
+typename BPTLeaf<Key,T>::node_ptr BPTLeaf<Key,T>::next_leaf()
+{
+	return p_next_leaf;
+}
+
 template <class Key, class T, typename D>
-class BPlusTree : public BPlusTreeBase<Key, T, node_addition> {
+class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T> > {
 	
 	public:
-		typedef BPlusTreeBase<Key, T, node_addition> Base;
+		typedef BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T> > Base;
 		typedef Key key_type;
 		typedef T val_type;
 		typedef typename Base::Node Node;
@@ -83,7 +134,7 @@ class BPlusTree : public BPlusTreeBase<Key, T, node_addition> {
 };
 
 template <class Key, class T, typename D>
-BPlusTree<Key, T, D>::BPlusTree(int factor, node_ptr node, long count, D* driver) : BPlusTreeBase<Key, T, node_addition>(factor), driver(driver) 
+BPlusTree<Key, T, D>::BPlusTree(int factor, node_ptr node, long count, D* driver) : BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T> >(factor), driver(driver) 
 {
 	init(node);
 	this->v_count = count;
@@ -258,6 +309,5 @@ void BPlusTree<Key, T, D>::save_base()
 	driver->save_base(stem, this);
 	processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
 }
-
 
 #endif //BPLUSTREE_H

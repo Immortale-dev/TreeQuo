@@ -10,5 +10,6 @@ namespace forest{
 	int INTR_CACHE_LENGTH = 10;
 	int LEAF_CACHE_LENGTH = 10;
 	int TREE_CACHE_LENGTH = 100;
+	int LOGGER_FLAG = 7;
 	
 }
