@@ -19,7 +19,7 @@
 namespace forest{
 	
 	enum class TREE_TYPES { KEY_STRING };
-	enum class RECORD_POSITION{ BEGIN, END };
+	enum class RECORD_POSITION{ BEGIN, END, LOWER, UPPER };
 	enum class KEY_TYPES { STRING };
 	enum class NODE_TYPES { INTR, LEAF };
 	

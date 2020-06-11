@@ -27,6 +27,7 @@ namespace forest{
 	void erase_leaf(string name, tree_t::key_type key);
 	LeafRecord_ptr find_leaf(string name, tree_t::key_type key);
 	LeafRecord_ptr find_leaf(string name, RECORD_POSITION position = RECORD_POSITION::BEGIN);
+	LeafRecord_ptr find_leaf(string name, tree_t::key_type key, RECORD_POSITION position);
 			
 	void bloom(string path);
 	void fold();

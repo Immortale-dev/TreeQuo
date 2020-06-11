@@ -94,6 +94,34 @@ DESCRIBE("Test single thread", {
 				forest::delete_tree("test");
 			});
 			
+			DESCRIBE("Add 10 items with even key to the tree", {
+				BEFORE_ALL({
+					for(int i=0;i<10;i++){
+						char c = (i*2)+'a';
+						string k = "";
+						k.push_back(c);
+						forest::insert_leaf("test", k, forest::leaf_value("value_" + std::to_string(i*2)));
+					}
+				});
+				
+				IT("find lower/upper bound items from `a` to `j`", {
+					for(int i=0;i<10;i++){
+						char c = i + 'a';
+						string k = "";
+						k.push_back(c);
+						auto record = forest::find_leaf("test", k, forest::RECORD_POSITION::LOWER);
+						string compare = "";
+						compare.push_back((char)(i-i%2)+'a');
+						EXPECT(record->key()).toBe(compare);
+						
+						record = forest::find_leaf("test", k, forest::RECORD_POSITION::UPPER);
+						compare = "";
+						compare.push_back((char)(i-i%2+2)+'a');
+						EXPECT(record->key()).toBe(compare);
+					}
+				});
+			});
+			
 			DESCRIBE("Add 120 items to the tree", {
 				BEFORE_ALL({
 					for(int i=0;i<120;i++){
@@ -331,6 +359,50 @@ DESCRIBE("Test multi threads", {
 			
 			AFTER_EACH({
 				forest::delete_tree("test");
+			});
+			
+			DESCRIBE("Add 10 items with even keys and lower/upper bound records", {
+				vector<string> resl[100];
+				vector<string> resr[100];
+				
+				BEFORE_ALL({
+					for(int i=0;i<10;i++){
+						char c = (i*2)+'a';
+						string k = "";
+						k.push_back(c);
+						forest::insert_leaf("test", k, forest::leaf_value("value_" + std::to_string(i*2)));
+					}
+					
+					vector<thread> trds;
+					for(int i=0;i<100;i++){
+						thread t([&resl, &resr](int ind){
+							for(int j=0;j<10;j++){
+								string k="";
+								k.push_back('a'+j);
+								auto record = forest::find_leaf("test", k, forest::RECORD_POSITION::LOWER);
+								resl[ind].push_back(record->key());
+								record = forest::find_leaf("test", k, forest::RECORD_POSITION::UPPER);
+								resr[ind].push_back(record->key());
+							}
+						}, i);
+						trds.push_back(move(t));
+					}
+					for(int i=0;i<100;i++){
+						trds[i].join();
+					}
+				});
+				
+				IT("result should be expected", {
+					for(int i=0;i<100;i++){
+						for(int j=0;j<10;j++){
+							string kl = "", kr = "";
+							kl.push_back('a' + (j-j%2));
+							kr.push_back('a' + (j-j%2 + 2));
+							EXPECT(resl[i][j]).toBe(kl);
+							EXPECT(resr[i][j]).toBe(kr);
+						}
+					}
+				});
 			});
 			
 			DESCRIBE("Add 120 items in 10 threads to the tree", {

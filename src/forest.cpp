@@ -151,6 +151,30 @@ forest::LeafRecord_ptr forest::find_leaf(string name, RECORD_POSITION position)
 	}
 }
 
+forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key, RECORD_POSITION position)
+{
+	if(position == RECORD_POSITION::BEGIN || position == RECORD_POSITION::END){
+		return find_leaf(name, position);
+	}
+	
+	tree_ptr tree = find_tree(name);
+	try{
+		tree_t::iterator t;
+		if(position == RECORD_POSITION::LOWER){
+			t = tree->get_tree()->lower_bound(key);
+		}
+		else {
+			t = tree->get_tree()->upper_bound(key);
+		}
+		leave_tree(tree->get_name());
+		return LeafRecord_ptr(new LeafRecord(t));
+	}
+	catch(DBException& e) {
+		leave_tree(tree->get_name());
+		throw e;
+	}
+}
+
 
 void forest::create_root_file()
 {
