@@ -42,7 +42,7 @@ forest::tree_ptr forest::Tree::get(string path)
 	if(cache::tree_cache_q.count(path)){
 		std::shared_future<tree_ptr> f = cache::tree_cache_q[path];
 		cache::tree_cache_m.unlock();
-		t = f.get();
+		f.get();
 		cache::tree_cache_m.lock();
 	}
 	

@@ -7,3 +7,6 @@
 [submodule "inc/bplustree"]
 	path = inc/bplustree
 	url = git@github.com:webdeveloperukraine/BPlusTreeBase.git
+[submodule "inc/logger"]
+	path = inc/logger
+	url = git@github.com:webdeveloperukraine/C-Logger.git

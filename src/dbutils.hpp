@@ -15,6 +15,8 @@
 #include "bplustree.hpp"
 #include "dbdriver.hpp"
 #include "dbexception.hpp"
+#include "log.hpp"
+
 
 namespace forest{
 	

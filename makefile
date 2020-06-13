@@ -10,12 +10,13 @@ OBJS:=$(SRCS:%.cpp=%.o)
 LIB_CACHE:=inc/listcache
 LIB_FS:=inc/dbfs
 LIB_BPTB:=inc/bplustree
+LIB_LOG:=inc/logger
 
-LIBS:=$(LIB_CACHE) $(LIB_FS) $(LIB_BPTB)
+LIBS:=$(LIB_CACHE) $(LIB_FS) $(LIB_BPTB) $(LIB_LOG)
 LIBS_SRC:=$(LIBS:%=%/src)
 LIBS_SRC_I:=$(LIBS_SRC:%=-I%)
 LIBS_SRCPATH:=$(LIBS_SRC:%=%/)
-LIBS_SRCS:=$(wildcard inc/dbfs/src/*.cpp)
+LIBS_SRCS:=$(wildcard inc/dbfs/src/*.cpp) $(wildcard inc/logger/src/*.cpp)
 LIBS_O=$(LIBS_SRCS:%.cpp=%.o)
 INCL=-Isrc -Itest $(LIBS_SRC_I)
 

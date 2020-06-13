@@ -754,8 +754,8 @@ DESCRIBE("Test multi threads", {
 							for(int i=0;i<10;i++){
 								thread t([&finish](int index){
 									int dir = index%2;
-									auto it = forest::find_leaf("test", dir ? forest::RECORD_POSITION::BEGIN : forest::RECORD_POSITION::END);
 									while(!finish){
+										auto it = forest::find_leaf("test", dir ? forest::RECORD_POSITION::BEGIN : forest::RECORD_POSITION::END);
 										while( (dir && it->move_forward()) || (!dir && it->move_back()) ){
 											// ok
 										}
