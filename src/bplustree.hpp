@@ -55,6 +55,31 @@ class BPTLeaf : public BPlusTreeBaseLeafNode<Key, T>{
 };
 
 template <class Key, class T>
+class BPTIterator : public BPlusTreeBaseIterator<Key, T>{
+	public: 
+		typedef BPTIterator<Key, T> self_type;
+		using BPlusTreeBaseIterator<Key, T>::BPlusTreeBaseIterator;
+		using BPlusTreeBaseIterator<Key, T>::get_base;
+		self_type& operator++();
+		self_type& operator--();
+		
+};
+
+template <class Key, class T>
+BPTIterator<Key, T>& BPTIterator<Key, T>::operator++()
+{
+	return dynamic_cast<BPTIterator<Key, T>& >(BPlusTreeBaseIterator<Key, T>::operator++());
+	//return *this;
+}
+
+template <class Key, class T>
+BPTIterator<Key, T>& BPTIterator<Key, T>::operator--()
+{
+	return dynamic_cast<BPTIterator<Key, T>& >(BPlusTreeBaseIterator<Key, T>::operator--());
+	//return *this;
+}
+
+template <class Key, class T>
 void BPTLeaf<Key, T>::set_prev_leaf(node_ptr node)
 {
 	p_prev_leaf = node;
@@ -79,10 +104,10 @@ typename BPTLeaf<Key,T>::node_ptr BPTLeaf<Key,T>::next_leaf()
 }
 
 template <class Key, class T, typename D>
-class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T> > {
+class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T>, BPTIterator<Key, T> > {
 	
 	public:
-		typedef BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T> > Base;
+		typedef BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T>, BPTIterator<Key, T> > Base;
 		typedef Key key_type;
 		typedef T val_type;
 		typedef typename Base::Node Node;
@@ -134,7 +159,7 @@ class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key,
 };
 
 template <class Key, class T, typename D>
-BPlusTree<Key, T, D>::BPlusTree(int factor, node_ptr node, long count, D* driver) : BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T> >(factor), driver(driver) 
+BPlusTree<Key, T, D>::BPlusTree(int factor, node_ptr node, long count, D* driver) : BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T>, BPTIterator<Key, T> >(factor), driver(driver) 
 {
 	init(node);
 	this->v_count = count;

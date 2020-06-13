@@ -175,7 +175,7 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key)
 		
 		log_info_public("[forest::find_leaf] end:"+name+" key:"+key);
 		
-		return LeafRecord_ptr(new LeafRecord(t));
+		return LeafRecord_ptr(new LeafRecord(t, tree));
 	} 
 	catch(DBException& e) {
 		log_info_public("[forest::find_leaf] end:"+name+" key:"+key + " (error)");
@@ -202,7 +202,7 @@ forest::LeafRecord_ptr forest::find_leaf(string name, RECORD_POSITION position)
 		
 		log_info_public("[forest::find_leaf] end:"+name+" position:"+to_string((int)position));
 		
-		return LeafRecord_ptr(new LeafRecord(t));
+		return LeafRecord_ptr(new LeafRecord(t, tree));
 	}
 	catch(DBException& e) {
 		log_info_public("[forest::find_leaf] end:"+name+" position:"+to_string((int)position) + " (error)");
@@ -233,7 +233,7 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key, RECO
 		
 		log_info_public("[forest::find_leaf] end:"+name+" key:"+key+" position:"+to_string((int)position));
 		
-		return LeafRecord_ptr(new LeafRecord(t));
+		return LeafRecord_ptr(new LeafRecord(t, tree));
 	}
 	catch(DBException& e) {
 		log_info_public("[forest::find_leaf] end:"+name+" key:"+key+" position:"+to_string((int)position) + " (error)");

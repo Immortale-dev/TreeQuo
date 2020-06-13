@@ -7,11 +7,15 @@ forest::LeafRecord::LeafRecord()
 
 forest::LeafRecord::~LeafRecord()
 {
+	if(tree){
+		tree->tree_release();
+	}
 	//dtor
 }
 
-forest::LeafRecord::LeafRecord(tree_t::iterator it) : it(std::move(it))
+forest::LeafRecord::LeafRecord(tree_t::iterator it, tree_ptr tree) : it(std::move(it)), tree(tree)
 {
+	tree->tree_reserve();
 	// main ctor
 }
 

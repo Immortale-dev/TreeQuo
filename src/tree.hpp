@@ -27,7 +27,11 @@
 
 namespace forest{
 	
+	class LeafRecord;
+	
 	class Tree{
+		
+		friend LeafRecord;
 		
 		using child_lengths_vec_ptr = std::vector<uint_t>*;
 		using child_keys_vec_ptr = std::vector<tree_t::key_type>*;

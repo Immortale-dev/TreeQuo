@@ -3,6 +3,7 @@
 
 #include <memory>
 #include "dbutils.hpp"
+#include "tree.hpp"
 
 namespace forest{
 	
@@ -10,7 +11,7 @@ namespace forest{
 		
 		public:
 			LeafRecord();
-			LeafRecord(tree_t::iterator it);
+			LeafRecord(tree_t::iterator it, tree_ptr tree);
 			virtual ~LeafRecord();
 			
 			bool eof();
@@ -20,6 +21,7 @@ namespace forest{
 			string key();
 		private:
 			tree_t::iterator it;
+			tree_ptr tree;
 	};
 	
 	using LeafRecord_ptr = std::shared_ptr<LeafRecord>;

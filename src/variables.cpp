@@ -11,4 +11,5 @@ namespace forest{
 	int LEAF_CACHE_LENGTH = 10;
 	int TREE_CACHE_LENGTH = 10;
 	int CACHE_BYTES = 4096;
+	int CHUNK_SIZE = 4096;
 }

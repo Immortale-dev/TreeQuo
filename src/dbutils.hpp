@@ -20,6 +20,8 @@
 
 namespace forest{
 	
+	extern int CACHE_BYTES;
+	
 	enum class TREE_TYPES { KEY_STRING };
 	enum class RECORD_POSITION{ BEGIN, END, LOWER, UPPER };
 	enum class KEY_TYPES { STRING };
@@ -79,10 +81,11 @@ namespace forest{
 			file_data_t(const char* data, uint_t length) : start(0), length(length) { data_cached = new char[length]; memcpy(data_cached, data, length); cached = true; };
 			virtual ~file_data_t() { delete_cache(); };
 			uint_t size(){ return length; };
-			void set_file(file_ptr file) { this->file=file; };
+			void set_file(file_ptr file) { this->file = file; };
 			void set_start(uint_t start) { this->start = start; };
 			void set_length(uint_t length) { this->length = length; };
-			void delete_cache() { if(cached) delete[] data_cached; cached = false; };
+			void delete_cache() { if(cached){ delete[] data_cached; cached = false; } };
+			void set_cache(char* buffer) { delete_cache(); data_cached = new char[length]; memcpy(data_cached, buffer, length); cached = true; };
 			
 			file_ptr file;
 			std::mutex m,g,o;
@@ -90,12 +93,27 @@ namespace forest{
 			int c = 0;
 			
 			struct file_data_reader{
-				file_data_reader(file_data_t* item) : data(item), lock(item->mtx), pos(0) { };
-				virtual ~file_data_reader() { };
+				file_data_reader(file_data_t* item) : data(item), lock(item->mtx), pos(0) { 
+					if(CACHE_BYTES && data->size() <= (uint_t)CACHE_BYTES && !data->cached) {
+						temp_cached = true;
+						temp_cache = new char[data->size()];
+					}
+				};
+				virtual ~file_data_reader() {
+					if(temp_cached) delete[] temp_cache;
+				};
 				uint_t read(char* buffer, uint_t count) { 
 					uint_t sz = std::min(data->size()-pos, count);
-					if(!sz)
+					if(!sz){
+						// Save cache
+						if(temp_cached){
+							data->data_cached = temp_cache;
+							data->cached = true;
+							temp_cached = false;
+							temp_cache = nullptr;
+						}
 						return sz;
+					}
 					if(data->cached){
 						memcpy(buffer, data->data_cached+pos, sz);
 					}
@@ -103,12 +121,17 @@ namespace forest{
 						auto lock = data->file->get_lock();
 						data->file->seek(data->start + pos);
 						data->file->read(buffer, sz);
+						if(temp_cached){
+							memcpy(temp_cache + pos, buffer, sz);
+						}
 					}
 					pos += sz;
 					return sz;
 				};
 				
 				private:
+					bool temp_cached = false;
+					char* temp_cache;
 					file_data_t* data;
 					std::lock_guard<mutex> lock;
 					uint_t pos;

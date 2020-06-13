@@ -17,6 +17,7 @@ namespace forest{
 	extern int LOGGER_FLAG;
 	extern int LOG_DETAILS;
 	extern int CACHE_BYTES;
+	extern int CHUNK_SIZE;
 }
 
 #endif // FOREST_VARIABLES

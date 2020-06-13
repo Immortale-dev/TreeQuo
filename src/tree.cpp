@@ -727,7 +727,7 @@ void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val
 {
 	int_t start_data = file->tell();
 	
-	int read_size = 4*1024;
+	int read_size = CHUNK_SIZE;
 	char* buf = new char[read_size];
 	int rsz;
 	auto reader = data->get_reader();
@@ -743,7 +743,10 @@ void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val
 	delete[] buf;
 	data->set_start(start_data);
 	data->set_file(file);
-	data->delete_cache();
+
+	//if(!CACHE_BYTES || CACHE_BYTES < data->size()){
+	//	data->delete_cache();
+	//}
 }
 
 forest::driver_t* forest::Tree::init_driver()
