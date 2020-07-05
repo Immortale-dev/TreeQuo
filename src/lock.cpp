@@ -283,11 +283,15 @@ void forest::change_lock_read(tree_t::node_ptr node)
 void forest::change_lock_read(tree_t::Node* node)
 {
 	auto& ch_node = get_data(node).change_locks;
-	ch_node.g.lock();
+	//ch_node.g.lock();
+	std::unique_lock<std::mutex> lock(ch_node.g);
+	while(ch_node.promote){
+		ch_node.p_cond.wait(lock);
+	}
 	if(ch_node.c++ == 0){
 		ch_node.m.lock();
 	}
-	ch_node.g.unlock();
+	//ch_node.g.unlock();
 }
 
 void forest::change_unlock_read(tree_t::node_ptr node)
@@ -301,6 +305,10 @@ void forest::change_unlock_read(tree_t::Node* node)
 	ch_node.g.lock();
 	if(--ch_node.c == 0){
 		ch_node.m.unlock();
+	}
+	// Notify if there is lock promotion
+	if(ch_node.promote){
+		ch_node.cond.notify_all();
 	}
 	ch_node.g.unlock();
 }
@@ -333,4 +341,28 @@ void forest::change_lock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type)
 void forest::change_unlock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type)
 {
 	(type == tree_t::PROCESS_TYPE::WRITE) ? change_unlock_write(node) : change_unlock_read(node);
+}
+
+void forest::change_lock_promote(tree_t::node_ptr node)
+{
+	change_lock_promote(node.get());
+}
+
+void forest::change_lock_promote(tree_t::Node* node)
+{
+	auto& ch_node = get_data(node).change_locks;
+	std::unique_lock<std::mutex> lock(ch_node.g);
+	
+	assert(!ch_node.promote);
+	
+	ch_node.promote = true;
+	while(ch_node.c > 1){
+		ch_node.p_cond.wait(lock);
+	}
+	
+	assert(ch_node.c == 1);
+	
+	--ch_node.c;
+	ch_node.promote = false;
+	ch_node.p_cond.notify_all();
 }

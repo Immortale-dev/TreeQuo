@@ -143,7 +143,7 @@ void forest::Tree::tree_release()
 	cache::tree_cache_m.unlock();
 }
 
-forest::Tree::tree_base_read_t forest::Tree::read_base(string filename)
+forest::tree_base_read_t forest::Tree::read_base(string filename)
 {
 	tree_base_read_t ret;
 	DBFS::File* f = new DBFS::File(filename);
@@ -167,7 +167,7 @@ forest::Tree::tree_base_read_t forest::Tree::read_base(string filename)
 	return ret;
 }
 
-forest::Tree::tree_intr_read_t forest::Tree::read_intr(string filename)
+forest::tree_intr_read_t forest::Tree::read_intr(string filename)
 {
 	using key_type = tree_t::key_type;
 	
@@ -205,7 +205,7 @@ forest::Tree::tree_intr_read_t forest::Tree::read_intr(string filename)
 	return d;
 }
 
-forest::Tree::tree_leaf_read_t forest::Tree::read_leaf(string filename)
+forest::tree_leaf_read_t forest::Tree::read_leaf(string filename)
 {
 	DBFS::File* f = new DBFS::File(filename);
 	
@@ -568,6 +568,7 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	std::vector<tree_t::key_type>* keys_ptr = leaf_d.child_keys;
 	std::vector<uint_t>* vals_length = leaf_d.child_lengths;
 	uint_t start_data = leaf_d.start_data;
+	get_data(leaf_data).f = leaf_d.file;
 	std::shared_ptr<DBFS::File> f(leaf_d.file);
 	int c = keys_ptr->size();
 	uint_t last_len = 0;
@@ -723,6 +724,35 @@ void forest::Tree::write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t
 	}
 }
 
+void forest::Tree::write_leaf_n(DBFS::File* file, tree_leaf_read_t data)
+{
+	auto* keys = data.child_keys;
+	auto* lengths = data.child_lengths;
+	int c = keys->size();
+	file->write(to_string(c) + " " + data.left_leaf + " " + data.right_leaf+ "\n");
+	string lenStr = "";
+	std::stringstream ss;
+	for(auto& key : (*keys)){
+		ss << key << " ";
+	}
+	for(auto& len : (*lengths)){
+		lenStr.append(to_string(len) + " ");
+	}
+	if(lenStr.size()){
+		lenStr.pop_back();
+	}
+	file->write(ss.str()+"\n");
+	file->write(lenStr+"\n");
+	
+	// Clear memory
+	delete keys;
+	delete lengths;
+	
+	if(file->fail()){
+		throw DBException(DBException::ERRORS::CANNOT_WRITE_FILE);
+	}
+}
+
 void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data)
 {
 	int_t start_data = file->tell();
@@ -747,6 +777,28 @@ void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val
 	//if(!CACHE_BYTES || CACHE_BYTES < data->size()){
 	//	data->delete_cache();
 	//}
+}
+
+void forest::Tree::write_leaf_item_n(DBFS::File* file, tree_t::val_type& data)
+{
+	//int_t start_data = file->tell();
+	
+	int read_size = CHUNK_SIZE;
+	char* buf = new char[read_size];
+	int rsz;
+	auto reader = data->get_reader();
+	
+	try{
+		while( (rsz = reader.read(buf, read_size)) ){
+			file->write(buf, rsz);
+		}
+	} catch(...){
+		throw DBException(DBException::ERRORS::CANNOT_WRITE_FILE);
+	}
+	
+	delete[] buf;
+	//data->set_start(start_data);
+	//data->set_file(file);
 }
 
 forest::driver_t* forest::Tree::init_driver()
@@ -880,6 +932,8 @@ void forest::Tree::d_insert(tree_t::node_ptr node, tree_t* tree)
 		for(auto& it : *(node->get_childs()) ){
 			write_leaf_item(fp, it->item->second);
 		}
+		
+		get_data(node).f = f;
 		
 		fp->stream().flush();
 		

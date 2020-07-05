@@ -50,6 +50,8 @@ namespace forest{
 	void change_unlock_write(tree_t::Node* node);
 	void change_lock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type);
 	void change_unlock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type);
+	void change_lock_promote(tree_t::node_ptr node);
+	void change_lock_promote(tree_t::Node* node);
 }
 
 #endif // FOREST_LOCK

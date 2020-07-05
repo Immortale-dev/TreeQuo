@@ -22,10 +22,12 @@ namespace forest{
 			std::mutex m,g,p;
 			bool wlock = false;
 			int c = 0;
-			std::condition_variable cond;
+			bool promote = false;
+			std::condition_variable cond, p_cond;
 			bool shared_lock = false;
 		} change_locks;
 		std::shared_ptr<void> drive_data;
+		DBFS::File* f;
 	};
 }
 
@@ -130,6 +132,11 @@ class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key,
 		node_ptr get_stem_pub();
 		bool is_stem_pub(node_ptr node);
 		void save_base();
+		
+		void lock_read();
+		void lock_write();
+		void unlock_read();
+		void unlock_write();
 		
 		using Base::update_positions;
 		
@@ -332,6 +339,34 @@ void BPlusTree<Key, T, D>::save_base()
 	node_ptr stem = this->get_stem();
 	processSearchNodeStart(stem, PROCESS_TYPE::WRITE);
 	driver->save_base(stem, this);
+	processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
+}
+
+template <class Key, class T, typename D>
+void BPlusTree<Key, T, D>::lock_read()
+{
+	node_ptr stem = this->get_stem();
+	processSearchNodeStart(stem, PROCESS_TYPE::READ);
+}
+
+template <class Key, class T, typename D>
+void BPlusTree<Key, T, D>::lock_write()
+{
+	node_ptr stem = this->get_stem();
+	processSearchNodeStart(stem, PROCESS_TYPE::WRITE);
+}
+
+template <class Key, class T, typename D>
+void BPlusTree<Key, T, D>::unlock_read()
+{
+	node_ptr stem = this->get_stem();
+	processSearchNodeEnd(stem, PROCESS_TYPE::READ);
+}
+
+template <class Key, class T, typename D>
+void BPlusTree<Key, T, D>::unlock_write()
+{
+	node_ptr stem = this->get_stem();
 	processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
 }
 

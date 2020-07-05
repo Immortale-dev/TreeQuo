@@ -24,19 +24,24 @@
 #include "listcache.hpp"
 #include "node_data.hpp"
 #include "lock.hpp"
+#include "savior.hpp"
 
 namespace forest{
 	
 	class LeafRecord;
+	class Savior;
 	
 	class Tree{
 		
 		friend LeafRecord;
+		friend Savior;
 		
-		using child_lengths_vec_ptr = std::vector<uint_t>*;
-		using child_keys_vec_ptr = std::vector<tree_t::key_type>*;
 		using tree_node_type = tree_t::Node::nodes_type;
 		using tree_keys_type = tree_t::Node::keys_type;
+		
+		/*
+		using child_lengths_vec_ptr = std::vector<uint_t>*;
+		using child_keys_vec_ptr = std::vector<tree_t::key_type>*;
 		using child_values_vec_ptr = std::vector<tree_t::val_type>*;
 		using child_nodes_vec_ptr = std::vector<string>*;
 		
@@ -58,7 +63,7 @@ namespace forest{
 			uint_t count;
 			int factor;
 			string branch;
-		};
+		};*/
 		
 		
 		public:
@@ -124,10 +129,13 @@ namespace forest{
 			tree_t::node_ptr extract_locked_node(tree_t::child_item_type_ptr item, bool w_prior=false);
 			
 			// Writers
-			void write_intr(DBFS::File* file, tree_intr_read_t data);
-			void write_base(DBFS::File* file, tree_base_read_t data);
-			void write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t data);
-			void write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data);
+			static void write_intr(DBFS::File* file, tree_intr_read_t data);
+			static void write_base(DBFS::File* file, tree_base_read_t data);
+			static void write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t data);
+			static void write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data);
+			
+			static void write_leaf_n(DBFS::File* file, tree_leaf_read_t data);
+			static void write_leaf_item_n(DBFS::File* file, tree_t::val_type& data);
 			
 			// Other
 			driver_t* init_driver();

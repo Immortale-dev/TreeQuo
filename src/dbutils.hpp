@@ -26,6 +26,7 @@ namespace forest{
 	enum class RECORD_POSITION{ BEGIN, END, LOWER, UPPER };
 	enum class KEY_TYPES { STRING };
 	enum class NODE_TYPES { INTR, LEAF };
+	enum class SAVE_TYPES{ LEAF, INTR, BASE };
 	
 	class Tree;
 	class file_data_t;
@@ -46,6 +47,31 @@ namespace forest{
 	
 	using tree_ptr = std::shared_ptr<Tree>;
 	using node_ptr = tree_t::node_ptr;
+	
+	using child_lengths_vec_ptr = std::vector<uint_t>*;
+	using child_keys_vec_ptr = std::vector<tree_t::key_type>*;
+	using child_values_vec_ptr = std::vector<tree_t::val_type>*;
+	using child_nodes_vec_ptr = std::vector<string>*;
+	
+	struct tree_leaf_read_t {
+		child_keys_vec_ptr child_keys;
+		child_lengths_vec_ptr child_lengths;
+		uint_t start_data;
+		DBFS::File* file;
+		string left_leaf, right_leaf;
+	};
+	struct tree_intr_read_t {
+		NODE_TYPES childs_type;
+		child_keys_vec_ptr child_keys;
+		child_nodes_vec_ptr child_values;
+	};
+	struct tree_base_read_t {
+		TREE_TYPES type;
+		NODE_TYPES branch_type;
+		uint_t count;
+		int factor;
+		string branch;
+	};
 	
 	////////////////////////////////////////////////////////////////
 	
