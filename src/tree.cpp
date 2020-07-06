@@ -169,6 +169,9 @@ forest::tree_base_read_t forest::Tree::read_base(string filename)
 
 forest::tree_intr_read_t forest::Tree::read_intr(string filename)
 {
+	// Wait for file to become ready
+	savior->get(filename);
+	
 	using key_type = tree_t::key_type;
 	
 	int t, c;
@@ -868,10 +871,12 @@ void forest::Tree::d_insert(tree_t::node_ptr node, tree_t* tree)
 		assert(false);
 	}
 	
-	DBFS::File* f = DBFS::create();
-	string new_name = f->name();
 	
 	if(!node->is_leaf()){
+		
+		/*
+		DBFS::File* f = DBFS::create();
+		string new_name = f->name();
 		tree_intr_read_t intr_d;
 		intr_d.childs_type = ((node->first_child_node()->is_leaf()) ? NODE_TYPES::LEAF : NODE_TYPES::INTR);
 		int c = node->get_nodes()->size();
@@ -893,7 +898,13 @@ void forest::Tree::d_insert(tree_t::node_ptr node, tree_t* tree)
 		
 		DBFS::remove(cur_name);
 		DBFS::move(new_name, cur_name);
+		*/
+		
+		node_data_ptr data = get_node_data(node);
+		string cur_name = data->path;
+		savior->put(cur_name, SAVE_TYPES::INTR);
 	} else {
+		DBFS::File* f = DBFS::create();
 		tree_leaf_read_t leaf_d;
 		auto* keys = new std::vector<tree_t::key_type>();
 		auto* lengths = new std::vector<uint_t>();
@@ -958,6 +969,10 @@ void forest::Tree::d_remove(tree_t::node_ptr node, tree_t* tree)
 	if(node->is_leaf() && node->size()){
 		node->first_child()->item->second->file->close();
 		node->get_childs()->resize(0);
+	}
+	
+	if(!node->is_leaf()){
+		savior->remove(data->path);
 	}
 	
 	DBFS::remove(data->path);

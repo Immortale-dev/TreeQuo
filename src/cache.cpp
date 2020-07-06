@@ -61,7 +61,8 @@ void forest::cache::check_intr_ref(string key)
 	if(!intr_cache_r.count(key))
 		return;
 	if(intr_cache_r[key].second == 0 && !intr_cache.has(key)){
-		intr_cache_r[key].first->get_nodes()->resize(0);
+		//intr_cache_r[key].first->get_nodes()->resize(0);
+		savior->save(key);
 		intr_cache_r.erase(key);
 	}
 }

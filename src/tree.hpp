@@ -31,6 +31,8 @@ namespace forest{
 	class LeafRecord;
 	class Savior;
 	
+	extern Savior* savior;
+	
 	class Tree{
 		
 		friend LeafRecord;

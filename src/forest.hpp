@@ -10,6 +10,7 @@
 #include "dbutils.hpp"
 #include "tree.hpp"
 #include "leaf_record.hpp"
+#include "savior.hpp"
 
 namespace forest{
 	

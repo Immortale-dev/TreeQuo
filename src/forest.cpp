@@ -1,5 +1,9 @@
 #include "forest.hpp"
 
+namespace forest{
+	Savior* savior;
+}
+
 void forest::bloom(string path)
 {
 	log_info_public("[forest::bloom] start");
@@ -17,6 +21,8 @@ void forest::bloom(string path)
 	}
 
 	open_root();
+	
+	savior = new Savior();
 
 	blossomed = true;
 	
@@ -33,6 +39,8 @@ void forest::fold()
 	}
 		
 	blossomed = false;
+	
+	delete savior;
 	
 	close_root();
 	

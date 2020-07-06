@@ -6,8 +6,14 @@
 #include "dbutils.hpp"
 #include "listcache.hpp"
 #include "node_data.hpp"
+#include "savior.hpp"
 
 namespace forest{
+	
+	class Savior;
+	
+	extern Savior* savior;
+	
 	// Cache
 	namespace cache{
 		void init_cache();
