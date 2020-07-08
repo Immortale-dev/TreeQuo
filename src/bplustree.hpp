@@ -27,7 +27,7 @@ namespace forest{
 			bool shared_lock = false;
 		} change_locks;
 		std::shared_ptr<void> drive_data;
-		DBFS::File* f;
+		std::shared_ptr<DBFS::File> f;
 	};
 }
 

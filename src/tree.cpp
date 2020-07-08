@@ -571,8 +571,8 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	std::vector<tree_t::key_type>* keys_ptr = leaf_d.child_keys;
 	std::vector<uint_t>* vals_length = leaf_d.child_lengths;
 	uint_t start_data = leaf_d.start_data;
-	get_data(leaf_data).f = leaf_d.file;
 	std::shared_ptr<DBFS::File> f(leaf_d.file);
+	get_data(leaf_data).f = f;
 	int c = keys_ptr->size();
 	uint_t last_len = 0;
 	for(int i=0;i<c;i++){
@@ -944,7 +944,10 @@ void forest::Tree::d_insert(tree_t::node_ptr node, tree_t* tree)
 			write_leaf_item(fp, it->item->second);
 		}
 		
-		get_data(node).f = f;
+		// Update link to file
+		cache::leaf_lock();
+		get_data(get_original(node)).f = fp;
+		cache::leaf_unlock();
 		
 		fp->stream().flush();
 		
@@ -966,16 +969,29 @@ void forest::Tree::d_remove(tree_t::node_ptr node, tree_t* tree)
 	node_data_ptr data = get_node_data(node);
 	
 	// TODO: RECODE WHEN DELAYED SAVE IMPLEMENTED
-	if(node->is_leaf() && node->size()){
-		node->first_child()->item->second->file->close();
-		node->get_childs()->resize(0);
+	if(node->is_leaf()){
+		
+		cache::leaf_lock();
+		/// lock{
+		auto& n_data = get_data(get_original(node));
+		/// }lock
+		cache::leaf_unlock();
+		if(n_data.f){
+			n_data.f->close();
+			n_data.f = nullptr;
+		}
+		
+		if(node->size()){
+			//node->first_child()->item->second->file->close();
+			node->get_childs()->resize(0);
+		}
 	}
 	
 	if(!node->is_leaf()){
-		savior->remove(data->path);
+		savior->remove(data->path, SAVE_TYPES::INTR);
+	} else {
+		DBFS::remove(data->path);
 	}
-	
-	DBFS::remove(data->path);
 	cache::clear_node_cache(node);
 }
 

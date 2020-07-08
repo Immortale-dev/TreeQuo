@@ -45,6 +45,7 @@ void forest::cache::check_leaf_ref(string key)
 		return;
 	if(leaf_cache_r[key].second == 0 && !leaf_cache.has(key)){
 		tree_t::node_ptr node = leaf_cache_r[key].first;
+		get_data(node).f = nullptr;
 		for(auto& it : (*node->get_childs())){
 			it->item->second->set_file(nullptr);
 			it->item->second = nullptr;

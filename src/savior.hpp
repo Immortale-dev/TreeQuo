@@ -15,6 +15,17 @@ namespace forest{
 	extern uint_t SAVIOR_DEPEND_CLUSTER_REDUCE_LENGTH;
 	
 	class Savior{
+		
+		enum class ACTION_TYPE{ SAVE, REMOVE };
+		
+		struct save_value{
+			void_shared node;
+			SAVE_TYPES type;
+			ACTION_TYPE action;
+			bool using_now = false;
+			std::mutex m;
+		};
+		
 		public:
 			using save_key = string;
 			using callback_t = std::function<void(void_shared, SAVE_TYPES)>;
@@ -22,8 +33,8 @@ namespace forest{
 			Savior();
 			virtual ~Savior();
 			void put(save_key item, SAVE_TYPES type);
-			void remove(save_key item);
-			void save(save_key item);
+			void remove(save_key item, SAVE_TYPES type);
+			void save(save_key item, bool async = false);
 			void get(save_key item);
 			void save_all();
 			int size();
@@ -37,8 +48,8 @@ namespace forest{
 			void put_internal(save_key item);
 			void put_base(save_key item);
 			void save_item(save_key item);
-			void_shared define_item(save_key item, SAVE_TYPES type);
-			void own_item(save_key item);
+			void_shared define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action);
+			save_value* own_item(save_key item);
 			void free_item(save_key item);
 			void schedule_save();
 			void remove_item(save_key item);
@@ -46,13 +57,6 @@ namespace forest{
 			DBFS::File* save_intr(node_ptr node);
 			DBFS::File* save_leaf(node_ptr node, std::shared_ptr<DBFS::File> fp);
 			DBFS::File* save_base(tree_ptr tree);
-		
-			struct save_value{
-				void_shared node;
-				SAVE_TYPES type;
-				bool using_now = false;
-				std::mutex m;
-			};
 			
 			callback_t callback;
 		
