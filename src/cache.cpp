@@ -35,6 +35,7 @@ void forest::cache::check_tree_ref(string key)
 	if(!tree_cache_r.count(key))
 		return;
 	if(tree_cache_r[key].second == 0 && !tree_cache.has(key)){
+		savior->save(key);
 		tree_cache_r.erase(key);
 	}
 }

@@ -70,6 +70,7 @@ namespace forest{
 		
 		public:
 			Tree(string path);
+			Tree(string path, TREE_TYPES type, int factor);
 			~Tree();
 			
 			string get_name();
@@ -146,8 +147,8 @@ namespace forest{
 			
 			tree_t* tree;
 			TREE_TYPES type;
-			mutex tree_m;
 			string name;
+			mutex tree_m;
 	};
 }
 

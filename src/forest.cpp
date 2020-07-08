@@ -20,9 +20,9 @@ void forest::bloom(string path)
 		create_root_file();
 	}
 
-	open_root();
-	
 	savior = new Savior();
+	
+	open_root();
 
 	blossomed = true;
 	
@@ -64,8 +64,12 @@ void forest::create_tree(TREE_TYPES type, string name, int factor)
 			throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
 		}
 	}
-	string file_name = Tree::seed(type, factor);
-	insert_tree(name, file_name);
+	//string file_name = Tree::seed(type, factor);
+	string file_name = DBFS::random_filename();
+	
+	tree_ptr tree = tree_ptr(new Tree(file_name, type, factor));
+	
+	insert_tree(name, file_name, tree);
 	
 	log_info_public("[forest::create_tree] end:"+name);
 }
@@ -268,6 +272,26 @@ void forest::close_root()
 	// Remove?
 }
 
+void forest::insert_tree(string name, string file_name, tree_ptr tree)
+{
+	cache::tree_cache_m.lock();
+	cache::tree_cache.push(file_name, tree);
+	cache::tree_cache_r[file_name] = make_pair(tree,1);
+	cache::tree_cache_m.unlock();
+	
+	savior->put(file_name, SAVE_TYPES::BASE);
+	
+	file_data_ptr tmp = file_data_ptr(new file_data_t(file_name.c_str(), file_name.size()));
+	FOREST->insert(name, tmp);
+	
+	cache::tree_cache_m.lock();
+	cache::tree_cache_r[file_name].second--;
+	cache::check_tree_ref(file_name);
+	cache::tree_cache_m.unlock();
+	//file_data_ptr tmp = file_data_ptr(new file_data_t(file_name.c_str(), file_name.size()));
+	//FOREST->insert(name, tmp);
+}
+
 void forest::insert_tree(string name, string file_name)
 {
 	file_data_ptr tmp = file_data_ptr(new file_data_t(file_name.c_str(), file_name.size()));
@@ -280,17 +304,21 @@ void forest::erase_tree(string path)
 	
 	t->get_tree()->clear();
 	
-	DBFS::remove(path);
+	savior->remove(path, SAVE_TYPES::BASE);
+	
+	//DBFS::remove(path);
 
 	// Clear cache
 	cache::tree_cache_m.lock();
-	if(cache::tree_cache_r.count(path)){
-		cache::tree_cache_r.erase(path);
-	}
+	//if(cache::tree_cache_r.count(path)){
+	//	cache::tree_cache_r.erase(path);
+	//}
 	if(cache::tree_cache.has(path)){
 		cache::tree_cache.remove(path);
 	}
 	cache::tree_cache_m.unlock();
+	
+	leave_tree(path);
 }
 
 forest::tree_ptr forest::get_tree(string path)

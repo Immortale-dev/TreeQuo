@@ -68,6 +68,8 @@ namespace forest{
 			uint_t cluster_reduce_length;
 			std::unordered_map<save_key, save_value*> map;
 			std::queue<save_key> save_queue;
+			bool saving = false;
+			bool resolving = false;
 	};
 }
 

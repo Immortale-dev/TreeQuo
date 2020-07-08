@@ -2,15 +2,25 @@
 
 forest::Tree::Tree(string path)
 {
-	// Read base tree file
 	name = path;
 	
+	// Read base tree file
 	tree_base_read_t base = read_base(path);
 	
 	type = base.type;
 	
 	// Init BPT
 	tree = new tree_t(base.factor, create_node(base.branch, base.branch_type), base.count, init_driver());
+}
+
+forest::Tree::Tree(string path, TREE_TYPES type, int factor)
+{
+	//std::cout << "CTYPE: " + to_string(((int)type)) + "\n";
+	name = path;
+	this->type = type;
+	
+	// Init BPT
+	tree = new tree_t(factor, create_node(LEAF_NULL, NODE_TYPES::LEAF), 0, init_driver());
 }
 
 forest::Tree::~Tree()
@@ -145,6 +155,9 @@ void forest::Tree::tree_release()
 
 forest::tree_base_read_t forest::Tree::read_base(string filename)
 {
+	// Wait for file to become ready
+	savior->get(filename);
+	
 	tree_base_read_t ret;
 	DBFS::File* f = new DBFS::File(filename);
 	
@@ -692,6 +705,7 @@ void forest::Tree::write_intr(DBFS::File* file, tree_intr_read_t data)
 
 void forest::Tree::write_base(DBFS::File* file, tree_base_read_t data)
 {
+	//std::cout << "TYPE: " + to_string((int)data.type) + "\n";
 	file->write( to_string(data.count) + " " + to_string(data.factor) + " " + to_string((int)data.type) + " " + data.branch + " " + to_string((int)data.branch_type) + "\n" );
 	if(file->fail()){
 		throw DBException(DBException::ERRORS::CANNOT_WRITE_FILE);
@@ -1379,6 +1393,9 @@ void forest::Tree::d_save_base(tree_t::node_ptr node, tree_t* tree)
 {
 	// Save Base File
 	string base_file_name = this->get_name();
+	savior->put(base_file_name, SAVE_TYPES::BASE);
+	/*
+	string base_file_name = this->get_name();
 	DBFS::File* base_f = DBFS::create();
 	tree_base_read_t base_d;
 	base_d.type = this->get_type();
@@ -1396,4 +1413,5 @@ void forest::Tree::d_save_base(tree_t::node_ptr node, tree_t* tree)
 	delete base_f;
 	DBFS::remove(base_file_name);
 	DBFS::move(new_base_file_name, base_file_name);
+	*/
 }

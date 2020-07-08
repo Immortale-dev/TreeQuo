@@ -45,6 +45,7 @@ namespace forest{
 	
 	// Tree methods
 	void insert_tree(string name, string path);
+	void insert_tree(string name, string file_name, tree_ptr tree);
 	void erase_tree(string path);
 	tree_ptr get_tree(string path);
 }
