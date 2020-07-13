@@ -32,23 +32,27 @@ namespace forest{
 			
 			Savior();
 			virtual ~Savior();
-			void put(save_key item, SAVE_TYPES type);
-			void remove(save_key item, SAVE_TYPES type);
+			void put(save_key item, SAVE_TYPES type, void_shared node);
+			void remove(save_key item, SAVE_TYPES type, void_shared node);
 			void save(save_key item, bool async = false);
 			void get(save_key item);
 			void save_all();
+			bool has(save_key item);
 			int size();
+			
+			void lock_map();
+			void unlock_map();
 			
 			void set_timer(uint_t time);
 			void set_cluster_limit(uint_t limit);
 			void set_cluster_reduce_length(uint_t length);
 			
 		private:
-			void put_leaf(save_key item);
-			void put_internal(save_key item);
-			void put_base(save_key item);
+			void put_leaf(save_key item, void_shared node);
+			void put_internal(save_key item, void_shared node);
+			void put_base(save_key item, void_shared node);
 			void save_item(save_key item);
-			void_shared define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action);
+			void_shared define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action, void_shared node);
 			save_value* own_item(save_key item);
 			void free_item(save_key item);
 			void schedule_save();

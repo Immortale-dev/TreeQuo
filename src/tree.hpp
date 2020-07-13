@@ -120,6 +120,7 @@ namespace forest{
 			void d_leaf_split(tree_t::node_ptr node, tree_t::node_ptr new_node, tree_t::node_ptr link_node, tree_t* tree);
 			void d_leaf_join(tree_t::node_ptr node, tree_t::node_ptr join_node, tree_t::node_ptr link_node, tree_t* tree);
 			void d_leaf_shift(tree_t::node_ptr node, tree_t::node_ptr shift_node, tree_t* tree);
+			void d_leaf_lock(tree_t::node_ptr node, tree_t* tree);
 			void d_leaf_free(tree_t::node_ptr node, tree_t* tree);
 			void d_leaf_ref(tree_t::node_ptr node, tree_t::node_ptr ref_node, tree_t::LEAF_REF ref, tree_t* tree);
 			void d_save_base(tree_t::node_ptr node, tree_t* tree);

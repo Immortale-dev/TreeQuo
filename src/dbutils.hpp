@@ -105,7 +105,7 @@ namespace forest{
 		public:
 			file_data_t(file_ptr file, uint_t start, uint_t length) : file(file), start(start), length(length) { };
 			file_data_t(const char* data, uint_t length) : start(0), length(length) { data_cached = new char[length]; memcpy(data_cached, data, length); cached = true; };
-			virtual ~file_data_t() { delete_cache(); };
+			virtual ~file_data_t() { /*std::cout << "-----DESTRUCT_file_data_t " + file->name() + " " + std::to_string((uint_t)this) + "\n";*/ delete_cache(); };
 			uint_t size(){ return length; };
 			void set_file(file_ptr file) { this->file = file; };
 			void set_start(uint_t start) { this->start = start; };
@@ -145,6 +145,7 @@ namespace forest{
 					}
 					else{
 						auto lock = data->file->get_lock();
+						//std::cout << "FN: " + data->file->name() + "\n";
 						data->file->seek(data->start + pos);
 						data->file->read(buffer, sz);
 						if(temp_cached){

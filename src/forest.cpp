@@ -64,6 +64,7 @@ void forest::create_tree(TREE_TYPES type, string name, int factor)
 			throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
 		}
 	}
+	
 	//string file_name = Tree::seed(type, factor);
 	string file_name = DBFS::random_filename();
 	
@@ -91,8 +92,12 @@ void forest::delete_tree(string name)
 		path = read_leaf_item(it->second);
 	}
 	
+	//std::cout << "ERASE TREE NAME: " + name + "\n";
+	
 	// Remove tree from forest
 	FOREST->erase(name);
+	
+	//std::cout << "ERASE TREE START:::: " + path + "\n";
 	
 	// Erase tree
 	erase_tree(path);
@@ -148,7 +153,7 @@ void forest::insert_leaf(string name, tree_t::key_type key, tree_t::val_type val
 	log_info_public("[forest::insert_leaf] start:"+name+" key:"+key);
 	
 	tree_ptr tree = find_tree(name);
-	tree->insert(key, val);
+	tree->insert(key, std::move(val));
 	leave_tree(tree->get_name());
 	
 	log_info_public("[forest::insert_leaf] end:"+name+" key:"+key);
@@ -159,7 +164,7 @@ void forest::update_leaf(string name, tree_t::key_type key, tree_t::val_type val
 	log_info_public("[forest::update_leaf] start:"+name+" key:"+key);
 	
 	tree_ptr tree = find_tree(name);
-	tree->insert(key, val, true);
+	tree->insert(key, std::move(val), true);
 	leave_tree(tree->get_name());
 	
 	log_info_public("[forest::update_leaf] end:"+name+" key:"+key);
@@ -258,31 +263,38 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key, RECO
 
 void forest::create_root_file()
 {
+	log_info_private("[forest::create_root_file] start");
 	Tree::seed(TREE_TYPES::KEY_STRING, ROOT_TREE, ROOT_FACTOR);
+	log_info_private("[forest::create_root_file] end");
 }
 
 void forest::open_root()
 {
+	log_info_private("[forest::open_root] start");
 	FOREST = tree_ptr(new Tree(ROOT_TREE));
+	log_info_private("[forest::open_root] end");
 }
 
 void forest::close_root()
 {
+	log_info_private("[forest::close_root] start");
 	FOREST = nullptr;
+	log_info_private("[forest::close_root] end");
 	// Remove?
 }
 
 void forest::insert_tree(string name, string file_name, tree_ptr tree)
 {
+	log_info_private("[forest::insert_tree] start");
 	cache::tree_cache_m.lock();
 	cache::tree_cache.push(file_name, tree);
 	cache::tree_cache_r[file_name] = make_pair(tree,1);
 	cache::tree_cache_m.unlock();
 	
-	savior->put(file_name, SAVE_TYPES::BASE);
+	savior->put(file_name, SAVE_TYPES::BASE, tree);
 	
 	file_data_ptr tmp = file_data_ptr(new file_data_t(file_name.c_str(), file_name.size()));
-	FOREST->insert(name, tmp);
+	FOREST->insert(name, std::move(tmp));
 	
 	cache::tree_cache_m.lock();
 	cache::tree_cache_r[file_name].second--;
@@ -290,21 +302,24 @@ void forest::insert_tree(string name, string file_name, tree_ptr tree)
 	cache::tree_cache_m.unlock();
 	//file_data_ptr tmp = file_data_ptr(new file_data_t(file_name.c_str(), file_name.size()));
 	//FOREST->insert(name, tmp);
+	log_info_private("[forest::insert_tree] end");
 }
 
 void forest::insert_tree(string name, string file_name)
 {
+	//REMOVE???
 	file_data_ptr tmp = file_data_ptr(new file_data_t(file_name.c_str(), file_name.size()));
 	FOREST->insert(name, tmp);
 }
 
 void forest::erase_tree(string path)
 {
+	log_info_private("[forest::erase_tree] start");
 	tree_ptr t = open_tree(path);
 	
 	t->get_tree()->clear();
 	
-	savior->remove(path, SAVE_TYPES::BASE);
+	savior->remove(path, SAVE_TYPES::BASE, t);
 	
 	//DBFS::remove(path);
 
@@ -319,6 +334,7 @@ void forest::erase_tree(string path)
 	cache::tree_cache_m.unlock();
 	
 	leave_tree(path);
+	log_info_private("[forest::erase_tree] end");
 }
 
 forest::tree_ptr forest::get_tree(string path)

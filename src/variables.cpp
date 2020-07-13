@@ -7,9 +7,9 @@ namespace forest{
 	string ROOT_TREE = "_root";
 	int ROOT_FACTOR = 3;
 	int DEFAULT_FACTOR = 3;
-	int INTR_CACHE_LENGTH = 10;
-	int LEAF_CACHE_LENGTH = 10;
-	int TREE_CACHE_LENGTH = 10;
+	int INTR_CACHE_LENGTH = 1;
+	int LEAF_CACHE_LENGTH = 1;
+	int TREE_CACHE_LENGTH = 3;
 	int CACHE_BYTES = 4096;
 	int CHUNK_SIZE = 4096;
 }

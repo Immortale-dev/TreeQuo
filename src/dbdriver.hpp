@@ -30,6 +30,7 @@ namespace forest{
 		fn_n_i leafDeleteItem;
 		fn_n_n_n leafSplit, leafJoin;
 		fn_n_n leafShift;
+		fn leafLock;
 		fn leafFree;
 		fn_n_n_r leafRef;
 		fn save_base;
@@ -51,6 +52,7 @@ namespace forest{
 			fn_n_n_n leafSplit,
 			fn_n_n_n leafJoin,
 			fn_n_n leafShift,
+			fn leafLock,
 			fn leafFree,
 			fn_n_n_r leafRef,
 			fn save_base
@@ -78,6 +80,7 @@ forest::DBDriver<T,V>::DBDriver(
 	fn_n_n_n leafSplit,
 	fn_n_n_n leafJoin,
 	fn_n_n leafShift,
+	fn leafLock,
 	fn leafFree,
 	fn_n_n_r leafRef,
 	fn save_base
@@ -98,6 +101,7 @@ forest::DBDriver<T,V>::DBDriver(
 	leafSplit(leafSplit),
 	leafJoin(leafJoin),
 	leafShift(leafShift),
+	leafLock(leafLock),
 	leafFree(leafFree),
 	leafRef(leafRef),
 	save_base(save_base)

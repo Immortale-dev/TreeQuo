@@ -42,6 +42,7 @@ template <class Key, class T>
 class BPTLeaf : public BPlusTreeBaseLeafNode<Key, T>{
 	public:
 		using BPlusTreeBaseLeafNode<Key, T>::BPlusTreeBaseLeafNode;
+		~BPTLeaf();
 		
 		typedef BPlusTreeBaseNode<Key, T> Node;
 		typedef std::shared_ptr<Node> node_ptr;
@@ -51,9 +52,10 @@ class BPTLeaf : public BPlusTreeBaseLeafNode<Key, T>{
 		node_ptr prev_leaf();
 		node_ptr next_leaf();
 		
-		forest::node_addition data;
 		node_ptr p_prev_leaf;
 		node_ptr p_next_leaf;
+		
+		forest::node_addition data;
 };
 
 template <class Key, class T>
@@ -82,6 +84,15 @@ BPTIterator<Key, T>& BPTIterator<Key, T>::operator--()
 }
 
 template <class Key, class T>
+BPTLeaf<Key, T>::~BPTLeaf()
+{
+	if(data.f){
+		//std::cout << "DESCRUCT_LEAF: " + data.f->name() + " " + std::to_string(data.f.use_count()) + "\n";
+		data.f->close();
+	}
+}
+
+template <class Key, class T>
 void BPTLeaf<Key, T>::set_prev_leaf(node_ptr node)
 {
 	p_prev_leaf = node;
@@ -104,6 +115,7 @@ typename BPTLeaf<Key,T>::node_ptr BPTLeaf<Key,T>::next_leaf()
 {
 	return p_next_leaf;
 }
+
 
 template <class Key, class T, typename D>
 class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T>, BPTIterator<Key, T> > {
@@ -159,6 +171,7 @@ class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key,
 		void processLeafSplit(node_ptr node, node_ptr new_node, node_ptr link_node);
 		void processLeafJoin(node_ptr node, node_ptr join_node, node_ptr link_node);
 		void processLeafShift(node_ptr node, node_ptr shift_node);
+		void processLeafLock(node_ptr node);
 		void processLeafFree(node_ptr node);
 		void processLeafRef(node_ptr node, node_ptr ref_node, LEAF_REF ref);
 		
@@ -168,6 +181,7 @@ class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key,
 template <class Key, class T, typename D>
 BPlusTree<Key, T, D>::BPlusTree(int factor, node_ptr node, long count, D* driver) : BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T>, BPTIterator<Key, T> >(factor), driver(driver) 
 {
+	//std::cout << "BPT_CREATED=========================================================================\n";
 	init(node);
 	this->v_count = count;
 }
@@ -319,6 +333,12 @@ template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processLeafShift(node_ptr node, node_ptr shift_node)
 {
 	driver->leafShift(node, shift_node, this);
+}
+
+template <class Key, class T, typename D>
+void BPlusTree<Key, T, D>::processLeafLock(node_ptr node)
+{
+	driver->leafLock(node, this);
 }
 
 template <class Key, class T, typename D>
