@@ -224,16 +224,16 @@ DBFS::File* forest::Savior::save_intr(node_ptr node)
 	auto* nodes = new std::vector<string>(c);
 	//std::cout << "SAVE--------INTR_START_ITERATE\n";
 	
-	std::unordered_set<string> test_correct;
+	//====//std::unordered_set<string> test_correct;
 	
 	for(int i=0;i<c;i++){
 		node_data_ptr d = get_node_data( (*(node->get_nodes()))[i] );
 		
-		if(test_correct.count(d->path)){
-			std::cout << "DUPLICATED: " + d->path + "\n";
-			assert(false);
-		}
-		test_correct.insert(d->path);
+		//====//if(test_correct.count(d->path)){
+			//====//std::cout << "DUPLICATED: " + d->path + "\n";
+			//====//assert(false);
+		//====//}
+		//====//test_correct.insert(d->path);
 		
 		(*nodes)[i] = d->path;
 	}
@@ -376,7 +376,7 @@ void forest::Savior::save_item(save_key item)
 			DBFS::remove(cur_name);
 			DBFS::move(new_name, cur_name);
 			
-			std::cout << "SAVE_INTR: " + cur_name + "\n";
+			//====//std::cout << "SAVE_INTR: " + cur_name + "\n";
 			
 			//std::cout << "SAVE_ITEM---ITEM_SAVE_INTR_END\n";
 		} else { // REMOVE
@@ -385,7 +385,7 @@ void forest::Savior::save_item(save_key item)
 			//std::cout << "RM_FA_START\n";
 			DBFS::remove(cur_name);
 			
-			std::cout << "REMOVE_INTR: " + cur_name + "\n";
+			//====//std::cout << "REMOVE_INTR: " + cur_name + "\n";
 			//std::cout << "RM_FA_END\n";
 		}
 		
@@ -413,7 +413,7 @@ void forest::Savior::save_item(save_key item)
 			{
 				std::shared_ptr<DBFS::File> cur_f = get_data(node).f;
 				if(cur_f){
-					std::cout << "MOVE_LEAF: " + cur_name + "\n";
+					//====//std::cout << "MOVE_LEAF: " + cur_name + "\n";
 					//std::cout << "CACHE_FILE: " + cur_f->name() + "\n";
 					//auto locked = cur_f->get_lock();
 					//cur_f->close();
@@ -434,13 +434,16 @@ void forest::Savior::save_item(save_key item)
 			save_leaf(node, fp);
 			
 			
-			std::cout << "SAVE_LEAF: " + cur_name + "\n";
+			//====//std::cout << "SAVE_LEAF: " + cur_name + "\n";
 			//cache::leaf_lock();
 			
+			//if(!cache::leaf_cache_r.count(item) || cache::leaf_cache_r[item].first.get() != node.get()){
+			//	fp->close();
+			//}
 			///////////////////////////////////////////////////////////////////
 			// TODO: should be deleted when BPT::insert move semantic done   //
 			// std::cout << "CLOSE_FUCKING_FILE!!! " + cur_name + "\n";      //
-			   fp->close();                                                  //
+			 fp->close();                                                  //
 			///////////////////////////////////////////////////////////////////
 			
 			//cache::leaf_unlock();
@@ -453,9 +456,9 @@ void forest::Savior::save_item(save_key item)
 			std::shared_ptr<DBFS::File> cur_f = get_data(node).f;
 			//if(cur_f){
 			if(cur_f){
-				std::cout << "PUT_ON_DIE_LEAF: " + cur_f->name() + "\n";
+				//====//std::cout << "PUT_ON_DIE_LEAF: " + cur_f->name() + "\n";
 				cur_f->on_close([](DBFS::File* file){
-					std::cout << "REMOVE_LEAF: " + file->name() + "\n";
+					//====//std::cout << "REMOVE_LEAF: " + file->name() + "\n";
 					file->remove();
 				});
 			}

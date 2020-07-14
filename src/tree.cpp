@@ -229,11 +229,11 @@ forest::tree_intr_read_t forest::Tree::read_intr(string filename)
 	// Wait for file to become ready
 	savior->get(filename);
 	
-	std::cout << "INTR_READ: " + filename + "\n";
-	if(!DBFS::exists(filename)){
-		std::cout << "FAIL_FILE: " + filename + "\n";
-		assert(false);
-	}
+	//std::cout << "INTR_READ: " + filename + "\n";
+	//if(!DBFS::exists(filename)){
+		//std::cout << "FAIL_FILE: " + filename + "\n";
+	//	assert(false);
+	//}
 	
 	using key_type = tree_t::key_type;
 	
@@ -282,12 +282,12 @@ forest::tree_leaf_read_t forest::Tree::read_leaf(string filename)
 	savior->get(filename);
 	//====//std::cout << "=READ_LEAF_END " + filename + "\n";
 	
-	std::cout << "LEAF_READ: " + filename + "\n";
+	//std::cout << "LEAF_READ: " + filename + "\n";
 	
-	if(!DBFS::exists(filename)){
-		std::cout << "FAIL_FILE: " + filename + "\n";
-		assert(false);
-	}
+	//if(!DBFS::exists(filename)){
+		//std::cout << "FAIL_FILE: " + filename + "\n";
+	//	assert(false);
+	//}
 	
 	DBFS::File* f = new DBFS::File(filename);
 	

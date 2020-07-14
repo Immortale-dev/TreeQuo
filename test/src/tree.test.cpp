@@ -370,7 +370,7 @@ DESCRIBE("Test multi threads", {
 		// Leaf insertions
 		DESCRIBE("Add `test` tree to the forest", {
 			BEFORE_EACH({
-				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 3);
+				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 80);
 			});
 			
 			AFTER_EACH({
@@ -495,7 +495,7 @@ DESCRIBE("Test multi threads", {
 					
 					check.clear();
 					
-					for(int i=0;i<200;i++){
+					for(int i=0;i<150;i++){
 						int rnd = rand()%10000 + 200;
 						if(!check.count(rnd)){
 							check.insert(rnd);
@@ -505,7 +505,7 @@ DESCRIBE("Test multi threads", {
 					}
 					num_of_items = check.size();
 					
-					std::cout << std::to_string(num_of_items) + " ITEMS INSERTED\n";
+					//std::cout << std::to_string(num_of_items) + " ITEMS INSERTED\n";
 					//assert(false);
 				});
 				
@@ -590,8 +590,8 @@ DESCRIBE("Test multi threads", {
 					});
 				});
 				
-				DESCRIBE_ONLY("Do 200 operations in 200 threads", {
-					int tests_count = 400;
+				DESCRIBE("Do 200 operations in 200 threads", {
+					int tests_count = 200;
 					
 					vector<vector<string> > tree_keys_check;
 					vector<thread> threads;
@@ -628,7 +628,7 @@ DESCRIBE("Test multi threads", {
 										if(sval.substr(0,3) == "new"){
 											continue;
 										}
-										int k, v;
+										int k=0, v=0;
 										try{
 											k = std::stoi(key.substr(1));
 											v = std::stoi(sval.substr(4));
@@ -658,7 +658,7 @@ DESCRIBE("Test multi threads", {
 										if(sval.substr(0,3) == "new"){
 											continue;
 										}
-										int k, v;
+										int k=0, v=0;
 										try{
 											k = std::stoi(key.substr(1));
 											v = std::stoi(sval.substr(4));
@@ -715,7 +715,7 @@ DESCRIBE("Test multi threads", {
 									forest::update_leaf("test", "p"+std::to_string(p), std::move(forest::leaf_value("new_" + std::to_string(rnd*rnd))) );
 								}
 								else if(cs == 7){
-									return;
+									//return;
 									int p;
 									{
 										lock_guard<mutex> lock(m);
@@ -768,62 +768,24 @@ DESCRIBE("Test multi threads", {
 				
 				DESCRIBE("Comparing time for insert on free and busy tree", {
 					
-					int time_busy, time_free;
+					int time_free;
 					
 					DESCRIBE("For free tree", {
 						IT("should quickly insert all values", {
-							chrono::time_point p1 = chrono::system_clock::now();				
-							for(int i=0;i<1000;i++){
-								int rnd = rand()%10000 + 11200;
-								forest::insert_leaf("test", "c"+std::to_string(rnd), forest::leaf_value("some pretty much standart length of the some basic item form leaf record blah blah blah .........................................................................................."));
+							chrono::time_point p1 = chrono::system_clock::now();	
+							
+							/*vector<thread> threads;
+							std::thread t([](){
+								
+							});	*/
+							for(int i=0;i<10000;i++){
+								int rnd = i;//rand()%1000000 + 11200;
+								forest::insert_leaf("test", "c"+std::to_string(rnd), forest::leaf_value("some pretty"));
 							}
 							chrono::time_point p2 = chrono::system_clock::now();
 							time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
 							TEST_SUCCEED();
 							INFO_PRINT("Time For Insert: " + to_string(time_free));
-						});
-					});
-					
-					DESCRIBE("For busy tree", {
-						vector<thread> threads;
-						bool finish = false;
-						
-						BEFORE_ALL({						
-							for(int i=0;i<10;i++){
-								thread t([&finish](int index){
-									int dir = index%2;
-									auto it = forest::find_leaf("test", dir ? forest::RECORD_POSITION::BEGIN : forest::RECORD_POSITION::END);
-									while(!finish){
-										while( (dir && it->move_forward()) || (!dir && it->move_back()) ){
-											// ok
-										}
-										this_thread::sleep_for(chrono::milliseconds(1));
-									}
-								}, i);
-								threads.push_back(move(t));
-							}
-						});
-						
-						IT("should quickly insert all values", {
-							chrono::time_point p1 = chrono::system_clock::now();				
-							for(int i=0;i<1000;i++){
-								int rnd = rand()%10000 + 11200;
-								forest::insert_leaf("test", "c"+std::to_string(rnd), forest::leaf_value("val111"));
-							}
-							chrono::time_point p2 = chrono::system_clock::now();
-							time_busy = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
-							finish = true;
-							for(auto& it : threads){
-								it.join();
-							}
-							TEST_SUCCEED();
-							INFO_PRINT("Time For Insert: " + to_string(time_busy));
-						});
-					});
-					
-					DESCRIBE("Analyzing the difference", {
-						IT("The difference should not be significant", {
-							EXPECT(time_free*2).toBeGreaterThan(time_busy);
 						});
 					});
 				});
@@ -847,7 +809,7 @@ DESCRIBE("Test multi threads", {
 			});
 			
 			IT_ONLY("Should add 10000 records, and the memory should not increase infinitely", {
-				for(int i=0;i<1000;i++){
+				for(int i=0;i<10000;i++){
 					forest::insert_leaf("test", "t"+std::to_string(i), forest::leaf_value("test_values"));
 					//if(i%100 == 0){
 					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << " | " << active_nodes_count << endl;
@@ -869,7 +831,7 @@ DESCRIBE("Test multi threads", {
 			});
 			
 			IT_ONLY("Should delete 10000 records, and the memory should not increase infinitely", {
-				for(int i=0;i<1000;i++){
+				for(int i=0;i<10000;i++){
 					forest::erase_leaf("test", "t"+std::to_string(i));
 					//if(i%100 == 0){
 					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << endl;

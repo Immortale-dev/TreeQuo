@@ -40,7 +40,7 @@ void forest::cache::check_tree_ref(string key)
 		return;
 	}
 	if(tree_cache_r[key].second == 0 && !tree_cache.has(key)){
-		savior->save(key);
+		savior->save(key, true);
 		tree_cache_r.erase(key);
 	}
 	log_info_private("[cache::check_tree_ref] end");
@@ -68,9 +68,9 @@ void forest::cache::check_leaf_ref(string key)
 		
 		// Close file if there if it should be closed
 		
-		 //====//std::cout << "+MAP_LOCK\n";
+		
 		savior->lock_map();
-		 //====//std::cout << "-MAP_LOCK\n";
+		
 		if(!savior->has(key) && get_data(node).f){
 			 //====//std::cout << "CLOSE FILE WHICH IS NOT GOING TO BE SAVED " + key + "\n";
 			get_data(node).f->close();
@@ -81,11 +81,13 @@ void forest::cache::check_leaf_ref(string key)
 		
 		if(savior->has(key)){
 			savior->unlock_map();
-			savior->save(key);
+			savior->save(key, true);
 		} else {
 			savior->unlock_map();
 		}
 		
+		
+		//savior->save(key, true);
 		leaf_cache_r.erase(key);
 		
 		//====//std::cout << "LEAF_REF_END " + key + "\n";
@@ -103,15 +105,15 @@ void forest::cache::check_intr_ref(string key)
 	if(intr_cache_r[key].second == 0 && !intr_cache.has(key)){
 		//intr_cache_r[key].first->get_nodes()->resize(0);
 		
+		
 		savior->lock_map();
 		if(savior->has(key)){
 			savior->unlock_map();
-			savior->save(key);
+			savior->save(key, true);
 		} else {
 			savior->unlock_map();
 		}
-		
-		//savior->save(key, true);
+
 		intr_cache_r.erase(key);
 	}
 	log_info_private("[cache::check_intr_ref] end");

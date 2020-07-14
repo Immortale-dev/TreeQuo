@@ -35,7 +35,7 @@ $(LIBS):
 generate_o: ${OBJS}
 
 generate_t: 
-	$(CC) $(CFLAGS) $(INCL) test/test.cpp -o test/test.o
+	$(CC) $(CFLAGS) $(INCL) test/test.cpp -O3 -o test/test.o
 	${CC} ${INCL} -o test.exe test/test.o ${OBJS} ${LIBS_O}
 	
 custom: generate_o
@@ -43,4 +43,4 @@ custom: generate_o
 	${CC} ${INCL} -o mtest.exe test/mtest.o ${OBJS} ${LIBS_O}
 
 %.o: %.cpp
-	${CC} ${CFLAGS} ${INCL} $< -o $@
+	${CC} ${CFLAGS} ${INCL} -O3 $< -o $@
