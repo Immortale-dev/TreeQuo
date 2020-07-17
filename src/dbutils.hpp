@@ -117,6 +117,7 @@ namespace forest{
 			std::mutex m,g,o;
 			bool shared_lock = false;
 			int c = 0;
+			int res_c = 0;
 			
 			struct file_data_reader{
 				file_data_reader(file_data_t* item) : data(item), lock(item->mtx), pos(0) { 

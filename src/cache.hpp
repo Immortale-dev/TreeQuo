@@ -16,6 +16,13 @@ namespace forest{
 	
 	// Cache
 	namespace cache{
+		
+		struct leaf_cache_ref_t{
+			tree_t::node_ptr first;
+			int second;
+			int items;
+		};
+		
 		void init_cache();
 		void release_cache();
 		void check_leaf_ref(string key);
@@ -24,8 +31,8 @@ namespace forest{
 		void set_tree_cache_length(int length);
 		void set_intr_cache_length(int length);
 		void set_leaf_cache_length(int length);
-		void insert_item(uintptr_t path, int pos);
-		void remove_item(uintptr_t path, int pos);
+		void insert_item(tree_t::child_item_type_ptr& item);
+		void remove_item(tree_t::child_item_type_ptr& item);
 		
 		void intr_lock();
 		void intr_unlock();
@@ -57,8 +64,9 @@ namespace forest{
 		extern mutex tree_cache_m, leaf_cache_m, intr_cache_m;
 		extern std::unordered_map<string, std::shared_future<tree_ptr> > tree_cache_q;
 		extern std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
-		extern std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r, leaf_cache_r;
-		extern std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
+		extern std::unordered_map<string, leaf_cache_ref_t> leaf_cache_r;
+		extern std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r;
+		//extern std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
 	}
 }
 

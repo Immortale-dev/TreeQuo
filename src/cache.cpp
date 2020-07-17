@@ -8,8 +8,9 @@ namespace forest{
 		mutex tree_cache_m, leaf_cache_m, intr_cache_m;
 		std::unordered_map<string, std::shared_future<tree_ptr> > tree_cache_q;
 		std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
-		std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r, leaf_cache_r;
-		std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
+		std::unordered_map<string, leaf_cache_ref_t> leaf_cache_r;
+		std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r;
+		//std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
 	}
 	
 	tree_ptr FOREST;
@@ -53,10 +54,11 @@ void forest::cache::check_leaf_ref(string key)
 		//======//log_info_private("[cache::check_leaf_ref] (no key found) end");
 		return;
 	}
-	if(leaf_cache_r[key].second == 0 && !leaf_cache.has(key)){
+	auto& leaf_cache_ref = leaf_cache_r[key];
+	if(leaf_cache_ref.second == 0 && leaf_cache_ref.items == 0 && !leaf_cache.has(key)){
 		//====//std::cout << "LEAF_REF_START " + key + "\n";
 		
-		tree_t::node_ptr node = leaf_cache_r[key].first;
+		tree_t::node_ptr node = leaf_cache_ref.first;
 		////get_data(node).f = nullptr;
 		////for(auto& it : (*node->get_childs())){
 			////it->item->second->set_file(nullptr);
@@ -149,18 +151,24 @@ void forest::cache::set_leaf_cache_length(int length)
 	//======//log_info_private("[cache::set_leaf_cache_length] end");
 }
 
-void forest::cache::insert_item(uintptr_t path, int pos)
+void forest::cache::insert_item(tree_t::child_item_type_ptr& item)
 {
 	//======//log_info_private("[cache::insert_item] ("+path+":"+std::to_string(pos)+") start");
-	leaf_cache_i[path][pos]++;
+	
+	item->item->second->res_c++;
+	
+	//leaf_cache_i[path][pos]++;
 	//======//log_info_private("[cache::insert_item] end");
 }
 
-void forest::cache::remove_item(uintptr_t path, int pos)
+void forest::cache::remove_item(tree_t::child_item_type_ptr& item)
 {
 	//======//log_info_private("[cache::remove_item] ("+path+":"+std::to_string(pos)+") start");
-	auto& c_node = leaf_cache_i[path];
 	
+	item->item->second->res_c--;
+	
+	//auto& c_node = leaf_cache_i[path];
+	/*
 	assert(c_node[pos] > 0);
 	
 	c_node[pos]--;
@@ -169,7 +177,7 @@ void forest::cache::remove_item(uintptr_t path, int pos)
 	}
 	if(!c_node.size()){
 		leaf_cache_i.erase(path);
-	}
+	} */
 	//======//log_info_private("[cache::remove_item] end");
 }
 
@@ -375,6 +383,6 @@ void forest::cache::_intr_insert(tree_t::node_ptr node)
 void forest::cache::_leaf_insert(tree_t::node_ptr node)
 {
 	string& path = get_node_data(node)->path;
-	cache::leaf_cache_r[path] = std::make_pair(node, 0);
+	cache::leaf_cache_r[path] = {node, 0, 0};
 	cache::leaf_cache.push(path, node);
 }
