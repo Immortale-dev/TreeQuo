@@ -9,7 +9,7 @@ namespace forest{
 		std::unordered_map<string, std::shared_future<tree_ptr> > tree_cache_q;
 		std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
 		std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r, leaf_cache_r;
-		std::unordered_map<string, std::unordered_map<int, int> > leaf_cache_i;
+		std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
 	}
 	
 	tree_ptr FOREST;
@@ -20,11 +20,11 @@ namespace forest{
 
 void forest::cache::init_cache()
 {
-	log_info_private("[cache::init_cache] start");
+	//======//log_info_private("[cache::init_cache] start");
 	tree_cache.set_callback([](string key){ forest::cache::check_tree_ref(key); });
 	leaf_cache.set_callback([](string key){ forest::cache::check_leaf_ref(key); });
 	intr_cache.set_callback([](string key){ forest::cache::check_intr_ref(key); });
-	log_info_private("[cache::init_cache] end");
+	//======//log_info_private("[cache::init_cache] end");
 }
 
 void forest::cache::release_cache()
@@ -34,23 +34,23 @@ void forest::cache::release_cache()
 
 void forest::cache::check_tree_ref(string key)
 {
-	log_info_private("[cache::check_tree_ref] start");
+	//======//log_info_private("[cache::check_tree_ref] start");
 	if(!tree_cache_r.count(key)){
-		log_info_private("[cache::check_tree_ref] (no key found) end");
+		//======//log_info_private("[cache::check_tree_ref] (no key found) end");
 		return;
 	}
 	if(tree_cache_r[key].second == 0 && !tree_cache.has(key)){
 		savior->save(key, true);
 		tree_cache_r.erase(key);
 	}
-	log_info_private("[cache::check_tree_ref] end");
+	//======//log_info_private("[cache::check_tree_ref] end");
 }
 
 void forest::cache::check_leaf_ref(string key)
 {
-	log_info_private("[cache::check_leaf_ref] start");
+	//======//log_info_private("[cache::check_leaf_ref] start");
 	if(!leaf_cache_r.count(key)){
-		log_info_private("[cache::check_leaf_ref] (no key found) end");
+		//======//log_info_private("[cache::check_leaf_ref] (no key found) end");
 		return;
 	}
 	if(leaf_cache_r[key].second == 0 && !leaf_cache.has(key)){
@@ -92,14 +92,14 @@ void forest::cache::check_leaf_ref(string key)
 		
 		//====//std::cout << "LEAF_REF_END " + key + "\n";
 	}
-	log_info_private("[cache::check_leaf_ref] end");
+	//======//log_info_private("[cache::check_leaf_ref] end");
 }
 
 void forest::cache::check_intr_ref(string key)
 {
-	log_info_private("[cache::check_intr_ref] start");
+	//======//log_info_private("[cache::check_intr_ref] start");
 	if(!intr_cache_r.count(key)){
-		log_info_private("[cache::check_intr_ref] () end");
+		//======//log_info_private("[cache::check_intr_ref] () end");
 		return;
 	}
 	if(intr_cache_r[key].second == 0 && !intr_cache.has(key)){
@@ -116,49 +116,49 @@ void forest::cache::check_intr_ref(string key)
 
 		intr_cache_r.erase(key);
 	}
-	log_info_private("[cache::check_intr_ref] end");
+	//======//log_info_private("[cache::check_intr_ref] end");
 }
 
 void forest::cache::set_tree_cache_length(int length)
 {
-	log_info_private("[cache::set_tree_cache_length] start");
+	//======//log_info_private("[cache::set_tree_cache_length] start");
 	TREE_CACHE_LENGTH = length;
 	tree_cache_m.lock();
 	tree_cache.resize(TREE_CACHE_LENGTH);
 	tree_cache_m.unlock();
-	log_info_private("[cache::set_tree_cache_length] end");
+	//======//log_info_private("[cache::set_tree_cache_length] end");
 }
 
 void forest::cache::set_intr_cache_length(int length)
 {
-	log_info_private("[cache::set_intr_cache_length] start");
+	//======//log_info_private("[cache::set_intr_cache_length] start");
 	INTR_CACHE_LENGTH = length;
 	intr_cache_m.lock();
 	intr_cache.resize(INTR_CACHE_LENGTH);
 	intr_cache_m.unlock();
-	log_info_private("[cache::set_intr_cache_length] end");
+	//======//log_info_private("[cache::set_intr_cache_length] end");
 }
 
 void forest::cache::set_leaf_cache_length(int length)
 {
-	log_info_private("[cache::set_leaf_cache_length] start");
+	//======//log_info_private("[cache::set_leaf_cache_length] start");
 	LEAF_CACHE_LENGTH = length;
 	leaf_cache_m.lock();
 	leaf_cache.resize(LEAF_CACHE_LENGTH);
 	leaf_cache_m.unlock();
-	log_info_private("[cache::set_leaf_cache_length] end");
+	//======//log_info_private("[cache::set_leaf_cache_length] end");
 }
 
-void forest::cache::insert_item(string path, int pos)
+void forest::cache::insert_item(uintptr_t path, int pos)
 {
-	log_info_private("[cache::insert_item] ("+path+":"+std::to_string(pos)+") start");
+	//======//log_info_private("[cache::insert_item] ("+path+":"+std::to_string(pos)+") start");
 	leaf_cache_i[path][pos]++;
-	log_info_private("[cache::insert_item] end");
+	//======//log_info_private("[cache::insert_item] end");
 }
 
-void forest::cache::remove_item(string path, int pos)
+void forest::cache::remove_item(uintptr_t path, int pos)
 {
-	log_info_private("[cache::remove_item] ("+path+":"+std::to_string(pos)+") start");
+	//======//log_info_private("[cache::remove_item] ("+path+":"+std::to_string(pos)+") start");
 	auto& c_node = leaf_cache_i[path];
 	
 	assert(c_node[pos] > 0);
@@ -170,35 +170,35 @@ void forest::cache::remove_item(string path, int pos)
 	if(!c_node.size()){
 		leaf_cache_i.erase(path);
 	}
-	log_info_private("[cache::remove_item] end");
+	//======//log_info_private("[cache::remove_item] end");
 }
 
 void forest::cache::intr_lock()
 {
-	log_info_private("[cache::intr_lock] start");
+	//======//log_info_private("[cache::intr_lock] start");
 	intr_cache_m.lock();
-	log_info_private("[cache::intr_lock] end");
+	//======//log_info_private("[cache::intr_lock] end");
 }
 
 void forest::cache::intr_unlock()
 {
-	log_info_private("[cache::intr_unlock] start");
+	//======//log_info_private("[cache::intr_unlock] start");
 	intr_cache_m.unlock();
-	log_info_private("[cache::intr_unlock] end");
+	//======//log_info_private("[cache::intr_unlock] end");
 }
 
 void forest::cache::leaf_lock()
 {
-	log_info_private("[cache::leaf_lock] start");
+	//======//log_info_private("[cache::leaf_lock] start");
 	leaf_cache_m.lock();
-	log_info_private("[cache::leaf_lock] end");
+	//======//log_info_private("[cache::leaf_lock] end");
 }
 
 void forest::cache::leaf_unlock()
 {
-	log_info_private("[cache::leaf_unlock] start");
+	//======//log_info_private("[cache::leaf_unlock] start");
 	leaf_cache_m.unlock();
-	log_info_private("[cache::leaf_unlock] end");
+	//======//log_info_private("[cache::leaf_unlock] end");
 }
 
 std::lock_guard<std::mutex> forest::cache::get_intr_lock()
@@ -213,7 +213,7 @@ std::lock_guard<std::mutex> forest::cache::get_leaf_lock()
 
 void forest::cache::reserve_node(tree_t::node_ptr node, bool w_lock)
 {
-	log_info_private("[cache::reserve_node] start");
+	//======//log_info_private("[cache::reserve_node] start");
 	assert(has_data(node));
 	bool is_leaf = node->is_leaf();
 	string& path = get_node_data(node)->path;
@@ -235,12 +235,12 @@ void forest::cache::reserve_node(tree_t::node_ptr node, bool w_lock)
 			reserve_intr_node(path);
 		}
 	}
-	log_info_private("[cache::reserve_node] end");
+	//======//log_info_private("[cache::reserve_node] end");
 }
 
 void forest::cache::release_node(tree_t::node_ptr node, bool w_lock)
 {
-	log_info_private("[cache::release_node] start");
+	//======//log_info_private("[cache::release_node] start");
 	bool is_leaf = node->is_leaf();
 	string& path = get_node_data(node)->path;
 
@@ -261,7 +261,7 @@ void forest::cache::release_node(tree_t::node_ptr node, bool w_lock)
 			release_intr_node(path);
 		}
 	}
-	log_info_private("[cache::release_node] end");
+	//======//log_info_private("[cache::release_node] end");
 }
 
 void forest::cache::with_lock(NODE_TYPES type, std::function<void()> fn)
@@ -283,41 +283,41 @@ void forest::cache::with_lock(NODE_TYPES type, std::function<void()> fn)
 
 void forest::cache::reserve_intr_node(string& path)
 {
-	log_info_private("[cache::reserve_intr_node] ("+path+") start");
+	//======//log_info_private("[cache::reserve_intr_node] ("+path+") start");
 	intr_cache_r[path].second++;
-	log_info_private("[cache::reserve_intr_node] end");
+	//======//log_info_private("[cache::reserve_intr_node] end");
 }
 
 void forest::cache::release_intr_node(string& path)
 {
-	log_info_private("[cache::release_intr_node] ("+path+") start");
+	//======//log_info_private("[cache::release_intr_node] ("+path+") start");
 	assert(intr_cache_r.count(path));
 	assert(intr_cache_r[path].second>0);
 	intr_cache_r[path].second--;
 	check_intr_ref(path);
-	log_info_private("[cache::release_intr_node] end");
+	//======//log_info_private("[cache::release_intr_node] end");
 }
 
 void forest::cache::reserve_leaf_node(string& path)
 {
-	log_info_private("[cache::reserve_leaf_node] ("+path+") start");
+	//======//log_info_private("[cache::reserve_leaf_node] ("+path+") start");
 	leaf_cache_r[path].second++;
-	log_info_private("[cache::reserve_leaf_node] end");
+	//======//log_info_private("[cache::reserve_leaf_node] end");
 }
 
 void forest::cache::release_leaf_node(string& path)
 {
-	log_info_private("[cache::release_leaf_node] ("+path+") start");
+	//======//log_info_private("[cache::release_leaf_node] ("+path+") start");
 	assert(leaf_cache_r.count(path));
 	assert(leaf_cache_r[path].second>0);
 	leaf_cache_r[path].second--;
 	check_leaf_ref(path);
-	log_info_private("[cache::release_leaf_node] end");
+	//======//log_info_private("[cache::release_leaf_node] end");
 }
 
 void forest::cache::intr_insert(tree_t::node_ptr node, bool w_lock)
 {
-	log_info_private("[cache::intr_insert] start");
+	//======//log_info_private("[cache::intr_insert] start");
 	if(w_lock){
 		with_lock(NODE_TYPES::INTR, [&node](){
 			_intr_insert(node);
@@ -325,12 +325,12 @@ void forest::cache::intr_insert(tree_t::node_ptr node, bool w_lock)
 	} else {
 		_intr_insert(node);
 	}
-	log_info_private("[cache::intr_insert] end");
+	//======//log_info_private("[cache::intr_insert] end");
 }
 
 void forest::cache::leaf_insert(tree_t::node_ptr node, bool w_lock)
 {
-	log_info_private("[cache::leaf_insert] start");
+	//======//log_info_private("[cache::leaf_insert] start");
 	if(w_lock){
 		with_lock(NODE_TYPES::LEAF, [&node](){
 			_leaf_insert(node);
@@ -338,12 +338,12 @@ void forest::cache::leaf_insert(tree_t::node_ptr node, bool w_lock)
 	} else {
 		_leaf_insert(node);
 	}
-	log_info_private("[cache::leaf_insert] end");
+	//======//log_info_private("[cache::leaf_insert] end");
 }
 
 void forest::cache::clear_node_cache(tree_t::node_ptr node)
 {
-	log_info_private("[cache::clear_node_cache] start");
+	//======//log_info_private("[cache::clear_node_cache] start");
 	node_data_ptr data = get_node_data(node);
 	string& path = data->path;
 	if(node->is_leaf()){
@@ -361,7 +361,7 @@ void forest::cache::clear_node_cache(tree_t::node_ptr node)
 		}
 		cache::intr_unlock();
 	}
-	log_info_private("[cache::clear_node_cache] end");
+	//======//log_info_private("[cache::clear_node_cache] end");
 }
 
 

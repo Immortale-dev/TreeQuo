@@ -24,7 +24,7 @@ INCL=-Isrc -Itest $(LIBS_SRC_I)
 all: generate_libs generate_o generate_t
 
 rc: generate_libs generate_o 
-	$(CC) $(CFLAGS) $(INCL) test/rc_test.cpp -o test/rc_test.o
+	$(CC) $(CFLAGS) $(INCL) test/rc_test.cpp -O3 -o test/rc_test.o
 	${CC} ${INCL} -o rc_test.exe test/rc_test.o ${OBJS} ${LIBS_O}
 
 generate_libs: ${LIBS_O}

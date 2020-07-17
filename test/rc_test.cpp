@@ -14,6 +14,18 @@ using namespace std;
 
 #include "forest.hpp"
 
+int hooks_time = 0;
+int hook_d_enter_time=0, 
+	hook_d_leave_time=0, 
+	hook_d_insert_time=0, 
+	hook_d_remove_time=0, 
+	hook_d_reserve_time=0, 
+	hook_d_release_time=0, 
+	hook_d_insert_leaf_time=0,
+	hook_d_split_time=0,
+	hook_d_ref_time=0,
+	hook_d_base_time=0;
+
 
 DESCRIBE("[RC]", {
     

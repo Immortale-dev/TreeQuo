@@ -1,5 +1,31 @@
 #include "forest.hpp"
 
+int hooks_time = 0;
+int hook_d_enter_time=0, 
+	hook_d_leave_time=0, 
+	hook_d_insert_time=0, 
+	hook_d_remove_time=0, 
+	hook_d_reserve_time=0, 
+	hook_d_release_time=0, 
+	hook_d_insert_leaf_time=0,
+	hook_d_split_time=0,
+	hook_d_ref_time=0,
+	hook_d_base_time=0;
+	
+string to_str(int a)
+{
+    string ret;
+    while(a > 0){
+        ret.push_back(a%26+'a');
+        a/=26;
+    }
+    while(ret.size()<10){
+        ret.push_back('a');   
+    }
+    reverse(ret.begin(),ret.end());
+    return ret;
+}
+
 DESCRIBE("Test single thread", {
 	
 	srand(time(0));
@@ -370,7 +396,7 @@ DESCRIBE("Test multi threads", {
 		// Leaf insertions
 		DESCRIBE("Add `test` tree to the forest", {
 			BEFORE_EACH({
-				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 80);
+				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 200);
 			});
 			
 			AFTER_EACH({
@@ -769,23 +795,54 @@ DESCRIBE("Test multi threads", {
 				DESCRIBE("Comparing time for insert on free and busy tree", {
 					
 					int time_free;
+					int time_to_create_value=0;
 					
 					DESCRIBE("For free tree", {
-						IT("should quickly insert all values", {
-							chrono::time_point p1 = chrono::system_clock::now();	
+						IT_ONLY("should quickly insert all values", {
+							chrono::high_resolution_clock::time_point p1,p2;
+							
 							
 							/*vector<thread> threads;
 							std::thread t([](){
 								
 							});	*/
-							for(int i=0;i<10000;i++){
-								int rnd = i;//rand()%1000000 + 11200;
-								forest::insert_leaf("test", "c"+std::to_string(rnd), forest::leaf_value("some pretty"));
+							
+							p1 = std::chrono::high_resolution_clock::now();
+							for(int i=0;i<100000;i++){
+								auto lf = forest::leaf_value("some pretty");								
 							}
-							chrono::time_point p2 = chrono::system_clock::now();
+							p2 = std::chrono::high_resolution_clock::now();
+							time_to_create_value += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
+							
+							p1 = chrono::system_clock::now();
+							for(int i=0;i<100000;i++){
+								int rnd = i;//rand()%1000000 + 11200;
+								
+								//auto p1 = std::chrono::high_resolution_clock::now();
+								
+								auto lf = forest::leaf_value("some pretty");
+								
+								//auto p2 = std::chrono::high_resolution_clock::now();
+								//time_to_create_value += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
+								
+								forest::insert_leaf("test", to_str(rnd), lf);
+							}
+							p2 = chrono::system_clock::now();
 							time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
 							TEST_SUCCEED();
 							INFO_PRINT("Time For Insert: " + to_string(time_free));
+							INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
+							INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
+							INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
+							INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
+							INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
+							INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
+							INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
+							INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
+							INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
+							INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
+							INFO_PRINT("time to create value: " + to_string(time_to_create_value/1000));
+							INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
 						});
 					});
 				});

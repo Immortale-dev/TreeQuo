@@ -7,6 +7,7 @@ void forest::lock_read(tree_t::node_ptr node)
 
 void forest::lock_read(tree_t::Node* node)
 {
+	//return;
 	auto& tl = get_data(node).travel_locks;
 	
 	tl.m.lock();
@@ -23,6 +24,7 @@ void forest::unlock_read(tree_t::node_ptr node)
 
 void forest::unlock_read(tree_t::Node* node)
 {
+	//return;
 	auto& tl = get_data(node).travel_locks;
 	
 	tl.m.lock();
@@ -39,10 +41,7 @@ void forest::lock_write(tree_t::node_ptr node)
 
 void forest::lock_write(tree_t::Node* node)
 {
-	//if(!node->is_leaf()){
-	//	std::cout << "LOCK_W_I: " + std::to_string((uint_t)node) + "\n";
-	//}
-	
+	//return;
 	auto& tl = get_data(node).travel_locks;
 	
 	tl.g.lock();
@@ -58,14 +57,11 @@ void forest::unlock_write(tree_t::node_ptr node)
 
 void forest::unlock_write(tree_t::Node* node)
 {
+	//return;
 	auto& tl = get_data(node).travel_locks;
 	
 	tl.wlock = false;
 	tl.g.unlock();
-	
-	//if(!node->is_leaf()){
-	//	std::cout << "UNLOCK_W_I: " + std::to_string((uint_t)node) + "\n";
-	//}
 }
 
 void forest::lock_type(tree_t::node_ptr node, tree_t::PROCESS_TYPE type)

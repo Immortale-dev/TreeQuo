@@ -8,23 +8,23 @@ namespace forest{
 
 forest::Savior::Savior()
 {
-	log_info_private("[Savior::Savior] start");
+	//======//log_info_private("[Savior::Savior] start");
 	set_cluster_limit(SAVIOR_DEPEND_CLUSTER_LIMIT);
 	set_cluster_reduce_length(SAVIOR_DEPEND_CLUSTER_REDUCE_LENGTH);
 	set_timer(SAVIOR_IDLE_TIME_MS);
-	log_info_private("[Savior::Savior] end");
+	//======//log_info_private("[Savior::Savior] end");
 }
 
 forest::Savior::~Savior()
 {
-	log_info_private("[Savior::~Savior] start");
+	//======//log_info_private("[Savior::~Savior] start");
 	save_all();
-	log_info_private("[Savior::~Savior] end");
+	//======//log_info_private("[Savior::~Savior] end");
 }
 
 void forest::Savior::put(save_key item, SAVE_TYPES type, void_shared node)
 {
-	log_info_private("[Savior::put] ("+item+") start");
+	//======//log_info_private("[Savior::put] ("+item+") start");
 	//std::cout << "SAVE_PUT_START" << std::endl;
 	if(type == SAVE_TYPES::LEAF){
 		put_leaf(item, node);
@@ -35,12 +35,12 @@ void forest::Savior::put(save_key item, SAVE_TYPES type, void_shared node)
 	}
 	resolve_cluster();
 	//std::cout << "SAVE_PUT_END" << std::endl;
-	log_info_private("[Savior::put] end");
+	//======//log_info_private("[Savior::put] end");
 }
 
 void forest::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
 {
-	log_info_private("[Savior::remove] ("+item+") start");
+	//======//log_info_private("[Savior::remove] ("+item+") start");
 	//std::cout << "S_REMOVE_START\n";
 	
 	//===std::cout << "+REMOVE_LOCK\n";
@@ -73,12 +73,12 @@ void forest::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
 	}
 	*/
 	//std::cout << "S_REMOVE_END\n";
-	log_info_private("[Savior::remove] end");
+	//======//log_info_private("[Savior::remove] end");
 }
 
 void forest::Savior::save(save_key item, bool sync)
 {
-	log_info_private("[Savior::save] ("+item+") start");
+	//======//log_info_private("[Savior::save] ("+item+") start");
 	//std::cout << "SAVE_SAVE_START" << std::endl;
 	{
 		//===std::cout << "+SAVE_LOCK\n";
@@ -86,7 +86,7 @@ void forest::Savior::save(save_key item, bool sync)
 		//===std::cout << "-SAVE_LOCK\n";
 		save_queue.push(item);
 		if(!sync && saving){
-			log_info_private("[Savior::save] (already saving) end");
+			//======//log_info_private("[Savior::save] (already saving) end");
 			return;
 		}
 	}
@@ -99,12 +99,12 @@ void forest::Savior::save(save_key item, bool sync)
 		t.detach();
 	}
 	//std::cout << "SAVE_SAVE_END" << std::endl;
-	log_info_private("[Savior::save] end");
+	//======//log_info_private("[Savior::save] end");
 }
 
 void forest::Savior::get(save_key item)
 {
-	log_info_private("[Savior::get] start");
+	//======//log_info_private("[Savior::get] start");
 	//std::cout << "SAVE_GET_START" << std::endl;
 	//===std::cout << "+GET_LOCK\n";
 	std::unique_lock lock(map_mtx);
@@ -113,19 +113,19 @@ void forest::Savior::get(save_key item)
 		cv.wait(lock);
 	}
 	//std::cout << "SAVE_GET_END" << std::endl;
-	log_info_private("[Savior::get] end");
+	//======//log_info_private("[Savior::get] end");
 }
 
 void forest::Savior::save_all()
 {
-	log_info_private("[Savior::save_all] start");
+	//======//log_info_private("[Savior::save_all] start");
 	while(true){
 		//===std::cout << "+SAVE_ALL_LOCK\n";
 		map_mtx.lock();
 		//===std::cout << "-SAVE_ALL_LOCK\n";
 		if(map.size() == 0){
 			map_mtx.unlock();
-			log_info_private("[Savior::save_all] end");
+			//======//log_info_private("[Savior::save_all] end");
 			return;
 		}
 		save_key item = (map.begin())->first;
@@ -176,40 +176,40 @@ void forest::Savior::set_cluster_reduce_length(uint_t length)
 
 void forest::Savior::put_leaf(save_key item, void_shared node)
 {	
-	log_info_private("[Savior::put_leaf] start");
+	//======//log_info_private("[Savior::put_leaf] start");
 	//std::cout << "PUT_LEAF_START\n";
 	//===std::cout << "+PUT_LEAF_LOCK\n";
 	std::lock_guard<std::mutex> lock(map_mtx);
 	//===std::cout << "-PUT_LEAF_LOCK\n";
 	define_item(item, SAVE_TYPES::LEAF, ACTION_TYPE::SAVE, node);
 	//std::cout << "PUT_LEAF_END\n";
-	log_info_private("[Savior::put_leaf] end");
+	//======//log_info_private("[Savior::put_leaf] end");
 }
 
 void forest::Savior::put_internal(save_key item, void_shared node)
 {	
-	log_info_private("[Savior::put_internal] start");
+	//======//log_info_private("[Savior::put_internal] start");
 	//===std::cout << "+PUT_INTERNAL_LOCK\n";
 	std::lock_guard<std::mutex> lock(map_mtx);
 	//===std::cout << "-PUT_INTERNAL_LOCK\n";
 	define_item(item, SAVE_TYPES::INTR, ACTION_TYPE::SAVE, node);
-	log_info_private("[Savior::put_internal] end");
+	//======//log_info_private("[Savior::put_internal] end");
 }
 
 void forest::Savior::put_base(save_key item, void_shared node)
 {
-	log_info_private("[Savior::put_base] start");
+	//======//log_info_private("[Savior::put_base] start");
 	//===std::cout << "+PUT_BASE_LOCK\n";
 	std::lock_guard<std::mutex> lock(map_mtx);
 	//===std::cout << "-PUT_BASE_LOCK\n";
 	define_item(item, SAVE_TYPES::BASE, ACTION_TYPE::SAVE, node);
-	log_info_private("[Savior::put_base] end");
+	//======//log_info_private("[Savior::put_base] end");
 }
 
 
 DBFS::File* forest::Savior::save_intr(node_ptr node)
 {
-	log_info_private("[Savior::save_intr] start");
+	//======//log_info_private("[Savior::save_intr] start");
 	//std::cout << "SAVE--------INTR_START\n";
 	DBFS::File* f = DBFS::create();
 	//std::cout << "SAVE--------INTR_FILE_CREATE\n";
@@ -245,13 +245,13 @@ DBFS::File* forest::Savior::save_intr(node_ptr node)
 	f->close();
 	
 	//std::cout << "SAVE--------INTR_CLOSE\n";
-	log_info_private("[Savior::save_intr] end");
+	//======//log_info_private("[Savior::save_intr] end");
 	return f;
 }
 
 DBFS::File* forest::Savior::save_leaf(node_ptr node, std::shared_ptr<DBFS::File> fp)
 {
-	log_info_private("[Savior::save_leaf] start");
+	//======//log_info_private("[Savior::save_leaf] start");
 	
 	tree_leaf_read_t leaf_d;
 	auto* keys = new std::vector<tree_t::key_type>();
@@ -299,13 +299,13 @@ DBFS::File* forest::Savior::save_leaf(node_ptr node, std::shared_ptr<DBFS::File>
 	
 	fp->stream().flush();
 	
-	log_info_private("[Savior::save_leaf] end");
+	//======//log_info_private("[Savior::save_leaf] end");
 	return fp.get();
 }
 
 DBFS::File* forest::Savior::save_base(tree_ptr tree)
 {
-	log_info_private("[Savior::save_base] start");
+	//======//log_info_private("[Savior::save_base] start");
 	
 	//std::cout << "-SAVE_BASE_START\n";
 	DBFS::File* base_f = DBFS::create();
@@ -330,21 +330,21 @@ DBFS::File* forest::Savior::save_base(tree_ptr tree)
 	base_f->close();
 	
 	//std::cout << "-SAVE_BASE_END\n";
-	log_info_private("[Savior::save_base] end");
+	//======//log_info_private("[Savior::save_base] end");
 	return base_f;
 }
 
 
 void forest::Savior::save_item(save_key item)
 {
-	log_info_private("[Savior::save_item] ("+item+") start");
+	//======//log_info_private("[Savior::save_item] ("+item+") start");
 	
 	//===std::cout << "+SAVE_ITEM_FIRST_LOCK\n";
 	map_mtx.lock();
 	//===std::cout << "-SAVE_ITEM_FIRST_LOCK\n";
 	if(!map.count(item)){
 		map_mtx.unlock();
-		log_info_private("[Savior::save_item] (no item found) end");
+		//======//log_info_private("[Savior::save_item] (no item found) end");
 		return;
 	}
 	//std::cout << "SAVE_ITEM---ITEM_SAVE_START\n";
@@ -521,7 +521,7 @@ void forest::Savior::save_item(save_key item)
 	map_mtx.unlock();
 	//std::cout << "SAVE_ITEM---ITEM_SAVE_END\n";
 	//std::cout << "S_SS_LEAF_END\n";
-	log_info_private("[Savior::save_item] end");
+	//======//log_info_private("[Savior::save_item] end");
 }
 
 void forest::Savior::resolve_cluster()
@@ -551,7 +551,7 @@ void forest::Savior::resolve_cluster()
 
 void forest::Savior::schedule_save()
 {
-	log_info_private("[Savior::schedule_save] start");
+	//======//log_info_private("[Savior::schedule_save] start");
 	
 	//===std::cout << "+SCHEDULE_SAVE_FIRST_LOCK\n";
 	mtx.lock();
@@ -577,12 +577,12 @@ void forest::Savior::schedule_save()
 		save_item(item);
 	}
 	
-	log_info_private("[Savior::schedule_save] end");
+	//======//log_info_private("[Savior::schedule_save] end");
 }
 
 forest::Savior::save_value* forest::Savior::own_item(save_key item)
 {
-	log_info_private("[Savior::own_item] ("+item+") start");
+	//======//log_info_private("[Savior::own_item] ("+item+") start");
 	//===std::cout << "+OWN_ITEM_LOCK\n";
 	std::unique_lock<std::mutex> lock(map_mtx);
 	//===std::cout << "-OWN_ITEM_LOCK\n";
@@ -593,25 +593,25 @@ forest::Savior::save_value* forest::Savior::own_item(save_key item)
 	map[item]->m.lock();
 	//===std::cout << "-OWN_ITEM_SECOND_LOCK\n";
 	map[item]->using_now = true;
-	log_info_private("[Savior::own_item] end");
+	//======//log_info_private("[Savior::own_item] end");
 	return map[item];
 }
 
 void forest::Savior::free_item(save_key item)
 {
-	log_info_private("[Savior::free_item] ("+item+") start");
+	//======//log_info_private("[Savior::free_item] ("+item+") start");
 	//===std::cout << "+FREE_ITEM_LOCK\n";
 	std::unique_lock<std::mutex> lock(map_mtx);
 	//===std::cout << "-FREE_ITEM_LOCK\n";
 	map[item]->using_now = false;
 	map[item]->m.unlock();
 	cv.notify_all();
-	log_info_private("[Savior::free_item] end");
+	//======//log_info_private("[Savior::free_item] end");
 }
 
 forest::void_shared forest::Savior::define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action, void_shared node)
 {
-	log_info_private("[Savior::define_item] ("+item+") start");
+	//======//log_info_private("[Savior::define_item] ("+item+") start");
 	if(!map.count(item)){
 		save_value* val = new save_value();
 		map[item] = val;
@@ -619,6 +619,6 @@ forest::void_shared forest::Savior::define_item(save_key item, SAVE_TYPES type, 
 		val->type = type;
 		val->node = node;
 	}
-	log_info_private("[Savior::define_item] end");
+	//======//log_info_private("[Savior::define_item] end");
 	return map[item]->node;
 }
