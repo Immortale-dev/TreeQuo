@@ -95,7 +95,9 @@ void forest::delete_tree(string name)
 	//std::cout << "ERASE TREE NAME: " + name + "\n";
 	
 	// Remove tree from forest
+	//std::cout << "ERASE_FROM_FOREST\n";
 	FOREST->erase(name);
+	//std::cout << "ERASE_FROM_FOREST_END\n";
 	
 	//std::cout << "ERASE TREE START:::: " + path + "\n";
 	

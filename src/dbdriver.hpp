@@ -12,9 +12,9 @@ namespace forest{
 		using bpt_t = BPlusTree<T, V, DBDriver<T,V>>;
 		using fn_p = std::function<void(typename bpt_t::node_ptr, typename bpt_t::PROCESS_TYPE, bpt_t*)>;
 		using fn = std::function<void(typename bpt_t::node_ptr, bpt_t*)>;
-		using fn_move = std::function<void(typename bpt_t::child_item_type_ptr&, int, bpt_t*)>;
+		using fn_move = std::function<void(typename bpt_t::childs_type_iterator&, int, bpt_t*)>;
 		using fn_item = std::function<void(typename bpt_t::child_item_type_ptr&, typename bpt_t::PROCESS_TYPE, bpt_t*)>;
-		using fn_item_move = std::function<void(typename bpt_t::node_ptr, bool, bpt_t*)>;
+		using fn_item_move = std::function<void(typename bpt_t::node_ptr, typename bpt_t::child_item_type_ptr, bpt_t*)>;
 		using fn_n_i = std::function<void(typename bpt_t::node_ptr, typename bpt_t::child_item_type_ptr, bpt_t*)>;
 		using fn_n_n = std::function<void(typename bpt_t::node_ptr, typename bpt_t::node_ptr, bpt_t*)>;
 		using fn_n_n_n = std::function<void(typename bpt_t::node_ptr, typename bpt_t::node_ptr, typename bpt_t::node_ptr, bpt_t*)>;

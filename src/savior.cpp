@@ -280,9 +280,18 @@ DBFS::File* forest::Savior::save_leaf(node_ptr node, std::shared_ptr<DBFS::File>
 	leaf_d.left_leaf = data->prev;
 	leaf_d.right_leaf = data->next;
 	
-	for(auto& it : *(node->get_childs()) ){
-		keys->push_back(it->item->first);
-		lengths->push_back(it->item->second->size());
+	///for(auto& it : *(node->get_childs()) ){
+	///	keys->push_back(it->item->first);
+	///	lengths->push_back(it->item->second->size());
+	///}
+	auto* childs = node->get_childs();
+	tree_t::childs_type_iterator start;
+	
+	start = childs->begin();
+	while(start != childs->end()){
+		keys->push_back(start->data->item->first);
+		lengths->push_back(start->data->item->second->size());
+		start = childs->find_next(start);
 	}
 	
 	leaf_d.child_keys = keys;
@@ -293,9 +302,15 @@ DBFS::File* forest::Savior::save_leaf(node_ptr node, std::shared_ptr<DBFS::File>
 	//===std::cout << "+SAVE_LEAF_LOCK\n";
 	auto lock = fp->get_lock();
 	//===std::cout << "-SAVE_LEAF_LOCK\n";
-	for(auto& it : *(node->get_childs()) ){
-		forest::Tree::write_leaf_item(fp, it->item->second);
+	///for(auto& it : *(node->get_childs()) ){
+	///	forest::Tree::write_leaf_item(fp, it->item->second);
+	///}
+	start = childs->begin();
+	while(start != childs->end()){
+		forest::Tree::write_leaf_item(fp, start->data->item->second);
+		start = childs->find_next(start);
 	}
+	
 	
 	fp->stream().flush();
 	
@@ -435,18 +450,21 @@ void forest::Savior::save_item(save_key item)
 			
 			
 			//====//std::cout << "SAVE_LEAF: " + cur_name + "\n";
-			//cache::leaf_lock();
 			
+			// TODO: uncomment!
+			//cache::leaf_lock();
 			//if(!cache::leaf_cache_r.count(item) || cache::leaf_cache_r[item].first.get() != node.get()){
 			//	fp->close();
 			//}
+			//cache::leaf_unlock();
+			
+			// FUCK IT!
 			///////////////////////////////////////////////////////////////////
 			// TODO: should be deleted when BPT::insert move semantic done   //
 			// std::cout << "CLOSE_FUCKING_FILE!!! " + cur_name + "\n";      //
-			 fp->close();                                                  //
+			   fp->close();                                                  //
 			///////////////////////////////////////////////////////////////////
 			
-			//cache::leaf_unlock();
 			
 			//std::cout << "SAVE_LEAF_END\n";
 			

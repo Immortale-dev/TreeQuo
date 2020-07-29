@@ -146,18 +146,24 @@ DESCRIBE("Test single thread", {
 					TEST_SUCCEED();
 					
 					for(int i=0;i<10;i++){
+						//std::cout << "FIND_LEAF_" + std::to_string(i) + "\n";
 						char c = i + 'a';
 						string k = "";
 						k.push_back(c);
+						//std::cout << "BEFORE_FIND_LOWER\n";
 						auto record = forest::find_leaf("test", k, forest::RECORD_POSITION::LOWER);
+						//std::cout << "AFTER_FIND_LOWER\n";
 						string compare = "";
 						compare.push_back((char)(i-i%2)+'a');
 						EXPECT(record->key()).toBe(compare);
 						
+						//std::cout << "BEFORE_FIND_UPPER\n";
 						record = forest::find_leaf("test", k, forest::RECORD_POSITION::UPPER);
+						//std::cout << "AFTER_FIND_UPPER\n";
 						compare = "";
 						compare.push_back((char)(i-i%2+2)+'a');
 						EXPECT(record->key()).toBe(compare);
+						//std::cout << "END_FIND_LEAF\n";
 					}
 					
 				});
@@ -792,13 +798,13 @@ DESCRIBE("Test multi threads", {
 					});
 				});
 				
-				DESCRIBE("Comparing time for insert on free and busy tree", {
+				DESCRIBE_SKIP("Comparing time for insert on free and busy tree", {
 					
 					int time_free;
 					int time_to_create_value=0;
 					
 					DESCRIBE("For free tree", {
-						IT_ONLY("should quickly insert all values", {
+						IT("should quickly insert all values", {
 							chrono::high_resolution_clock::time_point p1,p2;
 							
 							

@@ -134,6 +134,7 @@ class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key,
  		typedef std::shared_ptr<Node> node_ptr;
  		typedef typename Node::child_item_type child_item_type;
  		typedef typename Node::child_item_type_ptr child_item_type_ptr;
+ 		typedef typename Node::childs_type_iterator childs_type_iterator;
 		typedef typename Base::PROCESS_TYPE PROCESS_TYPE;
 		typedef typename Base::LEAF_REF LEAF_REF;
 		
@@ -154,6 +155,7 @@ class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key,
 		void unlock_write();
 		
 		using Base::update_positions;
+		using Base::create_entry_item;
 		
 	private:
 		void processSearchNodeStart(node_ptr node, PROCESS_TYPE type);
@@ -162,11 +164,11 @@ class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key,
 		void processDeleteNode(node_ptr node);
 		void processIteratorNodeReserved(node_ptr node);
 		void processIteratorNodeReleased(node_ptr node);
-		void processIteratorMoveStart(child_item_type_ptr item, int step);
-		void processIteratorMoveEnd(child_item_type_ptr item, int step);
+		void processIteratorMoveStart(childs_type_iterator item, int step);
+		void processIteratorMoveEnd(childs_type_iterator item, int step);
 		void processItemReserve(child_item_type_ptr item, PROCESS_TYPE type);
 		void processItemRelease(child_item_type_ptr item, PROCESS_TYPE type);
-		void processItemMove(node_ptr node, bool release);
+		void processItemMove(node_ptr node, child_item_type_ptr item);
 		void processLeafReserve(node_ptr node, PROCESS_TYPE type);
 		void processLeafRelease(node_ptr node, PROCESS_TYPE type);
 		void processLeafInsertItem(node_ptr node, child_item_type_ptr item);
@@ -285,7 +287,7 @@ void BPlusTree<Key, T, D>::processIteratorNodeReleased(node_ptr node)
 }
 
 template <class Key, class T, typename D>
-void BPlusTree<Key, T, D>::processIteratorMoveStart(child_item_type_ptr item, int step)
+void BPlusTree<Key, T, D>::processIteratorMoveStart(childs_type_iterator item, int step)
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 
@@ -296,7 +298,7 @@ void BPlusTree<Key, T, D>::processIteratorMoveStart(child_item_type_ptr item, in
 }
 
 template <class Key, class T, typename D>
-void BPlusTree<Key, T, D>::processIteratorMoveEnd(child_item_type_ptr item, int step)
+void BPlusTree<Key, T, D>::processIteratorMoveEnd(childs_type_iterator item, int step)
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 
@@ -329,11 +331,12 @@ void BPlusTree<Key, T, D>::processItemRelease(child_item_type_ptr item, PROCESS_
 }
 
 template <class Key, class T, typename D>
-void BPlusTree<Key, T, D>::processItemMove(node_ptr node, bool release)
+void BPlusTree<Key, T, D>::processItemMove(node_ptr node, child_item_type_ptr item)
 {
+	//std::cout << "WTDF!!!!!!!!!\n";
 	auto p1 = std::chrono::high_resolution_clock::now();
 
-	driver->itemMove(node, release, this);
+	driver->itemMove(node, item, this);
 	
 	auto p2 = std::chrono::high_resolution_clock::now();
 	hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
