@@ -9,6 +9,7 @@
 #include <atomic>
 #include <utility>
 #include <unordered_map>
+#include <unordered_set>
 #include <cstdint>
 #include <iostream> //for debug
 #include "dbfs.hpp"
@@ -43,7 +44,7 @@ namespace forest{
 	using file_data_ptr = std::shared_ptr<file_data_t>;
 	
 	using driver_t = DBDriver<string, file_data_ptr>;
-	using tree_t = BPlusTree<string, file_data_ptr, driver_t>;
+	using tree_t = BPlusTree<string, file_data_ptr, Tree>;
 	
 	using tree_ptr = std::shared_ptr<Tree>;
 	using node_ptr = tree_t::node_ptr;

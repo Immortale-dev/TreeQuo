@@ -134,6 +134,16 @@ DESCRIBE("Test single thread", {
 				forest::delete_tree("test");
 			});
 			
+			IT("move through the leaf should works", {
+				auto record = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
+
+				record->move_forward();
+				record->move_forward();
+				record->move_forward();
+				
+				EXPECT(record->eof()).toBe(true);
+			});
+			
 			DESCRIBE("Add 10 items with even key to the tree", {
 				BEFORE_ALL({
 					
@@ -804,7 +814,7 @@ DESCRIBE("Test multi threads", {
 					});
 				});
 				
-				DESCRIBE_ONLY("Comparing time for insert on free and busy tree", {
+				DESCRIBE("Comparing time for insert on free and busy tree", {
 					
 					int time_free;
 					int time_to_create_value=0;

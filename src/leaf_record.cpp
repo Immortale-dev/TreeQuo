@@ -18,7 +18,11 @@ forest::LeafRecord::~LeafRecord()
 forest::LeafRecord::LeafRecord(tree_t::iterator it, tree_ptr tree) : it(std::move(it)), tree(tree)
 {
 	//std::cout << "LR_CREATE\n";
+	//if(!eof() && tree){
+		//std::cout << (it->first) << std::endl;
 	tree->tree_reserve();
+	//}
+	//std::cout << "LR_CREA_TED\n";
 	// main ctor
 }
 
@@ -30,13 +34,13 @@ bool forest::LeafRecord::eof()
 bool forest::LeafRecord::move_forward()
 {
 	++it;
-	return eof();
+	return !eof();
 }
 
 bool forest::LeafRecord::move_back()
 {
 	--it;
-	return eof();
+	return !eof();
 }
 
 forest::file_data_ptr forest::LeafRecord::val()

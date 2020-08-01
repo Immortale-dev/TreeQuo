@@ -192,11 +192,12 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key)
 	tree_ptr tree = find_tree(name);
 	try{
 		tree_t::iterator t = tree->find(key);
+		
+		LeafRecord_ptr rc = LeafRecord_ptr(new LeafRecord(t, tree));
+		
 		leave_tree(tree->get_name());
-		
 		//=====//log_info_public("[forest::find_leaf] end:"+name+" key:"+key);
-		
-		return LeafRecord_ptr(new LeafRecord(t, tree));
+		return rc;
 	} 
 	catch(DBException& e) {
 		//=====//log_info_public("[forest::find_leaf] end:"+name+" key:"+key + " (error)");
@@ -211,6 +212,7 @@ forest::LeafRecord_ptr forest::find_leaf(string name, RECORD_POSITION position)
 	//=====//log_info_public("[forest::find_leaf] start:"+name+" position:"+to_string((int)position));
 	
 	tree_ptr tree = find_tree(name);
+	//std::cout << "NOW_START" << std::endl;
 	try{
 		tree_t::iterator t;
 		if(position == RECORD_POSITION::BEGIN){
@@ -219,11 +221,13 @@ forest::LeafRecord_ptr forest::find_leaf(string name, RECORD_POSITION position)
 		else{
 			t = --tree->get_tree()->end();
 		}
+		
+		LeafRecord_ptr rc = LeafRecord_ptr(new LeafRecord(t, tree));
+		
 		leave_tree(tree->get_name());
 		
 		//=====//log_info_public("[forest::find_leaf] end:"+name+" position:"+to_string((int)position));
-		
-		return LeafRecord_ptr(new LeafRecord(t, tree));
+		return rc;
 	}
 	catch(DBException& e) {
 		//=====//log_info_public("[forest::find_leaf] end:"+name+" position:"+to_string((int)position) + " (error)");
@@ -250,11 +254,13 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key, RECO
 		else {
 			t = tree->get_tree()->upper_bound(key);
 		}
+		
+		LeafRecord_ptr rc = LeafRecord_ptr(new LeafRecord(t, tree));
+		
 		leave_tree(tree->get_name());
 		
 		//=====//log_info_public("[forest::find_leaf] end:"+name+" key:"+key+" position:"+to_string((int)position));
-		
-		return LeafRecord_ptr(new LeafRecord(t, tree));
+		return rc;
 	}
 	catch(DBException& e) {
 		//=====//log_info_public("[forest::find_leaf] end:"+name+" key:"+key+" position:"+to_string((int)position) + " (error)");

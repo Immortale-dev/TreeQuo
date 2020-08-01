@@ -18,9 +18,15 @@ forest::Tree::Tree(string path)
 	type = base.type;
 	
 	// Init BPT
-	tree = new tree_t(base.factor, create_node(base.branch, base.branch_type), base.count, init_driver());
+	tree = new tree_t(base.factor, create_node(base.branch, base.branch_type), base.count, this);
 	
 	//======//log_info_private("[Tree::Tree] base_constructor end");
+}
+
+forest::Tree::Tree()
+{
+	tree = nullptr;
+	// ctor
 }
 
 forest::Tree::Tree(string path, TREE_TYPES type, int factor)
@@ -31,7 +37,7 @@ forest::Tree::Tree(string path, TREE_TYPES type, int factor)
 	this->type = type;
 	
 	// Init BPT
-	tree = new tree_t(factor, create_node(LEAF_NULL, NODE_TYPES::LEAF), 0, init_driver());
+	tree = new tree_t(factor, create_node(LEAF_NULL, NODE_TYPES::LEAF), 0, this);
 	
 	//======//log_info_private("[Tree::Tree] advanced_constructor end");
 }
@@ -39,7 +45,9 @@ forest::Tree::Tree(string path, TREE_TYPES type, int factor)
 forest::Tree::~Tree()
 {
 	//======//log_info_private("[Tree::~Tree] start");
-	delete tree;
+	if(tree){
+		delete tree;
+	}
 	//======//log_info_private("[Tree::~Tree] end");
 }
 
@@ -67,14 +75,11 @@ forest::tree_ptr forest::Tree::get(string path)
 {
 	//======//log_info_private("[Tree::get] start");
 	tree_ptr t;
-		
-	// Check for future
-	if(cache::tree_cache_q.count(path)){
-		std::shared_future<tree_ptr> f = cache::tree_cache_q[path];
-		cache::tree_cache_m.unlock();
-		// TODO: recode with condition variables
-		f.get();
-		cache::tree_cache_m.lock();
+	
+	std::unique_lock<std::mutex> tree_lock(cache::tree_cv_m);
+	
+	while(!cache::tree_cache_r.count(path) && cache::tree_cache_q.count(path)){
+		cache::tree_cv.wait(tree_lock);
 	}
 	
 	// Try to get from cache
@@ -92,9 +97,10 @@ forest::tree_ptr forest::Tree::get(string path)
 		return t;
 	}
 	
-	// Create Promise
-	std::promise<tree_ptr> p;
-	cache::tree_cache_q[path] = p.get_future();
+	cache::tree_cache_q.insert(path);
+	
+	// Unlock global mutexes
+	tree_lock.unlock();
 	cache::tree_cache_m.unlock();
 	
 	// Get from file
@@ -102,10 +108,14 @@ forest::tree_ptr forest::Tree::get(string path)
 	
 	// Fill in cache and send future event
 	cache::tree_cache_m.lock();
+	tree_lock.lock();
+	
 	cache::tree_cache.push(path, t);
 	cache::tree_cache_r[path] = std::make_pair(t,0);
-	p.set_value(t);
 	cache::tree_cache_q.erase(path);
+	
+	// Notify all threads
+	cache::tree_cv.notify_all();
 	
 	// return value
 	//======//log_info_private("[Tree::get] end");
@@ -115,6 +125,11 @@ forest::tree_ptr forest::Tree::get(string path)
 forest::tree_t* forest::Tree::get_tree()
 {
 	return this->tree;
+}
+
+void forest::Tree::set_tree(tree_t* tree)
+{
+	this->tree = tree;
 }
 
 void forest::Tree::insert(tree_t::key_type key, tree_t::val_type val, bool update)
@@ -479,7 +494,7 @@ void forest::Tree::materialize_leaf(tree_t::node_ptr node)
 void forest::Tree::unmaterialize_intr(tree_t::node_ptr node)
 {
 	//======//log_info_private("[Tree::unmaterialize_intr] start");
-	auto p1 = std::chrono::high_resolution_clock::now();
+	//auto p1 = std::chrono::high_resolution_clock::now();
 	
 	
 	// Get node data
@@ -512,14 +527,14 @@ void forest::Tree::unmaterialize_intr(tree_t::node_ptr node)
 	
 	cache::release_node(n, true);
 	
-	auto p2 = std::chrono::high_resolution_clock::now();
-	hook_unmaterialize_intr += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
+	//auto p2 = std::chrono::high_resolution_clock::now();
+	//hook_unmaterialize_intr += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 	//======//log_info_private("[Tree::unmaterialize_intr] end");
 }
 
 void forest::Tree::unmaterialize_leaf(tree_t::node_ptr node)
 {
-	auto p1 = std::chrono::high_resolution_clock::now();
+	//auto p1 = std::chrono::high_resolution_clock::now();
 	//======//log_info_private("[Tree::unmaterialize_leaf] start");
 	
 	// Get node data
@@ -555,8 +570,8 @@ void forest::Tree::unmaterialize_leaf(tree_t::node_ptr node)
 	
 	cache::release_node(n, true);
 	
-	auto p2 = std::chrono::high_resolution_clock::now();
-	hook_unmaterialize_leaf += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
+	//auto p2 = std::chrono::high_resolution_clock::now();
+	//hook_unmaterialize_leaf += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 	
 	//======//log_info_private("[Tree::unmaterialize_leaf] end");
 }
@@ -601,6 +616,11 @@ forest::string forest::Tree::get_name()
 forest::TREE_TYPES forest::Tree::get_type()
 {
 	return type;
+}
+
+void forest::Tree::set_type(TREE_TYPES type)
+{
+	this->type = type;
 }
 
 forest::tree_t::node_ptr forest::Tree::get_intr(string path)
@@ -697,7 +717,7 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	change_lock_write(leaf_data);
 	
 	// Put it into the cache
-	cache::leaf_cache_r[path] = {leaf_data,1,0};
+	cache::leaf_cache_r[path] = {leaf_data,1};
 	cache::leaf_unlock();
 	
 	// Fill data
@@ -989,7 +1009,7 @@ void forest::Tree::write_leaf_item_n(DBFS::File* file, tree_t::val_type& data)
 	//data->set_start(start_data);
 	//data->set_file(file);
 }
-
+/*
 forest::driver_t* forest::Tree::init_driver()
 {
 	return new driver_t(
@@ -1015,11 +1035,11 @@ forest::driver_t* forest::Tree::init_driver()
 		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_save_base(node, tree); }
 	);
 }
-
+*/
 
 
 // Proceed
-void forest::Tree::d_enter(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree)
+void forest::Tree::d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type)
 {	
 	auto p1 = std::chrono::high_resolution_clock::now();
 	//======//log_info_private("[Tree::d_enter] start");
@@ -1044,7 +1064,7 @@ void forest::Tree::d_enter(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tre
 	//======//log_info_private("[Tree::d_enter] end");
 }
 
-void forest::Tree::d_leave(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree)
+void forest::Tree::d_leave(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type)
 {	
 	auto p1 = std::chrono::high_resolution_clock::now();
 	//======//log_info_private("[Tree::d_leave] start");
@@ -1069,7 +1089,7 @@ void forest::Tree::d_leave(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tre
 	//======//log_info_private("[Tree::d_leave] end");
 }
 
-void forest::Tree::d_insert(tree_t::node_ptr node, tree_t* tree)
+void forest::Tree::d_insert(tree_t::node_ptr& node)
 {	
 	//======//log_info_private("[Tree::d_insert] start");
 	
@@ -1108,7 +1128,7 @@ void forest::Tree::d_insert(tree_t::node_ptr node, tree_t* tree)
 	//======//log_info_private("[Tree::d_insert] end");
 }
 
-void forest::Tree::d_remove(tree_t::node_ptr node, tree_t* tree)
+void forest::Tree::d_remove(tree_t::node_ptr& node)
 {	
 	
 	auto p1 = std::chrono::high_resolution_clock::now();
@@ -1155,7 +1175,7 @@ void forest::Tree::d_remove(tree_t::node_ptr node, tree_t* tree)
 	//======//log_info_private("[Tree::d_remove] end");
 }
 
-void forest::Tree::d_reserve(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree)
+void forest::Tree::d_reserve(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type)
 {	
 	//======//log_info_private("[Tree::d_reserve] start");
 	auto p1 = std::chrono::high_resolution_clock::now();
@@ -1178,7 +1198,7 @@ void forest::Tree::d_reserve(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, t
 	//======//log_info_private("[Tree::d_reserve] end");
 }
 
-void forest::Tree::d_release(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree)
+void forest::Tree::d_release(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type)
 {	
 	//======//log_info_private("[Tree::d_release] start");
 	auto p1 = std::chrono::high_resolution_clock::now();
@@ -1201,7 +1221,7 @@ void forest::Tree::d_release(tree_t::node_ptr node, tree_t::PROCESS_TYPE type, t
 	//======//log_info_private("[Tree::d_release] end");
 }
 
-void forest::Tree::d_before_move(tree_t::childs_type_iterator item, int_t step, tree_t* tree)
+void forest::Tree::d_before_move(tree_t::childs_type_iterator& item, int_t step)
 {
 	//std::cout << "BEFORE_MOVE\n";
 	//======//log_info_private("[Tree::d_before_move] start");
@@ -1258,7 +1278,7 @@ void forest::Tree::d_before_move(tree_t::childs_type_iterator item, int_t step, 
 	//======//log_info_private("[Tree::d_before_move] end");
 }
 
-void forest::Tree::d_after_move(tree_t::childs_type_iterator item, int_t step, tree_t* tree)
+void forest::Tree::d_after_move(tree_t::childs_type_iterator& item, int_t step)
 {	
 	//std::cout << "AFTER_MOVE\n";
 	//======//log_info_private("[Tree::d_after_move] start");
@@ -1302,9 +1322,9 @@ void forest::Tree::d_after_move(tree_t::childs_type_iterator item, int_t step, t
 	//======//log_info_private("[Tree::d_after_move] end");
 }
 
-void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree)
+void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr& item, tree_t::PROCESS_TYPE type)
 {	
-	auto p1 = std::chrono::high_resolution_clock::now();
+	//auto p1 = std::chrono::high_resolution_clock::now();
 	//======//log_info_private("[Tree::d_item_reserve] start");
 	
 	tree_t::node_ptr node;
@@ -1325,8 +1345,8 @@ void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROC
 	
 	cache::leaf_lock();
 	/// lock{
-	//=cache::reserve_leaf_node(path);
-	cache::leaf_cache_r[path].items++;
+	cache::reserve_leaf_node(path);
+	cache::leaf_cache_r[path].second++;
 	if(type == tree_t::PROCESS_TYPE::READ){
 		//=cache::insert_item((uintptr_t)node.get(), item->pos);
 		cache::insert_item(item);
@@ -1348,13 +1368,13 @@ void forest::Tree::d_item_reserve(tree_t::child_item_type_ptr item, tree_t::PROC
 	}
 	
 	//======//log_info_private("[Tree::d_item_reserve] end");
-	auto p2 = std::chrono::high_resolution_clock::now();
-	hooks_time_inner += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
+	//auto p2 = std::chrono::high_resolution_clock::now();
+	//hooks_time_inner += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
-void forest::Tree::d_item_release(tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree)
+void forest::Tree::d_item_release(tree_t::child_item_type_ptr& item, tree_t::PROCESS_TYPE type)
 {
-	auto p1 = std::chrono::high_resolution_clock::now();
+	//auto p1 = std::chrono::high_resolution_clock::now();
 	//======//log_info_private("[Tree::d_item_release] start");
 	
 	//std::cout << "ITEM_RELEASE_START\n";
@@ -1380,7 +1400,7 @@ void forest::Tree::d_item_release(tree_t::child_item_type_ptr item, tree_t::PROC
 	}
 	// Unlock item
 	unlock_type(item, type);
-	cache::leaf_cache_r[path].items--;
+	cache::leaf_cache_r[path].second--;
 	//=cache::release_leaf_node(path);
 	/// }lock
 	cache::leaf_unlock();
@@ -1397,18 +1417,18 @@ void forest::Tree::d_item_release(tree_t::child_item_type_ptr item, tree_t::PROC
 	//std::cout << "ITEM_RELEASE_END\n";
 
 	//======//log_info_private("[Tree::d_item_release] end");
-	auto p2 = std::chrono::high_resolution_clock::now();
-	hooks_time_inner += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
+	//auto p2 = std::chrono::high_resolution_clock::now();
+	//hooks_time_inner += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
-void forest::Tree::d_item_move(tree_t::node_ptr node, tree_t::child_item_type_ptr item, tree_t* tree)
+void forest::Tree::d_item_move(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item)
 {
 	//std::cout << "NODE_ASSIGN\n";
 	//======//log_info_private("[Tree::d_item_move] start");
 	
 	//std::cout << "MOVE\n";
 	
-	auto p1 = std::chrono::high_resolution_clock::now();
+	//auto p1 = std::chrono::high_resolution_clock::now();
 	
 	assert((bool)node);
 	
@@ -1449,14 +1469,14 @@ void forest::Tree::d_item_move(tree_t::node_ptr node, tree_t::child_item_type_pt
 	//std::cout << "MOVE_BEFORE_ASSIGN\n";
 	
 	//std::cout << "WTF?- " + std::to_string(item->item->second->res_c) + "\n";
-	cache::leaf_cache_r[get_node_data(node)->path].items += item->item->second->res_c;
+	cache::leaf_cache_r[get_node_data(node)->path].second += item->item->second->res_c;
 	//item->item->second->o.lock();
 	item->node = node;
 	//item->item->second->o.unlock();
 	
 	if(onode){
 		string& old_path = get_node_data(onode)->path;
-		cache::leaf_cache_r[old_path].items -= item->item->second->res_c;
+		cache::leaf_cache_r[old_path].second -= item->item->second->res_c;
 		cache::check_leaf_ref(old_path);
 	}
 	
@@ -1483,14 +1503,14 @@ void forest::Tree::d_item_move(tree_t::node_ptr node, tree_t::child_item_type_pt
 	
 	cache::leaf_unlock();
 	
-	auto p2 = std::chrono::high_resolution_clock::now();
-	hooks_time_inner += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
+	//auto p2 = std::chrono::high_resolution_clock::now();
+	//hooks_time_inner += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 	
 	//std::cout << "MOVE_END\n";
 	//======//log_info_private("[Tree::d_item_move] end");
 }
 
-void forest::Tree::d_leaf_insert(tree_t::node_ptr node, tree_t::child_item_type_ptr item, tree_t* tree)
+void forest::Tree::d_leaf_insert(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item)
 {	
 	//======//log_info_private("[Tree::d_leaf_insert] start");
 	auto p1 = std::chrono::high_resolution_clock::now();
@@ -1513,7 +1533,7 @@ void forest::Tree::d_leaf_insert(tree_t::node_ptr node, tree_t::child_item_type_
 	//======//log_info_private("[Tree::d_leaf_insert] end");
 }
 
-void forest::Tree::d_leaf_delete(tree_t::node_ptr node, tree_t::child_item_type_ptr item, tree_t* tree)
+void forest::Tree::d_leaf_delete(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item)
 {
 	//======//log_info_private("[Tree::d_leaf_delete] start");
 	
@@ -1533,14 +1553,14 @@ void forest::Tree::d_leaf_delete(tree_t::node_ptr node, tree_t::child_item_type_
 	//======//log_info_private("[Tree::d_leaf_delete] end");
 }
 
-void forest::Tree::d_leaf_split(tree_t::node_ptr node, tree_t::node_ptr new_node, tree_t::node_ptr link_node, tree_t* tree)
+void forest::Tree::d_leaf_split(tree_t::node_ptr& node, tree_t::node_ptr& new_node, tree_t::node_ptr& link_node)
 {
 	//======//log_info_private("[Tree::d_leaf_split] start");
 	
 	auto p1 = std::chrono::high_resolution_clock::now();
 	
 	if(!link_node){
-		d_leaf_shift(node, new_node, tree);
+		d_leaf_shift(node, new_node);
 		//======//log_info_private("[Tree::d_leaf_split] (no link node) end");
 		return;
 	}
@@ -1567,14 +1587,14 @@ void forest::Tree::d_leaf_split(tree_t::node_ptr node, tree_t::node_ptr new_node
 	//======//log_info_private("[Tree::d_leaf_split] end");
 }
 
-void forest::Tree::d_leaf_join(tree_t::node_ptr node, tree_t::node_ptr join_node, tree_t::node_ptr link_node, tree_t* tree)
+void forest::Tree::d_leaf_join(tree_t::node_ptr& node, tree_t::node_ptr& join_node, tree_t::node_ptr& link_node)
 {
 	//======//log_info_private("[Tree::d_leaf_join] start");
-	d_leaf_split(node, join_node, link_node, tree);
+	d_leaf_split(node, join_node, link_node);
 	//======//log_info_private("[Tree::d_leaf_join] end");
 }
 
-void forest::Tree::d_leaf_shift(tree_t::node_ptr node, tree_t::node_ptr shift_node, tree_t* tree)
+void forest::Tree::d_leaf_shift(tree_t::node_ptr& node, tree_t::node_ptr& shift_node)
 {
 	//======//log_info_private("[Tree::d_leaf_shift] start");
 	
@@ -1594,7 +1614,7 @@ void forest::Tree::d_leaf_shift(tree_t::node_ptr node, tree_t::node_ptr shift_no
 	//======//log_info_private("[Tree::d_leaf_shift] end");
 }
 
-void forest::Tree::d_leaf_lock(tree_t::node_ptr node, tree_t* tree)
+void forest::Tree::d_leaf_lock(tree_t::node_ptr& node)
 {
 	//======//log_info_private("[Tree::d_leaf_lock] start");
 	
@@ -1615,7 +1635,7 @@ void forest::Tree::d_leaf_lock(tree_t::node_ptr node, tree_t* tree)
 	//======//log_info_private("[Tree::d_leaf_lock] end");
 }
 
-void forest::Tree::d_leaf_free(tree_t::node_ptr node, tree_t* tree)
+void forest::Tree::d_leaf_free(tree_t::node_ptr& node)
 {
 	//======//log_info_private("[Tree::d_leaf_free] start");
 	
@@ -1636,7 +1656,7 @@ void forest::Tree::d_leaf_free(tree_t::node_ptr node, tree_t* tree)
 	//======//log_info_private("[Tree::d_leaf_free] end");
 }
 
-void forest::Tree::d_leaf_ref(tree_t::node_ptr node, tree_t::node_ptr ref_node, tree_t::LEAF_REF ref, tree_t* tree)
+void forest::Tree::d_leaf_ref(tree_t::node_ptr& node, tree_t::node_ptr& ref_node, tree_t::LEAF_REF ref)
 {
 	//======//log_info_private("[Tree::d_leaf_ref] start");
 	
@@ -1679,7 +1699,7 @@ void forest::Tree::d_leaf_ref(tree_t::node_ptr node, tree_t::node_ptr ref_node, 
 	//======//log_info_private("[Tree::d_leaf_ref] end");
 }
 
-void forest::Tree::d_save_base(tree_t::node_ptr node, tree_t* tree)
+void forest::Tree::d_save_base(tree_t::node_ptr& node)
 {
 	//======//log_info_private("[Tree::d_save_base] start");
 	

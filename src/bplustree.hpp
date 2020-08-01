@@ -197,7 +197,7 @@ BPlusTree<Key, T, D>::BPlusTree(int factor, node_ptr node, long count, D* driver
 template <class Key, class T, typename D>
 BPlusTree<Key, T, D>::~BPlusTree() 
 {
-	delete driver;
+	//delete driver;
 }
 
 template <class Key, class T, typename D>
@@ -238,7 +238,7 @@ void BPlusTree<Key, T, D>::processSearchNodeStart(node_ptr node, PROCESS_TYPE ty
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 	
-	driver->enter(node, type, this);
+	driver->d_enter(node, type);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -249,7 +249,7 @@ void BPlusTree<Key, T, D>::processSearchNodeEnd(node_ptr node, PROCESS_TYPE type
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 	
-	driver->leave(node, type, this);
+	driver->d_leave(node, type);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -260,7 +260,7 @@ void BPlusTree<Key, T, D>::processInsertNode(node_ptr node)
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 
-	driver->insert(node, this);
+	driver->d_insert(node);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -271,7 +271,7 @@ void BPlusTree<Key, T, D>::processDeleteNode(node_ptr node)
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 
-	driver->remove(node, this);
+	driver->d_remove(node);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -294,7 +294,7 @@ void BPlusTree<Key, T, D>::processIteratorMoveStart(childs_type_iterator item, i
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 
-	driver->beforeMove(item, step, this);
+	driver->d_before_move(item, step);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -305,7 +305,7 @@ void BPlusTree<Key, T, D>::processIteratorMoveEnd(childs_type_iterator item, int
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 
-	driver->afterMove(item, step, this);
+	driver->d_after_move(item, step);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -316,7 +316,7 @@ void BPlusTree<Key, T, D>::processItemReserve(child_item_type_ptr item, PROCESS_
 {
 	auto p1 = std::chrono::high_resolution_clock::now();
 
-	driver->itemReserve(item, type, this);
+	driver->d_item_reserve(item, type);
 	
 	auto p2 = std::chrono::high_resolution_clock::now();
 	hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -327,7 +327,7 @@ void BPlusTree<Key, T, D>::processItemRelease(child_item_type_ptr item, PROCESS_
 {
 	auto p1 = std::chrono::high_resolution_clock::now();
 	
-	driver->itemRelease(item, type, this);
+	driver->d_item_release(item, type);
 	
 	auto p2 = std::chrono::high_resolution_clock::now();
 	hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -339,7 +339,7 @@ void BPlusTree<Key, T, D>::processItemMove(node_ptr node, child_item_type_ptr it
 	//std::cout << "WTDF!!!!!!!!!\n";
 	auto p1 = std::chrono::high_resolution_clock::now();
 
-	driver->itemMove(node, item, this);
+	driver->d_item_move(node, item);
 	
 	auto p2 = std::chrono::high_resolution_clock::now();
 	hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -350,7 +350,7 @@ void BPlusTree<Key, T, D>::processLeafReserve(node_ptr node, PROCESS_TYPE type)
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 	
-	driver->leafReserve(node, type, this);
+	driver->d_reserve(node, type);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -361,7 +361,7 @@ void BPlusTree<Key, T, D>::processLeafRelease(node_ptr node, PROCESS_TYPE type)
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 	
-	driver->leafRelease(node, type, this);
+	driver->d_release(node, type);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -372,7 +372,7 @@ void BPlusTree<Key, T, D>::processLeafInsertItem(node_ptr node, child_item_type_
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 	
-	driver->leafInsertItem(node, item, this);
+	driver->d_leaf_insert(node, item);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -383,7 +383,7 @@ void BPlusTree<Key, T, D>::processLeafDeleteItem(node_ptr node, child_item_type_
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 	
-	driver->leafDeleteItem(node, item, this);
+	driver->d_leaf_delete(node, item);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -394,7 +394,7 @@ void BPlusTree<Key, T, D>::processLeafSplit(node_ptr node, node_ptr new_node, no
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 	
-	driver->leafSplit(node, new_node, link_node, this);
+	driver->d_leaf_split(node, new_node, link_node);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -405,7 +405,7 @@ void BPlusTree<Key, T, D>::processLeafJoin(node_ptr node, node_ptr join_node, no
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 
-	driver->leafJoin(node, join_node, link_node, this);
+	driver->d_leaf_join(node, join_node, link_node);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -416,7 +416,7 @@ void BPlusTree<Key, T, D>::processLeafShift(node_ptr node, node_ptr shift_node)
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 	
-	driver->leafShift(node, shift_node, this);
+	driver->d_leaf_shift(node, shift_node);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -427,7 +427,7 @@ void BPlusTree<Key, T, D>::processLeafLock(node_ptr node)
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 	
-	driver->leafLock(node, this);
+	driver->d_leaf_lock(node);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -438,7 +438,7 @@ void BPlusTree<Key, T, D>::processLeafFree(node_ptr node)
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 	
-	driver->leafFree(node, this);
+	driver->d_leaf_free(node);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -449,7 +449,7 @@ void BPlusTree<Key, T, D>::processLeafRef(node_ptr node, node_ptr ref_node, LEAF
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 
-	driver->leafRef(node, ref_node, ref, this);
+	driver->d_leaf_ref(node, ref_node, ref);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -462,7 +462,7 @@ void BPlusTree<Key, T, D>::save_base()
 	
 	node_ptr stem = this->get_stem();
 	processSearchNodeStart(stem, PROCESS_TYPE::WRITE);
-	driver->save_base(stem, this);
+	driver->d_save_base(stem);
 	processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
