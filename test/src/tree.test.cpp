@@ -1,6 +1,6 @@
 #include "forest.hpp"
 
-int hooks_time = 0;
+int hooks_time = 0, hooks_time_inner = 0;
 int hook_d_enter_time=0, 
 	hook_d_leave_time=0, 
 	hook_d_insert_time=0, 
@@ -10,7 +10,9 @@ int hook_d_enter_time=0,
 	hook_d_insert_leaf_time=0,
 	hook_d_split_time=0,
 	hook_d_ref_time=0,
-	hook_d_base_time=0;
+	hook_d_base_time=0,
+	hook_unmaterialize_leaf=0,
+	hook_unmaterialize_intr=0;
 	
 string to_str(int a)
 {
@@ -59,8 +61,12 @@ DESCRIBE("Test single thread", {
 		});
 		
 		DESCRIBE("Remove 100 trees", {
+			//int a;
+			//cout << "ENTER\n";
+			//cin >> a;
 			BEFORE_ALL({
 				for(int i=0;i<100;i++){
+					//std::cout << "delete_tree " << i << std::endl;
 					forest::delete_tree("test_string_tree_"+to_string(i));
 				}
 			});
@@ -402,7 +408,7 @@ DESCRIBE("Test multi threads", {
 		// Leaf insertions
 		DESCRIBE("Add `test` tree to the forest", {
 			BEFORE_EACH({
-				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 200);
+				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 500);
 			});
 			
 			AFTER_EACH({
@@ -798,7 +804,7 @@ DESCRIBE("Test multi threads", {
 					});
 				});
 				
-				DESCRIBE_SKIP("Comparing time for insert on free and busy tree", {
+				DESCRIBE_ONLY("Comparing time for insert on free and busy tree", {
 					
 					int time_free;
 					int time_to_create_value=0;
@@ -849,6 +855,9 @@ DESCRIBE("Test multi threads", {
 							INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
 							INFO_PRINT("time to create value: " + to_string(time_to_create_value/1000));
 							INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
+							INFO_PRINT("HOOKS_TIME_INNER: " + to_string(hooks_time_inner/1000));
+							INFO_PRINT("unmaterialize_leaf: " + to_string(hook_unmaterialize_leaf/1000));
+							INFO_PRINT("unmaterialize_intr: " + to_string(hook_unmaterialize_intr/1000));
 						});
 					});
 				});

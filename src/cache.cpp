@@ -41,7 +41,18 @@ void forest::cache::check_tree_ref(string key)
 		return;
 	}
 	if(tree_cache_r[key].second == 0 && !tree_cache.has(key)){
-		savior->save(key, true);
+		//savior->save(key, true);
+		
+		//std::cout << "SAVIOR_CHECK_TREE " + key + "\n";
+		savior->lock_map();
+		if(savior->has(key)){
+			savior->unlock_map();			
+			//std::cout << "SAVIOR_SAVE_TREE " + key + "\n";
+			savior->save(key, true);
+		} else {
+			savior->unlock_map();
+		}
+		//std::cout << "REMOVE_TREE " + key + "\n";
 		tree_cache_r.erase(key);
 	}
 	//======//log_info_private("[cache::check_tree_ref] end");
@@ -59,6 +70,7 @@ void forest::cache::check_leaf_ref(string key)
 		//====//std::cout << "LEAF_REF_START " + key + "\n";
 		
 		tree_t::node_ptr node = leaf_cache_ref.first;
+		
 		////get_data(node).f = nullptr;
 		////for(auto& it : (*node->get_childs())){
 			////it->item->second->set_file(nullptr);
@@ -88,9 +100,12 @@ void forest::cache::check_leaf_ref(string key)
 			savior->unlock_map();
 		}
 		
+		get_data(node).bloomed = false;
 		
 		//savior->save(key, true);
 		leaf_cache_r.erase(key);
+		
+		//std::cout << "REMOVE_LEAF " + key + "\n";
 		
 		//====//std::cout << "LEAF_REF_END " + key + "\n";
 	}
@@ -104,9 +119,10 @@ void forest::cache::check_intr_ref(string key)
 		//======//log_info_private("[cache::check_intr_ref] () end");
 		return;
 	}
-	if(intr_cache_r[key].second == 0 && !intr_cache.has(key)){
+	auto& intr_cache_ref = intr_cache_r[key];
+	if(intr_cache_ref.second == 0 && !intr_cache.has(key)){
 		//intr_cache_r[key].first->get_nodes()->resize(0);
-		
+		//std::cout << "REMOVE_INTR " + key + "\n";
 		
 		savior->lock_map();
 		if(savior->has(key)){
@@ -115,6 +131,8 @@ void forest::cache::check_intr_ref(string key)
 		} else {
 			savior->unlock_map();
 		}
+		
+		get_data(intr_cache_ref.first).bloomed = false;
 
 		intr_cache_r.erase(key);
 	}
@@ -299,8 +317,8 @@ void forest::cache::reserve_intr_node(string& path)
 void forest::cache::release_intr_node(string& path)
 {
 	//======//log_info_private("[cache::release_intr_node] ("+path+") start");
-	assert(intr_cache_r.count(path));
-	assert(intr_cache_r[path].second>0);
+	///assert(intr_cache_r.count(path));
+	///assert(intr_cache_r[path].second>0);
 	intr_cache_r[path].second--;
 	check_intr_ref(path);
 	//======//log_info_private("[cache::release_intr_node] end");
@@ -316,8 +334,8 @@ void forest::cache::reserve_leaf_node(string& path)
 void forest::cache::release_leaf_node(string& path)
 {
 	//======//log_info_private("[cache::release_leaf_node] ("+path+") start");
-	assert(leaf_cache_r.count(path));
-	assert(leaf_cache_r[path].second>0);
+	///assert(leaf_cache_r.count(path));
+	///assert(leaf_cache_r[path].second>0);
 	leaf_cache_r[path].second--;
 	check_leaf_ref(path);
 	//======//log_info_private("[cache::release_leaf_node] end");
@@ -376,6 +394,7 @@ void forest::cache::clear_node_cache(tree_t::node_ptr node)
 void forest::cache::_intr_insert(tree_t::node_ptr node)
 {
 	string& path = get_node_data(node)->path;
+	get_data(node).is_original = true;
 	cache::intr_cache_r[path] = std::make_pair(node, 0);
 	cache::intr_cache.push(path, node);
 }
@@ -383,6 +402,7 @@ void forest::cache::_intr_insert(tree_t::node_ptr node)
 void forest::cache::_leaf_insert(tree_t::node_ptr node)
 {
 	string& path = get_node_data(node)->path;
+	get_data(node).is_original = true;
 	cache::leaf_cache_r[path] = {node, 0, 0};
 	cache::leaf_cache.push(path, node);
 }

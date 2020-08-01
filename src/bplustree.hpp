@@ -31,6 +31,9 @@ namespace forest{
 		} change_locks;
 		std::shared_ptr<void> drive_data;
 		std::shared_ptr<DBFS::File> f;
+		std::weak_ptr<void> original;
+		bool bloomed = true;
+		bool is_original = false;
 	};
 }
 

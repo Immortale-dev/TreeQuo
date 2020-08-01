@@ -353,7 +353,7 @@ DBFS::File* forest::Savior::save_base(tree_ptr tree)
 void forest::Savior::save_item(save_key item)
 {
 	//======//log_info_private("[Savior::save_item] ("+item+") start");
-	
+	//std::cout << "_SV_save_item " + item + "\n";
 	//===std::cout << "+SAVE_ITEM_FIRST_LOCK\n";
 	map_mtx.lock();
 	//===std::cout << "-SAVE_ITEM_FIRST_LOCK\n";
@@ -491,6 +491,8 @@ void forest::Savior::save_item(save_key item)
 		//forest::unlock_write(node);
 	} else {
 		
+		//std::cout << "_SV save_tree? " + item + "\n";
+		
 		//std::cout << "SAVE_ITEM_BASE_START\n";
 		tree_ptr tree = std::static_pointer_cast<Tree>(it->node);
 		//std::cout << "SAVE_ITEM_BASE_GET_NODE\n";
@@ -502,12 +504,16 @@ void forest::Savior::save_item(save_key item)
 		//callback(it->node, it->type);
 		
 		if(it->action == ACTION_TYPE::SAVE){
+			
+			//std::cout << "_SV save_tree? REALLY_SAVE?" + item + "\n";
 			//std::cout << "SAVE_ITEM_BASE_SAVE_START\n";
 			DBFS::File* base_f = save_base(tree);
 			//std::cout << "SAVE_ITEM_BASE_SAVE_--save-base\n";
 			
 			string base_file_name = tree->get_name();
 			string new_base_file_name = base_f->name();
+			
+			//std::cout << "_SV tree original name: " + base_file_name + " ; new_name: " + new_base_file_name + " ;\n";
 			//std::cout << "SAVE_ITEM_BASE_SAVE_--get-names\n";
 			
 			delete base_f;
@@ -516,6 +522,8 @@ void forest::Savior::save_item(save_key item)
 			//std::cout << "SAVE_ITEM_BASE_SAVE_--remove-old-file\n";
 			DBFS::move(new_base_file_name, base_file_name);
 			//std::cout << "SAVE_ITEM_BASE_SAVE_END\n";
+			
+			//std::cout << "_SV tree SAVED TO: " + base_file_name + " ;\n";
 		} else { // REMOVE
 			string base_file_name = tree->get_name();
 			//std::cout << "RM_FL_START\n";
@@ -532,6 +540,7 @@ void forest::Savior::save_item(save_key item)
 	map_mtx.lock();
 	//===std::cout << "-SAVE_ITEM_SECOND_LOCK\n";
 	map.erase(item);
+	//std::cout << "_SV remove_item_from_map " + item + "\n"; 
 	// Free item
 	it->m.unlock();
 	delete it;

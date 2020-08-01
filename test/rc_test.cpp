@@ -14,7 +14,7 @@ using namespace std;
 
 #include "forest.hpp"
 
-int hooks_time = 0;
+int hooks_time = 0, hooks_time_inner = 0;
 int hook_d_enter_time=0, 
 	hook_d_leave_time=0, 
 	hook_d_insert_time=0, 
@@ -24,7 +24,9 @@ int hook_d_enter_time=0,
 	hook_d_insert_leaf_time=0,
 	hook_d_split_time=0,
 	hook_d_ref_time=0,
-	hook_d_base_time=0;
+	hook_d_base_time=0,
+	hook_unmaterialize_leaf=0,
+	hook_unmaterialize_intr=0;
 
 
 DESCRIBE("[RC]", {
@@ -78,7 +80,6 @@ DESCRIBE("[RC]", {
                 thread t([&m, &q, &check, &tree_keys_check, &should_contains, &complete, &num_assert](int index, int rnd){
                     int cs = index%4;
                     if(cs == 1){
-						//return;
                         auto it = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
                         vector<string> keys;
                         do{
@@ -105,9 +106,7 @@ DESCRIBE("[RC]", {
                         lock_guard<mutex> lock(m);
                         tree_keys_check.push_back(keys);
                         complete.push_back("move");
-                    }
-                    else if(cs == 2){
-						return;
+                    } else if (cs == 2){
                         auto it = forest::find_leaf("test", forest::RECORD_POSITION::END);
                         vector<string> keys;
                         do{
@@ -134,9 +133,7 @@ DESCRIBE("[RC]", {
                         lock_guard<mutex> lock(m);
                         tree_keys_check.push_back(keys);
                         complete.push_back("move");
-                    }
-                    else if(cs == 3){
-						return;
+                    } else if(cs == 3) {
                         int p;
                         {
                             lock_guard<mutex> lock(m);
@@ -147,9 +144,7 @@ DESCRIBE("[RC]", {
                         lock_guard<mutex> lock(m);
                         should_contains.erase("p"+std::to_string(p));
                         complete.push_back("erase");
-                    }
-                    else{
-						//return;
+                    } else {
                         {
                             lock_guard<mutex> lock(m);
                             if(check.count(rnd)){
@@ -174,7 +169,7 @@ DESCRIBE("[RC]", {
         });
         
         IT("All expected records should be iterated", {
-            /*for(auto& vec : tree_keys_check){
+            for(auto& vec : tree_keys_check){
                 unordered_set<string> keys;
                 for(auto& it : vec){
                     keys.insert(it);
@@ -182,7 +177,7 @@ DESCRIBE("[RC]", {
                 for(auto& it : should_contains){
                     EXPECT(keys.count(it)).toBe(1);
                 }
-            }*/
+            }
             EXPECT(num_assert).toBe(true);
         });
     });
