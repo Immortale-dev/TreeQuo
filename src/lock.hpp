@@ -145,7 +145,7 @@ inline bool forest::is_write_locked(tree_t::node_ptr& node)
 
 inline void forest::lock_read(tree_t::child_item_type_ptr& item)
 {
-	auto it = item->item->second;
+	auto& it = item->item->second;
 	it->g.lock();
 	if(it->c++ == 0){
 		it->m.lock();
@@ -155,7 +155,7 @@ inline void forest::lock_read(tree_t::child_item_type_ptr& item)
 
 inline void forest::unlock_read(tree_t::child_item_type_ptr& item)
 {
-	auto it = item->item->second;
+	auto& it = item->item->second;
 	it->g.lock();
 	if(--it->c == 0){
 		it->m.unlock();

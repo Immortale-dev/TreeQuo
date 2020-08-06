@@ -148,7 +148,7 @@ namespace forest{
 					else{
 						auto lock = data->file->get_lock();
 						//std::cout << "FN: " + data->file->name() + "\n";
-						data->file->seek(data->start + pos);
+						data->file->seekg(data->start + pos);
 						data->file->read(buffer, sz);
 						if(temp_cached){
 							memcpy(temp_cache + pos, buffer, sz);

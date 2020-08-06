@@ -62,13 +62,16 @@ namespace forest{
 		extern ListCache<string, tree_ptr> tree_cache;
 		extern ListCache<string, tree_t::node_ptr> leaf_cache, intr_cache;
 		extern mutex tree_cache_m, leaf_cache_m, intr_cache_m;
-		extern std::unordered_map<string, std::pair<tree_ptr, int_a> > tree_cache_r;
+		extern std::unordered_map<string, std::pair<tree_ptr, int> > tree_cache_r;
 		extern std::unordered_map<string, leaf_cache_ref_t> leaf_cache_r;
-		extern std::unordered_map<string, std::pair<tree_t::node_ptr, int_a> > intr_cache_r;
+		extern std::unordered_map<string, std::pair<tree_t::node_ptr, int> > intr_cache_r;
 		
 		extern std::unordered_set<string> tree_cache_q;
 		extern std::condition_variable tree_cv;
 		extern std::mutex tree_cv_m;
+		
+		extern std::queue<string> savior_save;
+		extern std::mutex savior_save_m;
 		//extern std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
 	}
 }
@@ -109,13 +112,6 @@ inline void forest::cache::leaf_lock()
 	//======//log_info_private("[cache::leaf_lock] end");
 }
 
-inline void forest::cache::leaf_unlock()
-{
-	//======//log_info_private("[cache::leaf_unlock] start");
-	leaf_cache_m.unlock();
-	//======//log_info_private("[cache::leaf_unlock] end");
-}
-
 inline std::lock_guard<std::mutex> forest::cache::get_intr_lock()
 {
 	return std::lock_guard<std::mutex>(intr_cache_m);
@@ -139,8 +135,9 @@ inline void forest::cache::release_intr_node(string& path)
 	//======//log_info_private("[cache::release_intr_node] ("+path+") start");
 	///assert(intr_cache_r.count(path));
 	///assert(intr_cache_r[path].second>0);
-	intr_cache_r[path].second--;
-	check_intr_ref(path);
+	if(--intr_cache_r[path].second == 0){
+		check_intr_ref(path);
+	}
 	//======//log_info_private("[cache::release_intr_node] end");
 }
 
@@ -156,8 +153,9 @@ inline void forest::cache::release_leaf_node(string& path)
 	//======//log_info_private("[cache::release_leaf_node] ("+path+") start");
 	///assert(leaf_cache_r.count(path));
 	///assert(leaf_cache_r[path].second>0);
-	leaf_cache_r[path].second--;
-	check_leaf_ref(path);
+	if(--leaf_cache_r[path].second == 0){;
+		check_leaf_ref(path);
+	}
 	//======//log_info_private("[cache::release_leaf_node] end");
 }
 

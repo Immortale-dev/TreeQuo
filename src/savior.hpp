@@ -34,7 +34,7 @@ namespace forest{
 			virtual ~Savior();
 			void put(save_key item, SAVE_TYPES type, void_shared node);
 			void remove(save_key item, SAVE_TYPES type, void_shared node);
-			void save(save_key item, bool async = false);
+			void save(save_key item, bool async = false, bool lock_leaf = true);
 			void get(save_key item);
 			void save_all();
 			bool has(save_key item);
@@ -51,11 +51,11 @@ namespace forest{
 			void put_leaf(save_key item, void_shared node);
 			void put_internal(save_key item, void_shared node);
 			void put_base(save_key item, void_shared node);
-			void save_item(save_key item);
+			void save_item(save_key item, bool sync = false);
 			void_shared define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action, void_shared node);
 			save_value* own_item(save_key item);
 			void free_item(save_key item);
-			void schedule_save();
+			void schedule_save(bool sync);
 			void remove_item(save_key item);
 			void resolve_cluster();
 			DBFS::File* save_intr(node_ptr node);

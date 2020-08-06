@@ -7,12 +7,11 @@ SRCPATH:=src/
 SRCS:=$(wildcard $(SRCPATH)*.cpp)
 OBJS:=$(SRCS:%.cpp=%.o)
 
-LIB_CACHE:=inc/listcache
 LIB_FS:=inc/dbfs
 LIB_BPTB:=inc/bplustree
 LIB_LOG:=inc/logger
 
-LIBS:=$(LIB_CACHE) $(LIB_FS) $(LIB_BPTB) $(LIB_LOG)
+LIBS:=$(LIB_FS) $(LIB_BPTB) $(LIB_LOG)
 LIBS_SRC:=$(LIBS:%=%/src)
 LIBS_SRC_I:=$(LIBS_SRC:%=-I%)
 LIBS_SRCPATH:=$(LIBS_SRC:%=%/)
@@ -24,7 +23,7 @@ INCL=-Isrc -Itest $(LIBS_SRC_I)
 all: generate_libs generate_o generate_t
 
 rc: generate_libs generate_o 
-	$(CC) $(CFLAGS) $(INCL) test/rc_test.cpp -O3 -o test/rc_test.o
+	$(CC) $(CFLAGS) $(INCL) test/rc_test.cpp -O3 -funroll-loops -o test/rc_test.o
 	${CC} ${INCL} -o rc_test.exe test/rc_test.o ${OBJS} ${LIBS_O}
 
 generate_libs: ${LIBS_O}
@@ -35,7 +34,7 @@ $(LIBS):
 generate_o: ${OBJS}
 
 generate_t: 
-	$(CC) $(CFLAGS) $(INCL) test/test.cpp -O3 -o test/test.o
+	$(CC) $(CFLAGS) $(INCL) test/test.cpp -O3 -funroll-loops -o test/test.o
 	${CC} ${INCL} -o test.exe test/test.o ${OBJS} ${LIBS_O}
 	
 custom: generate_o
@@ -43,4 +42,4 @@ custom: generate_o
 	${CC} ${INCL} -o mtest.exe test/mtest.o ${OBJS} ${LIBS_O}
 
 %.o: %.cpp
-	${CC} ${CFLAGS} ${INCL} -O3 $< -o $@
+	${CC} ${CFLAGS} ${INCL} -O3 -funroll-loops $< -o $@

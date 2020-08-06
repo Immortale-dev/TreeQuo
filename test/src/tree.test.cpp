@@ -12,7 +12,9 @@ int hook_d_enter_time=0,
 	hook_d_ref_time=0,
 	hook_d_base_time=0,
 	hook_unmaterialize_leaf=0,
-	hook_unmaterialize_intr=0;
+	hook_unmaterialize_intr=0,
+	hook_remove_leaf=0,
+	hook_read_leaf=0;
 	
 string to_str(int a)
 {
@@ -418,7 +420,7 @@ DESCRIBE("Test multi threads", {
 		// Leaf insertions
 		DESCRIBE("Add `test` tree to the forest", {
 			BEFORE_EACH({
-				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 500);
+				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 10);
 			});
 			
 			AFTER_EACH({
@@ -813,63 +815,265 @@ DESCRIBE("Test multi threads", {
 						EXPECT(num_assert).toBe(true);
 					});
 				});
+			});
+		});
+		
+		
+		DESCRIBE("Performance Tests", {
+					
+			int time_free;
+			chrono::high_resolution_clock::time_point p1,p2;
+			//int time_to_create_value=0;
+			
+			BEFORE_ALL({
+				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_else", 500);
+			});
+			
+			BEFORE_EACH({
+				time_free =
+				hook_d_enter_time =
+				hook_d_leave_time =
+				hook_d_insert_time =
+				hook_d_remove_time =
+				hook_d_reserve_time =
+				hook_d_release_time =
+				hook_d_insert_leaf_time =
+				hook_d_split_time =
+				hook_d_ref_time =
+				hook_d_base_time =
+				hook_remove_leaf =
+				hook_read_leaf =
+				hooks_time = 0;
+			});
+			
+			AFTER_ALL({
+				forest::delete_tree("test_else");
+			});
+			
+			DESCRIBE_SKIP("Ordered requests", {
 				
-				DESCRIBE("Comparing time for insert on free and busy tree", {
+				int rec_count = 100000;
+				
+				IT("Insert 100000 items [0,100000)", {
+					p1 = chrono::system_clock::now();
+					forest::tree_ptr tree = forest::find_tree("test_else");
+					for(int i=0;i<rec_count;i++){
+						int rnd = i;//rand()%1000000 + 11200;
+						
+						tree->insert(to_str(rnd), forest::leaf_value("some pretty basic value to insert into the database"));
+						//forest::insert_leaf("test_else", to_str(rnd), forest::leaf_value("some pretty basic value to insert into the database"));
+					}
+					forest::leave_tree(tree);
+					p2 = chrono::system_clock::now();
+					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
+					TEST_SUCCEED();
+					INFO_PRINT("Time For Insert: " + to_string(time_free) + "ms");
+					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
+					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
+					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
+					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
+					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
+					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
+					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
+					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
+					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
+					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
+					INFO_PRINT("remove_leaf Time: " + to_string(hook_remove_leaf/1000));
+					INFO_PRINT("read_leaf Time: " + to_string(hook_read_leaf/1000));
+					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
+				});
+				
+				IT("Get all items independently", {
+					p1 = chrono::system_clock::now();
+					for(int i=0;i<rec_count;i++){
+						int rnd = i;
+						auto rc = forest::find_leaf("test_else", to_str(rnd));
+						EXPECT(forest::read_leaf_item(rc->val())).toBe("some pretty basic value to insert into the database");
+					}
+					p2 = chrono::system_clock::now();
+					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
+					TEST_SUCCEED();
+					INFO_PRINT("Time For Find: " + to_string(time_free) + "ms");
+					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
+					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
+					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
+					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
+					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
+					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
+					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
+					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
+					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
+					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
+					INFO_PRINT("remove_leaf Time: " + to_string(hook_remove_leaf/1000));
+					INFO_PRINT("read_leaf Time: " + to_string(hook_read_leaf/1000));
+					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
+				});
+				
+				IT("Move through the all values", {
+					p1 = chrono::system_clock::now();
+					auto rc = forest::find_leaf("test_else", forest::RECORD_POSITION::BEGIN);
+					int cnt = 0;
+					do{
+						EXPECT(forest::read_leaf_item(rc->val())).toBe("some pretty basic value to insert into the database");
+						cnt++;
+					}while(rc->move_forward());
+					EXPECT(cnt).toBe(rec_count);
+					INFO_PRINT("CNT: " + std::to_string(cnt));
+					p2 = chrono::system_clock::now();
+					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
+					TEST_SUCCEED();
+					INFO_PRINT("Time For Move: " + to_string(time_free) + "ms");
+					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
+					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
+					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
+					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
+					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
+					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
+					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
+					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
+					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
+					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
+					INFO_PRINT("remove_leaf Time: " + to_string(hook_remove_leaf/1000));
+					INFO_PRINT("read_leaf Time: " + to_string(hook_read_leaf/1000));
+					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
+				});
+				
+				IT("Remove all records", {
+					p1 = chrono::system_clock::now();
+					for(int i=0;i<rec_count;i++){
+						int rnd = i;
+						forest::erase_leaf("test_else", to_str(rnd));
+					}
+					p2 = chrono::system_clock::now();
+					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
+					TEST_SUCCEED();
+					INFO_PRINT("Time For Remove: " + to_string(time_free) + "ms");
+					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
+					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
+					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
+					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
+					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
+					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
+					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
+					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
+					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
+					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
+					INFO_PRINT("remove_leaf Time: " + to_string(hook_remove_leaf/1000));
+					INFO_PRINT("read_leaf Time: " + to_string(hook_read_leaf/1000));
+					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
+				});
+			});
+			
+			DESCRIBE_SKIP("Random shuffle requests", {
+				
+				unordered_set<int> exists;
+				int real_cnt = 0;
+				
+				IT("Insert 100000 items [0,100000)", {
+					p1 = chrono::system_clock::now();
 					
-					int time_free;
-					int time_to_create_value=0;
-					
-					DESCRIBE("For free tree", {
-						IT("should quickly insert all values", {
-							chrono::high_resolution_clock::time_point p1,p2;
-							
-							
-							/*vector<thread> threads;
-							std::thread t([](){
-								
-							});	*/
-							
-							p1 = std::chrono::high_resolution_clock::now();
-							for(int i=0;i<100000;i++){
-								auto lf = forest::leaf_value("some pretty");								
-							}
-							p2 = std::chrono::high_resolution_clock::now();
-							time_to_create_value += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
-							
-							p1 = chrono::system_clock::now();
-							for(int i=0;i<100000;i++){
-								int rnd = i;//rand()%1000000 + 11200;
-								
-								//auto p1 = std::chrono::high_resolution_clock::now();
-								
-								auto lf = forest::leaf_value("some pretty");
-								
-								//auto p2 = std::chrono::high_resolution_clock::now();
-								//time_to_create_value += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
-								
-								forest::insert_leaf("test", to_str(rnd), lf);
-							}
-							p2 = chrono::system_clock::now();
-							time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
-							TEST_SUCCEED();
-							INFO_PRINT("Time For Insert: " + to_string(time_free));
-							INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
-							INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
-							INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
-							INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
-							INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
-							INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
-							INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
-							INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
-							INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
-							INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
-							INFO_PRINT("time to create value: " + to_string(time_to_create_value/1000));
-							INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
-							INFO_PRINT("HOOKS_TIME_INNER: " + to_string(hooks_time_inner/1000));
-							INFO_PRINT("unmaterialize_leaf: " + to_string(hook_unmaterialize_leaf/1000));
-							INFO_PRINT("unmaterialize_intr: " + to_string(hook_unmaterialize_intr/1000));
-						});
-					});
+					for(int i=0;i<100000;i++){
+						if(i%10000 == 0){
+							cout << i << std::endl;
+						}
+						int rnd = ((long long int)rand())*rand()%10000000LL + 11200;
+						//std::cout << rnd << std::endl;
+						if(exists.count(rnd)){
+							//--i;
+							continue;
+						}
+						real_cnt++;
+						exists.insert(rnd);
+						forest::insert_leaf("test_else", to_str(rnd), forest::leaf_value("some pretty basic value to insert into the database"));
+					}
+					p2 = chrono::system_clock::now();
+					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
+					TEST_SUCCEED();
+					INFO_PRINT("Time For Insert "+ std::to_string(real_cnt) +" items: " + to_string(time_free) + "ms");
+					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
+					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
+					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
+					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
+					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
+					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
+					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
+					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
+					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
+					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
+					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
+				});
+				
+				IT("Get all items independently", {
+					p1 = chrono::system_clock::now();
+					for(auto &it : exists){
+						int rnd = it;
+						auto rc = forest::find_leaf("test_else", to_str(rnd));
+						EXPECT(forest::read_leaf_item(rc->val())).toBe("some pretty basic value to insert into the database");
+					}
+					p2 = chrono::system_clock::now();
+					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
+					TEST_SUCCEED();
+					INFO_PRINT("Time For Find: " + to_string(time_free) + "ms");
+					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
+					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
+					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
+					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
+					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
+					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
+					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
+					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
+					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
+					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
+					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
+				});
+				
+				IT("Move through the all values", {
+					p1 = chrono::system_clock::now();
+					auto rc = forest::find_leaf("test_else", forest::RECORD_POSITION::BEGIN);
+					int cnt = 0;
+					do{
+						EXPECT(forest::read_leaf_item(rc->val())).toBe("some pretty basic value to insert into the database");
+						cnt++;
+					}while(rc->move_forward());
+					p2 = chrono::system_clock::now();
+					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
+					TEST_SUCCEED();
+					INFO_PRINT("Time For Move: " + to_string(time_free) + "ms");
+					INFO_PRINT("CNT: " + std::to_string(cnt));
+					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
+					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
+					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
+					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
+					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
+					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
+					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
+					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
+					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
+					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
+					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
+				});
+				
+				IT("Remove all records", {
+					p1 = chrono::system_clock::now();
+					for(auto &it : exists){
+						int rnd = it;
+						forest::erase_leaf("test_else", to_str(rnd));
+					}
+					p2 = chrono::system_clock::now();
+					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
+					TEST_SUCCEED();
+					INFO_PRINT("Time For Remove: " + to_string(time_free) + "ms");
+					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
+					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
+					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
+					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
+					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
+					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
+					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
+					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
+					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
+					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
+					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
 				});
 			});
 		});

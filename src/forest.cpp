@@ -119,6 +119,11 @@ void forest::leave_tree(string path)
 	//=====//log_info_public("[forest::leave_tree] end:"+path);
 }
 
+void forest::leave_tree(tree_ptr tree)
+{
+	leave_tree(tree->get_name());
+}
+
 forest::tree_ptr forest::find_tree(string name)
 {
 	//=====//log_info_public("[forest::find_tree] start:"+name);
@@ -131,7 +136,9 @@ forest::tree_ptr forest::find_tree(string name)
 	}
 	
 	// Get tree path
+	//std::cout << "A\n";
 	string path = read_leaf_item(it->second);
+	//std::cout << "B\n";
 	
 	//=====//log_info_public("[forest::find_tree] end:"+name);
 	
@@ -191,12 +198,14 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key)
 	
 	tree_ptr tree = find_tree(name);
 	try{
+		//std::cout << "A\n";
 		tree_t::iterator t = tree->find(key);
 		
 		LeafRecord_ptr rc = LeafRecord_ptr(new LeafRecord(t, tree));
 		
 		leave_tree(tree->get_name());
 		//=====//log_info_public("[forest::find_leaf] end:"+name+" key:"+key);
+		//std::cout << "B\n";
 		return rc;
 	} 
 	catch(DBException& e) {
