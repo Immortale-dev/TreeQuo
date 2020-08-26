@@ -1,5 +1,12 @@
 #include "savior.hpp"
 
+std::string thread_id_str()
+{
+	std::stringstream ss;
+	ss << std::this_thread::get_id();
+	return ss.str();
+}
+
 namespace forest{
 	uint_t SAVIOR_IDLE_TIME_MS = 50;
 	uint_t SAVIOR_DEPEND_CLUSTER_LIMIT = 10;
@@ -17,8 +24,10 @@ forest::Savior::Savior()
 
 forest::Savior::~Savior()
 {
+	//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	//======//log_info_private("[Savior::~Savior] start");
 	save_all();
+	//std::cout << "SAVE_ALL_END!!!\n";
 	//======//log_info_private("[Savior::~Savior] end");
 }
 
@@ -26,15 +35,28 @@ void forest::Savior::put(save_key item, SAVE_TYPES type, void_shared node)
 {
 	//======//log_info_private("[Savior::put] ("+item+") start");
 	//std::cout << "SAVE_PUT_START" << std::endl;
-	if(type == SAVE_TYPES::LEAF){
-		put_leaf(item, node);
-	} else if(type == SAVE_TYPES::INTR) {
-		put_internal(item, node);
-	} else {
-		put_base(item, node);
+	///if(type == SAVE_TYPES::LEAF){
+	///	put_leaf(item, node);
+	///} else if(type == SAVE_TYPES::INTR) {
+	///	put_internal(item, node);
+	///} else {
+	///	put_base(item, node);
+	///}
+	std::unique_lock<std::mutex> lock(map_mtx);
+	
+	while(locking_items.count(item)){
+		cv.wait(lock);
 	}
-	resolve_cluster();
+	
+	define_item(item, type, ACTION_TYPE::SAVE, node);
 	//std::cout << "SAVE_PUT_END" << std::endl;
+	
+	//return;
+	if(type == SAVE_TYPES::INTR || type == SAVE_TYPES::BASE){
+		return;
+	}
+	items_queue.push(item, true);
+	run_scheduler();
 	//======//log_info_private("[Savior::put] end");
 }
 
@@ -44,7 +66,12 @@ void forest::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
 	//std::cout << "S_REMOVE_START\n";
 	
 	//===std::cout << "+REMOVE_LOCK\n";
-	std::lock_guard<std::mutex> lock(map_mtx);
+	std::unique_lock<std::mutex> lock(map_mtx);
+	
+	while(locking_items.count(item)){
+		cv.wait(lock);
+	}
+	
 	//===std::cout << "-REMOVE_LOCK\n";
 	define_item(item, type, ACTION_TYPE::REMOVE, node);
 	//std::cout << "S_REMOVE_DEFINED\n";
@@ -53,6 +80,13 @@ void forest::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
 	//save_value* it = own_item(item);
 	it->action = ACTION_TYPE::REMOVE;
 	//free_item(item);
+	
+	//return;
+	if(type == SAVE_TYPES::INTR || type == SAVE_TYPES::BASE){
+		return;
+	}
+	items_queue.push(item, true);
+	run_scheduler();
 	
 	/*
 	std::lock_guard<std::mutex> lock(save_mtx);
@@ -80,25 +114,33 @@ void forest::Savior::save(save_key item, bool sync, bool lock_leaf)
 {
 	//======//log_info_private("[Savior::save] ("+item+") start");
 	//std::cout << "SAVE_SAVE_START" << std::endl;
-	{
-		//std::cout << "+SAVE_LOCK\n";
-		std::lock_guard<std::mutex> lock(mtx);
-		//std::cout << "-SAVE_LOCK\n";
-		save_queue.push(item);
-		if(!sync && saving){
-			//======//log_info_private("[Savior::save] (already saving) end");
-			return;
-		}
-	}
+	////////////{
+	////////////	//std::cout << "+SAVE_LOCK\n";
+	////////////	std::lock_guard<std::mutex> lock(mtx);
+	////////////	//std::cout << "-SAVE_LOCK\n";
+	////////////	save_queue.push(item);
+	////////////	if(!sync && saving){
+	////////////		//======//log_info_private("[Savior::save] (already saving) end");
+	////////////		return;
+	////////////	}
+	////////////}
+	////////////if(sync){
+	////////////	schedule_save(true);
+	////////////} else {
+	////////////	std::thread t([this](){
+	////////////		//cache::leaf_lock();
+	////////////		//cache::intr_lock();
+	////////////		schedule_save(false);
+	////////////		//cache::intr_unlock();
+	////////////		//cache::leaf_unlock();
+	////////////	});
+	////////////	t.detach();
+	////////////}
 	if(sync){
-		schedule_save(true);
+		save_item(item, true);
 	} else {
-		std::thread t([this](){
-			//cache::leaf_lock();
-			//cache::intr_lock();
-			schedule_save(false);
-			//cache::intr_unlock();
-			//cache::leaf_unlock();
+		std::thread t([this, item](){
+			save_item(item, false);
 		});
 		t.detach();
 	}
@@ -337,10 +379,17 @@ DBFS::File* forest::Savior::save_base(tree_ptr tree)
 	
 	//std::cout << "CTYPE: " + std::to_string(((int)tree->get_type())) + "\n";
 	
+	//std::cout << thread_id_str() + " BEFORE_SAVE_TREE\n";
+	
 	base_d.count = tree->get_tree()->size();
 	base_d.factor = tree->get_tree()->get_factor();
+
+	//std::cout << thread_id_str() + " AFTER_SAVE_TREE\n";
 	
 	tree_t::node_ptr root_node = tree->get_tree()->get_root_pub();
+	
+	assert((bool)root_node);
+	
 	base_d.branch_type = (root_node->is_leaf() ? NODE_TYPES::LEAF : NODE_TYPES::INTR);
 	//std::cout << "-SAVE_BASE_GOT_ROOT_TYPE\n";
 	if(!has_data(root_node)){
@@ -363,32 +412,53 @@ void forest::Savior::save_item(save_key item, bool sync)
 	//======//log_info_private("[Savior::save_item] ("+item+") start");
 	//std::cout << "_SV_save_item " + item + "\n";
 	//std::cout << "+SAVE_ITEM_FIRST_LOCK\n";
-	map_mtx.lock();
+	
+	std::unique_lock<std::mutex> lock(map_mtx);
+	
+	while(saving_items.count(item)){
+		cv.wait(lock);
+	}
+	///map_mtx.lock();
 	//std::cout << "-SAVE_ITEM_FIRST_LOCK\n";
 	if(!map.count(item)){
-		map_mtx.unlock();
+		//std::cout << "CANCEL---_SV_save_item " + item + "\n";
+		///map_mtx.unlock();
+		cv.notify_all();
 		//======//log_info_private("[Savior::save_item] (no item found) end");
 		return;
 	}
+	
+	
 	//std::cout << "SAVE_ITEM---ITEM_SAVE_START\n";
 	save_value* it = map[item];
-	map_mtx.unlock();
+	
+	saving_items.insert(item);
+	///map_mtx.unlock();
+	lock.unlock();
 	
 	
 	if(it->type == SAVE_TYPES::INTR){
+		//std::cout << thread_id_str() + " SAVIOR_SAVE_INTR_START "+item+"\n";
 		node_ptr node = std::static_pointer_cast<tree_t::Node>(it->node);
 		//std::cout << "SAVE_INTR_BEFORE_LOCK\n";
 		
+		//std::cout << thread_id_str() + " SAVIOR_SAVE_INTR_GET_NODE "+item+"\n";
 		if(!sync){
 			forest::lock_write(node);
 		}
+		//std::cout << thread_id_str() + " SAVIOR_SAVE_INTR_LOCK "+item+"\n";
 		//std::cout << "SAVE_INTR_MID_LOCK\n";
-		own_item(item);
+		//own_item(item);
 		//std::cout << "SAVE_INTR_AFTER_LOCK\n";
+		
+		lock.lock();
+		locking_items.insert(item);
+		lock.unlock();
 		
 		//callback(it->node, it->type);
 		
 		if(it->action == ACTION_TYPE::SAVE){
+			//std::cout << thread_id_str() + " SAVIOR_SAVE_INTR__SAVE "+item+"\n";
 			//std::cout << "SAVE_ITEM---ITEM_SAVE_INTR_FILE\n";
 			DBFS::File* f = save_intr(node);
 			//std::cout << "SAVE_ITEM---ITEM_SAVE_INTR_AFTER_FILE\n";
@@ -418,23 +488,38 @@ void forest::Savior::save_item(save_key item, bool sync)
 		if(!sync){
 			forest::unlock_write(node);
 		}
+		
+		//std::cout << thread_id_str() + " SAVIOR_SAVE_INTR_END "+item+"\n";
 	} else if(it->type == SAVE_TYPES::LEAF){
+		
+		//std::cout << thread_id_str() + " SAVIOR_SAVE_LEAF_START "+item+"\n";
+		
 		node_ptr node = std::static_pointer_cast<tree_t::Node>(it->node);
 		//std::cout << "SI - C - " + std::to_string(get_data(node).change_locks.c) + "\n";
 		//std::cout << "SAVE_ITEM---BEFORE_CHANGE_LOCK\n";
 		//forest::lock_write(node);
+		
+		assert(get_data(node).is_original);
+		
+		//std::cout << thread_id_str() + " SAVIOR_SAVE_LEAF_GET_NODE "+item+"\n";
 		if(!sync){
+			lock_write(node);
 			change_lock_write(node);
 		}
+		//std::cout << thread_id_str() + " SAVIOR_SAVE_LEAF_LOCK "+item+"\n";
 		//std::cout << "SAVE_ITEM---AFTER_CHANGE_LOCK\n";
-		own_item(item);
+		//own_item(item);
 		//std::cout << "SAVE_ITEM---AFTER_OWN_LOCK\n";
-		
+		lock.lock();
+		locking_items.insert(item);
+		lock.unlock();
 		//callback(it->node, it->type);
 		
 		if(it->action == ACTION_TYPE::SAVE){
 			
 			//std::cout << "SAVE_LEAF_START\n";
+			
+			//std::cout << thread_id_str() + " SAVIOR_SAVE_LEAF__SAVE "+item+"\n";
 			
 			node_data_ptr data = get_node_data(node);
 			string cur_name = data->path;
@@ -465,7 +550,17 @@ void forest::Savior::save_item(save_key item, bool sync)
 			
 			
 			//====//std::cout << "SAVE_LEAF: " + cur_name + "\n";
-			
+			if(!sync){
+				cache::leaf_lock();
+			}
+			own_lock(node);
+			if(!get_data(node).bloomed){
+				fp->close();
+			}
+			own_unlock(node);
+			if(!sync){
+				cache::leaf_unlock();
+			}
 			// TODO: uncomment!
 			//cache::leaf_lock();
 			//if(!cache::leaf_cache_r.count(item) || cache::leaf_cache_r[item].first.get() != node.get()){
@@ -477,7 +572,7 @@ void forest::Savior::save_item(save_key item, bool sync)
 			///////////////////////////////////////////////////////////////////
 			// TODO: should be deleted when BPT::insert move semantic done   //
 			// std::cout << "CLOSE_FUCKING_FILE!!! " + cur_name + "\n";      //
-			   fp->close();                                                  //
+			// fp->close();                                                  //
 			///////////////////////////////////////////////////////////////////
 			
 			
@@ -504,20 +599,27 @@ void forest::Savior::save_item(save_key item, bool sync)
 		
 		if(!sync){
 			change_unlock_write(node);
+			unlock_write(node);
 		}
+		
+		//std::cout << thread_id_str() + " SAVIOR_SAVE_LEAF_END "+item+"\n";
 		//forest::unlock_write(node);
 	} else {
 		
+		//std::cout << thread_id_str() + " SAVIOR_SAVE_TREE_START "+item+"\n";
 		//std::cout << "_SV save_tree? " + item + "\n";
 		
 		//std::cout << "SAVE_ITEM_BASE_START\n";
 		tree_ptr tree = std::static_pointer_cast<Tree>(it->node);
-		//std::cout << "SAVE_ITEM_BASE_GET_NODE\n";
+		//std::cout << thread_id_str() + " SAVE_ITEM_BASE_GET_NODE\n";
+		assert((bool)tree->get_tree());
 		tree->get_tree()->lock_write();
-		//std::cout << "SAVE_ITEM_BASE_LOCK_TREE\n";
-		own_item(item);
+		//std::cout << thread_id_str() + " SAVE_ITEM_BASE_LOCK_TREE\n";
+		//own_item(item);
 		//std::cout << "SAVE_ITEM_BASE_LOCK_ITEM\n";
-		
+		lock.lock();
+		locking_items.insert(item);
+		lock.unlock();
 		//callback(it->node, it->type);
 		
 		if(it->action == ACTION_TYPE::SAVE){
@@ -530,7 +632,7 @@ void forest::Savior::save_item(save_key item, bool sync)
 			string base_file_name = tree->get_name();
 			string new_base_file_name = base_f->name();
 			
-			//std::cout << "_SV tree original name: " + base_file_name + " ; new_name: " + new_base_file_name + " ;\n";
+			//std::cout << thread_id_str() + "_SV tree original name: " + base_file_name + " ; new_name: " + new_base_file_name + " ;\n";
 			//std::cout << "SAVE_ITEM_BASE_SAVE_--get-names\n";
 			
 			delete base_f;
@@ -542,61 +644,80 @@ void forest::Savior::save_item(save_key item, bool sync)
 			
 			//std::cout << "_SV tree SAVED TO: " + base_file_name + " ;\n";
 		} else { // REMOVE
-			string base_file_name = tree->get_name();
-			//std::cout << "RM_FL_START\n";
-			DBFS::remove(base_file_name);
-			//std::cout << "RM_FL_END\n";
+			//std::cout << thread_id_str() + "DELETE_FILE " + item + "\n";
+			///string base_file_name = tree->get_name();
+			//std::cout << thread_id_str() + "RM_FL_START\n";
+			DBFS::remove(item);
+			//std::cout << thread_id_str() + "RM_FL_END\n";
 		}
 		
+		assert((bool)tree->get_tree());
 		tree->get_tree()->unlock_write();
+		
+		//std::cout << thread_id_str() + " SAVIOR_SAVE_TREE_END\n";
 		//std::cout << "SAVE_ITEM_BASE_END\n";
 	}
 	
 	// Remove item
 	//std::cout << "+SAVE_ITEM_SECOND_LOCK\n";
-	map_mtx.lock();
+	lock.lock();
 	//std::cout << "-SAVE_ITEM_SECOND_LOCK\n";
 	map.erase(item);
+	saving_items.erase(item);
+	locking_items.erase(item);
 	//std::cout << "_SV remove_item_from_map " + item + "\n"; 
 	// Free item
-	it->m.unlock();
+	//it->m.unlock();
 	delete it;
 	cv.notify_all();
-	map_mtx.unlock();
+	///map_mtx.unlock();
 	//std::cout << "SAVE_ITEM---ITEM_SAVE_END\n";
 	//std::cout << "S_SS_LEAF_END\n";
 	//======//log_info_private("[Savior::save_item] end");
 }
 
-void forest::Savior::resolve_cluster()
+void forest::Savior::run_scheduler()
 {
-	return;
-	map_mtx.lock();
-	if(!resolving && map.size() >= cluster_limit){
-		resolving = true;
+	//map_mtx.lock();
+	if(scheduler_running){
+		//map_mtx.unlock();
+		return;
+	}
+	
+	scheduler_running = true;
+	//map_mtx.unlock();
+	
+	std::thread t([this](){		
+		delayed_save();
+	});
+	t.detach();
+}
+
+void forest::Savior::delayed_save()
+{
+	while(true){
+		//std::cout << "LOOP_1\n";
+		std::this_thread::sleep_for(std::chrono::milliseconds(schedule_timer));
+		
+		map_mtx.lock();
+		if(!items_queue.size()){
+			scheduler_running = false;
+			map_mtx.unlock();
+			return;
+		}
+		///{
+		save_key item = items_queue.back().first;
+		items_queue.pop();
+		///}
 		map_mtx.unlock();
-		std::thread t([this](){	
-			while(true){
-				map_mtx.lock();
-				if(map.size() <= cluster_reduce_length){
-					//map_mtx.unlock();
-					resolving = false;
-					break;
-				}
-				string item = (*map.begin()).first;
-				map_mtx.unlock();
-				save(item, true);
-			}
-		});
-		t.detach();
-	} 
-	map_mtx.unlock();
+		save(item, false);
+	}
 }
 
 void forest::Savior::schedule_save(bool sync)
 {
 	//======//log_info_private("[Savior::schedule_save] start");
-	
+	assert(false);
 	//std::cout << "+SCHEDULE_SAVE_FIRST_LOCK\n";
 	mtx.lock();
 	//std::cout << "-SCHEDULE_SAVE_FIRST_LOCK\n";
@@ -604,7 +725,7 @@ void forest::Savior::schedule_save(bool sync)
 	mtx.unlock();
 
 	//std::cout << "+SCHEDULE_SAVE_SECOND_LOCK\n";
-	std::lock_guard<std::mutex> lock(save_mtx);
+	///std::lock_guard<std::mutex> lock(save_mtx);
 	//std::cout << "-SCHEDULE_SAVE_SECOND_LOCK\n";
 	while(true){
 		//std::cout << "+SCHEDULE_SAVE_THIRD_LOCK\n";

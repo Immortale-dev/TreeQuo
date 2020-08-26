@@ -1,7 +1,8 @@
 .PHONY: all rc generate_o generate_t generate_libs custom
 
 CC=g++
-CFLAGS=-c -Wall -std=c++17
+OPT=-O3
+CFLAGS=-c -Wall -std=c++17 
 LDFLAGS=
 SRCPATH:=src/
 SRCS:=$(wildcard $(SRCPATH)*.cpp)
@@ -23,7 +24,7 @@ INCL=-Isrc -Itest $(LIBS_SRC_I)
 all: generate_libs generate_o generate_t
 
 rc: generate_libs generate_o 
-	$(CC) $(CFLAGS) $(INCL) test/rc_test.cpp -O3 -funroll-loops -o test/rc_test.o
+	$(CC) $(CFLAGS) $(INCL) test/rc_test.cpp ${OPT} -pthread -o test/rc_test.o
 	${CC} ${INCL} -o rc_test.exe test/rc_test.o ${OBJS} ${LIBS_O}
 
 generate_libs: ${LIBS_O}
@@ -34,12 +35,12 @@ $(LIBS):
 generate_o: ${OBJS}
 
 generate_t: 
-	$(CC) $(CFLAGS) $(INCL) test/test.cpp -O3 -funroll-loops -o test/test.o
-	${CC} ${INCL} -o test.exe test/test.o ${OBJS} ${LIBS_O}
+	$(CC) $(CFLAGS) $(INCL) test/test.cpp ${OPT} -pthread -o test/test.o
+	${CC} ${INCL} -o test.exe test/test.o -pthread ${OBJS} ${LIBS_O}
 	
 custom: generate_o
 	$(CC) $(CFLAGS) $(INCL) test/mtest.cpp -o test/mtest.o
 	${CC} ${INCL} -o mtest.exe test/mtest.o ${OBJS} ${LIBS_O}
 
 %.o: %.cpp
-	${CC} ${CFLAGS} ${INCL} -O3 -funroll-loops $< -o $@
+	${CC} ${CFLAGS} ${INCL} ${OPT} -pthread $< -o $@

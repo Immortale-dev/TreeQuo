@@ -30,7 +30,7 @@ string to_str(int a)
     return ret;
 }
 
-DESCRIBE("Test single thread", {
+DESCRIBE_SKIP("Test single thread", {
 	
 	srand(time(0));
 
@@ -278,6 +278,8 @@ DESCRIBE("Test single thread", {
 DESCRIBE("Test multi threads", {
 	DESCRIBE("Initialize forest at tmp/t2", {
 		
+		//std::cout << "HER!" << std::endl;
+		
 		mutex mt;
 		
 		BEFORE_ALL({
@@ -286,6 +288,7 @@ DESCRIBE("Test multi threads", {
 		
 		AFTER_ALL({
 			forest::fold();
+			std::cout << "AFTER_ALL!!!\n";
 			// Remove dirs?
 		});
 		
@@ -384,7 +387,7 @@ DESCRIBE("Test multi threads", {
 				INFO_PRINT("Dirs count: " + to_string(fc));
 			});
 			
-			DESCRIBE("Then remove all trees in random shuffle in 10 threads", {
+			DESCRIBE("Then remove all trees in random shuffle in 100 threads", {
 				BEFORE_ALL({
 					for(int i=0;i<cnt;i++){
 						swap(nums[i],nums[rand()%cnt]);
@@ -420,7 +423,7 @@ DESCRIBE("Test multi threads", {
 		// Leaf insertions
 		DESCRIBE("Add `test` tree to the forest", {
 			BEFORE_EACH({
-				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 10);
+				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 3);
 			});
 			
 			AFTER_EACH({

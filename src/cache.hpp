@@ -27,7 +27,7 @@ namespace forest{
 		void release_cache();
 		void check_leaf_ref(string& key);
 		void check_intr_ref(string& key);
-		void check_tree_ref(string& key);
+		void check_tree_ref(string key);
 		void set_tree_cache_length(int length);
 		void set_intr_cache_length(int length);
 		void set_leaf_cache_length(int length);

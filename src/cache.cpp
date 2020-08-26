@@ -65,7 +65,7 @@ void forest::cache::leaf_unlock()
 	//======//log_info_private("[cache::leaf_unlock] end");
 }
 
-void forest::cache::check_tree_ref(string& key)
+void forest::cache::check_tree_ref(string key)
 {
 	//======//log_info_private("[cache::check_tree_ref] start");
 	if(!tree_cache_r.count(key)){
@@ -75,17 +75,17 @@ void forest::cache::check_tree_ref(string& key)
 	if(tree_cache_r[key].second == 0 && !tree_cache.has(key)){
 		//savior->save(key, true);
 		
+		tree_cache_r.erase(key);
 		//std::cout << "SAVIOR_CHECK_TREE " + key + "\n";
 		savior->lock_map();
 		if(savior->has(key)){
 			savior->unlock_map();			
 			//std::cout << "SAVIOR_SAVE_TREE " + key + "\n";
-			savior->save(key, true);
+			savior->save(key, false);
 		} else {
 			savior->unlock_map();
 		}
 		//std::cout << "REMOVE_TREE " + key + "\n";
-		tree_cache_r.erase(key);
 	}
 	//======//log_info_private("[cache::check_tree_ref] end");
 }
@@ -125,7 +125,9 @@ void forest::cache::check_leaf_ref(string& key)
 		}
 		
 		leaf_cache_r.erase(key);
+		own_lock(node);
 		get_data(node).bloomed = false;
+		own_unlock(node);
 		
 		if(savior->has(key)){
 			//savior_save_m.lock();
@@ -133,7 +135,7 @@ void forest::cache::check_leaf_ref(string& key)
 			//savior_save_m.unlock();
 			
 			savior->unlock_map();
-			savior->save(key, true);
+			savior->save(key, false);
 		} else {
 			savior->unlock_map();
 		}
@@ -165,7 +167,7 @@ void forest::cache::check_intr_ref(string& key)
 		savior->lock_map();
 		if(savior->has(key)){
 			savior->unlock_map();
-			savior->save(key, true);
+			savior->save(key, false);
 		} else {
 			savior->unlock_map();
 		}

@@ -40,7 +40,10 @@ void forest::fold()
 		
 	blossomed = false;
 	
+	//std::cout << "BEFORE_DELETE_SAVIOR\n";
 	delete savior;
+	//std::cout << "AFTER_DELETE_SAVIOR\n";
+	
 	
 	close_root();
 	
@@ -97,9 +100,9 @@ void forest::delete_tree(string name)
 	//std::cout << "ERASE TREE NAME: " + name + "\n";
 	
 	// Remove tree from forest
-	//std::cout << "ERASE_FROM_FOREST\n";
+	//std::cout << "ERASE_FROM_FOREST-start\n";
 	FOREST->erase(name);
-	//std::cout << "ERASE_FROM_FOREST_END\n";
+	//std::cout << "ERASE_FROM_FOREST-end\n";
 	
 	//std::cout << "ERASE TREE START:::: " + path + "\n";
 	
@@ -113,6 +116,8 @@ void forest::leave_tree(string path)
 {
 	//=====//log_info_public("[forest::leave_tree] start:"+path);
 	cache::tree_cache_m.lock();
+	assert(cache::tree_cache_r.count(path));
+	assert(cache::tree_cache_r[path].second > 0);
 	cache::tree_cache_r[path].second--;
 	cache::check_tree_ref(path);
 	cache::tree_cache_m.unlock();
@@ -148,11 +153,12 @@ forest::tree_ptr forest::find_tree(string name)
 forest::tree_ptr forest::open_tree(string path)
 {
 	//=====//log_info_public("[forest::open_tree] start:"+path);
-	
+	//std::cout << "OPEN_TREE-START\n";
 	cache::tree_cache_m.lock();
 	tree_ptr t = get_tree(path);
 	cache::tree_cache_r[path].second++;
 	cache::tree_cache_m.unlock();
+	//std::cout << "OPEN_TREE-END\n";
 	
 	//=====//log_info_public("[forest::open_tree] end:"+path);
 	
@@ -317,6 +323,8 @@ void forest::insert_tree(string name, string file_name, tree_ptr tree)
 	FOREST->insert(name, std::move(tmp));
 	
 	cache::tree_cache_m.lock();
+	assert(cache::tree_cache_r.count(file_name));
+	assert(cache::tree_cache_r[file_name].second > 0);
 	cache::tree_cache_r[file_name].second--;
 	cache::check_tree_ref(file_name);
 	cache::tree_cache_m.unlock();
@@ -335,12 +343,12 @@ void forest::insert_tree(string name, string file_name)
 void forest::erase_tree(string path)
 {
 	//=====//log_info_private("[forest::erase_tree] start");
+	
 	tree_ptr t = open_tree(path);
 	
 	t->get_tree()->clear();
 	
 	savior->remove(path, SAVE_TYPES::BASE, t);
-	
 	//DBFS::remove(path);
 
 	// Clear cache
@@ -354,6 +362,7 @@ void forest::erase_tree(string path)
 	cache::tree_cache_m.unlock();
 	
 	leave_tree(path);
+	
 	//=====//log_info_private("[forest::erase_tree] end");
 }
 

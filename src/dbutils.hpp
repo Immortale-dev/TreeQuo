@@ -1,6 +1,7 @@
 #ifndef FOREST_DBUTILS_H
 #define FOREST_DBUTILS_H
 
+#include <cstring>
 #include <functional>
 #include <memory>
 #include <string>
@@ -105,14 +106,14 @@ namespace forest{
 		
 		public:
 			file_data_t(file_ptr file, uint_t start, uint_t length) : file(file), start(start), length(length) { };
-			file_data_t(const char* data, uint_t length) : start(0), length(length) { data_cached = new char[length]; memcpy(data_cached, data, length); cached = true; };
+			file_data_t(const char* data, uint_t length) : start(0), length(length) { data_cached = new char[length]; std::memcpy(data_cached, data, length); cached = true; };
 			virtual ~file_data_t() { /*std::cout << "-----DESTRUCT_file_data_t " + file->name() + " " + std::to_string((uint_t)this) + "\n";*/ delete_cache(); };
 			uint_t size(){ return length; };
 			void set_file(file_ptr file) { this->file = file; };
 			void set_start(uint_t start) { this->start = start; };
 			void set_length(uint_t length) { this->length = length; };
 			void delete_cache() { if(cached){ delete[] data_cached; cached = false; } };
-			void set_cache(char* buffer) { delete_cache(); data_cached = new char[length]; memcpy(data_cached, buffer, length); cached = true; };
+			void set_cache(char* buffer) { delete_cache(); data_cached = new char[length]; std::memcpy(data_cached, buffer, length); cached = true; };
 			
 			file_ptr file;
 			std::mutex m,g,o;
@@ -143,7 +144,7 @@ namespace forest{
 						return sz;
 					}
 					if(data->cached){
-						memcpy(buffer, data->data_cached+pos, sz);
+						std::memcpy(buffer, data->data_cached+pos, sz);
 					}
 					else{
 						auto lock = data->file->get_lock();
@@ -151,7 +152,7 @@ namespace forest{
 						data->file->seekg(data->start + pos);
 						data->file->read(buffer, sz);
 						if(temp_cached){
-							memcpy(temp_cache + pos, buffer, sz);
+							std::memcpy(temp_cache + pos, buffer, sz);
 						}
 					}
 					pos += sz;

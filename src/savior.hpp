@@ -2,11 +2,13 @@
 #define FOREST_SAVIOR_H
 
 #include <queue>
+#include <thread>
 #include "dbutils.hpp"
 #include "node_data.hpp"
 #include "lock.hpp"
 #include "cache.hpp"
 #include "tree.hpp"
+#include "listcache.hpp"
 
 namespace forest{
 	
@@ -57,7 +59,8 @@ namespace forest{
 			void free_item(save_key item);
 			void schedule_save(bool sync);
 			void remove_item(save_key item);
-			void resolve_cluster();
+			void run_scheduler();
+			void delayed_save();
 			DBFS::File* save_intr(node_ptr node);
 			DBFS::File* save_leaf(node_ptr node, std::shared_ptr<DBFS::File> fp);
 			DBFS::File* save_base(tree_ptr tree);
@@ -71,9 +74,14 @@ namespace forest{
 			uint_t cluster_limit;
 			uint_t cluster_reduce_length;
 			std::unordered_map<save_key, save_value*> map;
+			std::unordered_set<save_key> saving_items, locking_items;
 			std::queue<save_key> save_queue;
 			bool saving = false;
 			bool resolving = false;
+			
+			ListCache<save_key, bool> items_queue;
+			bool scheduler_running = false;
+			int schedule_timer = 1;
 	};
 }
 

@@ -2,13 +2,13 @@
 #define FOREST_LOG_H
 
 #include <string>
-#include "logger.hpp"
+//#include "logger.hpp"
 
 namespace forest{
 	
 	extern int LOGGER_FLAG;
 	extern int LOG_DETAILS;
-	extern logger::Log log;
+	//extern logger::Log log;
 	
 	void log_error(std::string str);
 	void log_info_public(std::string str);

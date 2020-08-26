@@ -5,6 +5,7 @@
 #include <memory>
 #include <chrono>
 #include <mutex>
+#include <thread>
 #include <condition_variable>
 #include "BPlusTreeBase.hpp"
 
@@ -460,10 +461,13 @@ void BPlusTree<Key, T, D>::save_base()
 {
 	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
 	
+	//node_ptr stem = this->get_stem();
+	//processSearchNodeStart(stem, PROCESS_TYPE::WRITE);
+	lock_write();
 	node_ptr stem = this->get_stem();
-	processSearchNodeStart(stem, PROCESS_TYPE::WRITE);
 	driver->d_save_base(stem);
-	processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
+	//processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
+	unlock_write();
 	
 	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
 	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
@@ -472,6 +476,7 @@ void BPlusTree<Key, T, D>::save_base()
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::lock_read()
 {
+	//std::cout << "__LOCK_TREE_READ__ " << this << std::endl;
 	node_ptr stem = this->get_stem();
 	processSearchNodeStart(stem, PROCESS_TYPE::READ);
 }
@@ -479,8 +484,11 @@ void BPlusTree<Key, T, D>::lock_read()
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::lock_write()
 {
+	//std::cout << std::this_thread::get_id() << " __LOCK_TREE_WRITE-START__ " << std::endl;
 	node_ptr stem = this->get_stem();
+	assert((bool)stem);
 	processSearchNodeStart(stem, PROCESS_TYPE::WRITE);
+	//std::cout << std::this_thread::get_id() << " __LOCK_TREE_WRITE-END__ " << this << std::endl;
 }
 
 template <class Key, class T, typename D>
@@ -488,13 +496,17 @@ void BPlusTree<Key, T, D>::unlock_read()
 {
 	node_ptr stem = this->get_stem();
 	processSearchNodeEnd(stem, PROCESS_TYPE::READ);
+	//std::cout << "__UNLOCK_TREE_READ__ " << this << std::endl;
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::unlock_write()
 {
+	//std::cout << std::this_thread::get_id() << " __UNLOCK_TREE_WRITE-START__ " << this << std::endl;
 	node_ptr stem = this->get_stem();
+	assert((bool)stem);
 	processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
+	//std::cout << std::this_thread::get_id() << " __UNLOCK_TREE_WRITE-END__ " << this << std::endl;
 }
 
 #endif //BPLUSTREE_H

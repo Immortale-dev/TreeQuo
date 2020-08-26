@@ -47,6 +47,7 @@ forest::Tree::~Tree()
 	//======//log_info_private("[Tree::~Tree] start");
 	if(tree){
 		delete tree;
+		tree = nullptr;
 	}
 	//======//log_info_private("[Tree::~Tree] end");
 }
@@ -727,6 +728,7 @@ forest::tree_t::node_ptr forest::Tree::get_intr(string path)
 	
 	// Create and lock node
 	intr_data = node_ptr(new tree_t::InternalNode());
+	get_data(intr_data).is_original = true;
 	lock_write(intr_data);
 	
 	// Put it into the cache
@@ -794,6 +796,7 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 
 	// Create and lock node
 	leaf_data = node_ptr(new typename tree_t::LeafNode());
+	get_data(leaf_data).is_original = true;
 	lock_write(leaf_data);
 	change_lock_write(leaf_data);
 	
@@ -862,7 +865,7 @@ forest::tree_t::node_ptr forest::Tree::get_original(tree_t::node_ptr node)
 	assert(has_data(node));
 	
 	node_ptr n;
-	/*
+	
 	if(get_data(node).is_original){
 		return node;
 	}
@@ -890,7 +893,7 @@ forest::tree_t::node_ptr forest::Tree::get_original(tree_t::node_ptr node)
 			return n;
 		}
 	}
-	*/
+	
 	string& path = get_node_data(node)->path;
 	
 	
@@ -1214,6 +1217,8 @@ void forest::Tree::d_insert(tree_t::node_ptr& node)
 		node_ptr n = get_original(node);
 		cache::leaf_unlock();
 		
+		assert(get_data(n).is_original);
+		
 		node_data_ptr data = get_node_data(node);
 		string cur_name = data->path;
 		savior->put(cur_name, SAVE_TYPES::LEAF, n);
@@ -1256,7 +1261,7 @@ void forest::Tree::d_remove(tree_t::node_ptr& node)
 		savior->remove(data->path, SAVE_TYPES::INTR, n);
 	} else {
 		///node->get_childs()->resize(0);
-		node->get_childs()->clear();
+		n->get_childs()->clear();
 		//if(get_original(node) && get_original(node)->get_childs()){
 		//	get_original(node)->get_childs()->resize(0);
 		//}
@@ -1814,6 +1819,8 @@ void forest::Tree::d_save_base(tree_t::node_ptr& node)
 		t = FOREST;	
 	} else {
 		cache::tree_cache_m.lock();
+		assert(cache::tree_cache_r.count(base_file_name));
+		assert(cache::tree_cache_r[base_file_name].second > 0);
 		t = cache::tree_cache_r[base_file_name].first;
 		cache::tree_cache_m.unlock();
 	}
