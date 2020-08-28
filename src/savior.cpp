@@ -51,10 +51,10 @@ void forest::Savior::put(save_key item, SAVE_TYPES type, void_shared node)
 	define_item(item, type, ACTION_TYPE::SAVE, node);
 	//std::cout << "SAVE_PUT_END" << std::endl;
 	
-	//return;
-	if(type == SAVE_TYPES::INTR || type == SAVE_TYPES::BASE){
-		return;
-	}
+	///return;
+	///if(type == SAVE_TYPES::INTR || type == SAVE_TYPES::BASE){
+	///	return;
+	///}
 	items_queue.push(item, true);
 	run_scheduler();
 	//======//log_info_private("[Savior::put] end");
@@ -81,10 +81,10 @@ void forest::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
 	it->action = ACTION_TYPE::REMOVE;
 	//free_item(item);
 	
-	//return;
-	if(type == SAVE_TYPES::INTR || type == SAVE_TYPES::BASE){
-		return;
-	}
+	///return;
+	///if(type == SAVE_TYPES::INTR || type == SAVE_TYPES::BASE){
+	///	return;
+	///}
 	items_queue.push(item, true);
 	run_scheduler();
 	
@@ -171,15 +171,18 @@ void forest::Savior::save_all()
 	//======//log_info_private("[Savior::save_all] start");
 	while(true){
 		//===std::cout << "+SAVE_ALL_LOCK\n";
-		map_mtx.lock();
+		std::unique_lock<std::mutex> lock(map_mtx);
 		//===std::cout << "-SAVE_ALL_LOCK\n";
 		if(map.size() == 0){
-			map_mtx.unlock();
+			while(items_queue.size()){
+				cv.wait(lock);
+			}
+			//map_mtx.unlock();
 			//======//log_info_private("[Savior::save_all] end");
 			return;
 		}
 		save_key item = (map.begin())->first;
-		map_mtx.unlock();
+		lock.unlock();
 		save(item, true);
 	}
 }
@@ -443,9 +446,9 @@ void forest::Savior::save_item(save_key item, bool sync)
 		//std::cout << "SAVE_INTR_BEFORE_LOCK\n";
 		
 		//std::cout << thread_id_str() + " SAVIOR_SAVE_INTR_GET_NODE "+item+"\n";
-		if(!sync){
+		//if(!sync){
 			forest::lock_write(node);
-		}
+		//}
 		//std::cout << thread_id_str() + " SAVIOR_SAVE_INTR_LOCK "+item+"\n";
 		//std::cout << "SAVE_INTR_MID_LOCK\n";
 		//own_item(item);
@@ -485,9 +488,9 @@ void forest::Savior::save_item(save_key item, bool sync)
 			//std::cout << "RM_FA_END\n";
 		}
 		
-		if(!sync){
+		//if(!sync){
 			forest::unlock_write(node);
-		}
+		//}
 		
 		//std::cout << thread_id_str() + " SAVIOR_SAVE_INTR_END "+item+"\n";
 	} else if(it->type == SAVE_TYPES::LEAF){
@@ -502,10 +505,10 @@ void forest::Savior::save_item(save_key item, bool sync)
 		assert(get_data(node).is_original);
 		
 		//std::cout << thread_id_str() + " SAVIOR_SAVE_LEAF_GET_NODE "+item+"\n";
-		if(!sync){
-			lock_write(node);
+		//if(!sync){
+			//lock_write(node);
 			change_lock_write(node);
-		}
+		//}
 		//std::cout << thread_id_str() + " SAVIOR_SAVE_LEAF_LOCK "+item+"\n";
 		//std::cout << "SAVE_ITEM---AFTER_CHANGE_LOCK\n";
 		//own_item(item);
@@ -550,17 +553,18 @@ void forest::Savior::save_item(save_key item, bool sync)
 			
 			
 			//====//std::cout << "SAVE_LEAF: " + cur_name + "\n";
-			if(!sync){
-				cache::leaf_lock();
-			}
-			own_lock(node);
-			if(!get_data(node).bloomed){
-				fp->close();
-			}
-			own_unlock(node);
-			if(!sync){
-				cache::leaf_unlock();
-			}
+			//if(!sync){
+			//	cache::leaf_lock();
+			//}
+			
+			///own_lock(node);
+			///if(!get_data(node).bloomed){
+			///	fp->close();
+			///}
+			///own_unlock(node);
+			//if(!sync){
+			//	cache::leaf_unlock();
+			//}
 			// TODO: uncomment!
 			//cache::leaf_lock();
 			//if(!cache::leaf_cache_r.count(item) || cache::leaf_cache_r[item].first.get() != node.get()){
@@ -597,10 +601,10 @@ void forest::Savior::save_item(save_key item, bool sync)
 			//}
 		}
 		
-		if(!sync){
+		//if(!sync){
 			change_unlock_write(node);
-			unlock_write(node);
-		}
+			//unlock_write(node);
+		//}
 		
 		//std::cout << thread_id_str() + " SAVIOR_SAVE_LEAF_END "+item+"\n";
 		//forest::unlock_write(node);
@@ -662,6 +666,16 @@ void forest::Savior::save_item(save_key item, bool sync)
 	//std::cout << "+SAVE_ITEM_SECOND_LOCK\n";
 	lock.lock();
 	//std::cout << "-SAVE_ITEM_SECOND_LOCK\n";
+	
+	if(it->type == SAVE_TYPES::LEAF){
+		node_ptr node = std::static_pointer_cast<tree_t::Node>(it->node);
+		auto& data = get_data(node);
+		if(!data.bloomed && data.f){
+			data.f->close();
+			data.f = nullptr;
+		}
+	}
+	
 	map.erase(item);
 	saving_items.erase(item);
 	locking_items.erase(item);

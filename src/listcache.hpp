@@ -37,6 +37,7 @@ class ListCache{
 		
 	private:
 		int max_size = 10;
+		bool destructed = false;
 		hash_t container;
 		list_t list;
 		callback_t fn;
@@ -54,7 +55,7 @@ ListCache<Key, T>::ListCache()
 template<typename Key, typename T>
 ListCache<Key, T>::~ListCache()
 {
-	
+	destructed = true;
 }
 
 template<typename Key, typename T>
@@ -78,8 +79,12 @@ bool ListCache<Key, T>::has(Key& key)
 template<typename Key, typename T>
 T& ListCache<Key, T>::get(Key& key)
 {
-	auto& it = container[key];
+	auto it = container[key];
 	list.splice(list.begin(), list, it);
+	//if(container.size() != list.size()){
+	//	std::cout << std::to_string(list.size()) + " " + std::to_string(container.size()) + " " + std::to_string((int)destructed) + "\n"; 
+	//	assert(false);
+	//}
 	return it->second;
 }
 
@@ -93,12 +98,20 @@ void ListCache<Key, T>::push(item_t val)
 	list.push_front(val);
 	container[val.first] = list.begin();
 	remove_overflow();
+	//if(container.size() != list.size()){
+		//std::cout << std::to_string(list.size()) + " " + std::to_string(container.size()) + " " + std::to_string((int)destructed) + "\n"; 
+	//	assert(false);
+	//}
 }
 
 template<typename Key, typename T>
 void ListCache<Key, T>::push(Key key, T val)
 {
 	push(std::make_pair(key,val));
+	//if(container.size() != list.size()){
+		//std::cout << std::to_string(list.size()) + " " + std::to_string(container.size()) + " " + std::to_string((int)destructed) + "\n"; 
+		//assert(false);
+	//}
 }
 
 template<typename Key, typename T>
@@ -120,15 +133,35 @@ void ListCache<Key, T>::remove(Key& key)
 		return;
 	list.erase(container[key]);
 	container.erase(key);
+	//if(container.size() != list.size()){
+		//std::cout << "ERRORRRORORO!!!";
+		//std::cout << std::to_string(list.size()) + " " + std::to_string(container.size()) + "\n"; 
+		//std::cout << "DSTR:: " << destructed << std::endl;
+		//assert(!destructed);
+		//assert(false);
+	//}
 }
 
 template<typename Key, typename T>
 void ListCache<Key, T>::pop()
 {
+	//if(container.size() != list.size()){
+		//std::cout << "ERRORRRORORO!!!";
+		//std::cout << std::to_string(list.size()) + " " + std::to_string(container.size()) + "\n"; 
+		//std::cout << "DSTR:: " << destructed << std::endl;
+		//assert(!destructed);
+		//assert(false);
+	//}
+	//assert(!list.empty());
+	//assert(!container.empty());
 	Key k = list.back().first;
 	container.erase(k);
 	list.pop_back();
 	if(fn) fn(k);
+	//if(container.size() != list.size()){
+	//	std::cout << std::to_string(list.size()) + " " + std::to_string(container.size()) + " " + std::to_string((int)destructed) + "\n"; 	
+	//	assert(false);
+	//}
 }
 
 template<typename Key, typename T>
@@ -136,6 +169,10 @@ void ListCache<Key, T>::resize(int size)
 {
 	max_size = size;
 	remove_overflow();
+	//if(container.size() != list.size()){
+	//	std::cout << std::to_string(list.size()) + " " + std::to_string(container.size()) + " " + std::to_string((int)destructed) + "\n"; 	
+	//	assert(false);
+	//}
 }
 
 template<typename Key, typename T>
@@ -149,6 +186,10 @@ void ListCache<Key, T>::clear()
 {
 	list.clear();
 	container.clear();
+	//if(container.size() != list.size()){
+	//	std::cout << std::to_string(list.size()) + " " + std::to_string(container.size()) + " " + std::to_string((int)destructed) + "\n"; 
+	//	assert(false);
+	//}
 }
 
 template<typename Key, typename T>
@@ -164,6 +205,10 @@ void ListCache<Key, T>::remove_overflow()
 	while(size() > max_size){
 		pop();
 	}
+	//if(container.size() != list.size()){
+	//	std::cout << std::to_string(list.size()) + " " + std::to_string(container.size()) + " " + std::to_string((int)destructed) + "\n"; 
+	//	assert(false);
+	//}
 }
 
 
