@@ -30,7 +30,7 @@ string to_str(int a)
     return ret;
 }
 
-DESCRIBE_SKIP("Test single thread", {
+DESCRIBE("Test single thread", {
 	
 	srand(time(0));
 
@@ -855,7 +855,7 @@ DESCRIBE("Test multi threads", {
 			
 			DESCRIBE_SKIP("Ordered requests", {
 				
-				int rec_count = 100000;
+				int rec_count = 1000000;
 				
 				IT("Insert 100000 items [0,100000)", {
 					p1 = chrono::system_clock::now();

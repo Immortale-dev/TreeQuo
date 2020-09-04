@@ -14,6 +14,7 @@ namespace forest{
 	std::atomic<int> opened_files_count = 0;
 	std::mutex opened_files_m;
 	std::condition_variable opened_files_cv;
+	int SCHEDULE_TIMER = 2500;
 }
 
 forest::Savior::Savior()
@@ -736,7 +737,7 @@ void forest::Savior::delayed_save()
 {
 	while(true){
 		//std::cout << "LOOP_1\n";
-		std::this_thread::sleep_for(std::chrono::milliseconds(schedule_timer));
+		std::this_thread::sleep_for(std::chrono::microseconds(SCHEDULE_TIMER));
 		
 		map_mtx.lock();
 		if(!items_queue.size()){

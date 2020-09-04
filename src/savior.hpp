@@ -20,6 +20,8 @@ namespace forest{
 	extern std::mutex opened_files_m;
 	extern std::condition_variable opened_files_cv;
 	
+	extern int SCHEDULE_TIMER;
+	
 	class Savior{
 		
 		enum class ACTION_TYPE{ SAVE, REMOVE };
@@ -85,7 +87,6 @@ namespace forest{
 			
 			ListCache<save_key, bool> items_queue;
 			bool scheduler_running = false;
-			int schedule_timer = 1;
 	};
 }
 
