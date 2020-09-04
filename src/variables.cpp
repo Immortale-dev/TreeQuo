@@ -12,4 +12,5 @@ namespace forest{
 	int TREE_CACHE_LENGTH = 3;
 	int CACHE_BYTES = 4096;
 	int CHUNK_SIZE = 4096;
+	int OPENED_FILES_LIMIT = 10;
 }

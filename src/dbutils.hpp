@@ -13,11 +13,11 @@
 #include <unordered_set>
 #include <cstdint>
 #include <iostream> //for debug
+#include "log.hpp"
 #include "dbfs.hpp"
 #include "bplustree.hpp"
 #include "dbdriver.hpp"
 #include "dbexception.hpp"
-#include "log.hpp"
 
 
 namespace forest{

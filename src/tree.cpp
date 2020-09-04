@@ -380,7 +380,9 @@ forest::tree_leaf_read_t forest::Tree::read_leaf(string filename)
 	//}
 	
 	auto p1 = std::chrono::high_resolution_clock::now();
-	DBFS::File* f = new DBFS::File(filename);
+	
+	///DBFS::File* f = new DBFS::File(filename);
+	DBFS::File* f = create_leaf_file(filename, true);
 	
 	//auto& sf = f->stream();
 	
@@ -656,6 +658,38 @@ void forest::Tree::unmaterialize_leaf(tree_t::node_ptr node)
 	//hook_unmaterialize_leaf += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 	
 	//======//log_info_private("[Tree::unmaterialize_leaf] end");
+}
+
+DBFS::File* forest::Tree::create_leaf_file(string filename, bool lock_for_limit)
+{
+	return new DBFS::File(filename);
+	/*
+	std::unique_lock<std::mutex> lock(opened_files_m);
+	while(lock_for_limit && opened_files_count >= OPENED_FILES_LIMIT){
+		opened_files_cv.wait(lock);
+	}
+	forest::opened_files_count++;
+	lock.unlock();
+	DBFS::File* file = new DBFS::File(filename);
+	file->on_open([](DBFS::File* f){
+		forest::opened_files_count++;
+	});
+	file->on_close([](DBFS::File* f){
+		std::unique_lock<std::mutex> lock(forest::opened_files_m);
+		forest::opened_files_count--;
+		forest::opened_files_cv.notify_all();
+	});
+	return file;
+	* */
+	
+	
+	/*
+	return new DBFS::File(filename, [](DBFS::File* f){
+		
+	}, [](DBFS::File* f){
+		forest::opened_files_count--;
+	});
+	* */
 }
 
 forest::node_ptr forest::Tree::create_node(string path, NODE_TYPES node_type)
@@ -1110,34 +1144,6 @@ void forest::Tree::write_leaf_item_n(DBFS::File* file, tree_t::val_type& data)
 	//data->set_start(start_data);
 	//data->set_file(file);
 }
-/*
-forest::driver_t* forest::Tree::init_driver()
-{
-	return new driver_t(
-		 [this](tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_enter(node, type, tree); }
-		,[this](tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_leave(node, type, tree); }
-		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_insert(node, tree); }
-		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_remove(node, tree); }
-		,[this](tree_t::childs_type_iterator item, int_t step, tree_t* tree){ this->d_before_move(item, step, tree); }
-		,[this](tree_t::childs_type_iterator item, int_t step, tree_t* tree){ this->d_after_move(item, step, tree); }
-		,[this](tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_item_reserve(item, type, tree); }
-		,[this](tree_t::child_item_type_ptr item, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_item_release(item, type, tree); }
-		,[this](tree_t::node_ptr node, tree_t::child_item_type_ptr item, tree_t* tree){ this->d_item_move(node, item, tree); }
-		,[this](tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_reserve(node, type, tree); }
-		,[this](tree_t::node_ptr node, tree_t::PROCESS_TYPE type, tree_t* tree){ this->d_release(node, type, tree); }
-		,[this](tree_t::node_ptr node, tree_t::child_item_type_ptr item, tree_t* tree){ this->d_leaf_insert(node, item, tree); }
-		,[this](tree_t::node_ptr node, tree_t::child_item_type_ptr item, tree_t* tree){ this->d_leaf_delete(node, item, tree); }
-		,[this](tree_t::node_ptr node, tree_t::node_ptr new_node, tree_t::node_ptr link_node, tree_t* tree){ this->d_leaf_split(node, new_node, link_node, tree); }
-		,[this](tree_t::node_ptr node, tree_t::node_ptr join_node, tree_t::node_ptr link_node, tree_t* tree){ this->d_leaf_join(node, join_node, link_node, tree); }
-		,[this](tree_t::node_ptr node, tree_t::node_ptr shift_node, tree_t* tree){ this->d_leaf_shift(node, shift_node, tree); }
-		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_leaf_lock(node, tree); }
-		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_leaf_free(node, tree); }
-		,[this](tree_t::node_ptr node, tree_t::node_ptr ref_node, tree_t::LEAF_REF ref, tree_t* tree){ this->d_leaf_ref(node, ref_node, ref, tree); }
-		,[this](tree_t::node_ptr node, tree_t* tree){ this->d_save_base(node, tree); }
-	);
-}
-*/
-
 
 // Proceed
 void forest::Tree::d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type)

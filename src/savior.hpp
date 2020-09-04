@@ -16,6 +16,10 @@ namespace forest{
 	extern uint_t SAVIOR_DEPEND_CLUSTER_LIMIT;
 	extern uint_t SAVIOR_DEPEND_CLUSTER_REDUCE_LENGTH;
 	
+	extern std::atomic<int> opened_files_count;
+	extern std::mutex opened_files_m;
+	extern std::condition_variable opened_files_cv;
+	
 	class Savior{
 		
 		enum class ACTION_TYPE{ SAVE, REMOVE };

@@ -18,6 +18,7 @@ namespace forest{
 	extern int LOG_DETAILS;
 	extern int CACHE_BYTES;
 	extern int CHUNK_SIZE;
+	extern int OPENED_FILES_LIMIT;
 }
 
 #endif // FOREST_VARIABLES

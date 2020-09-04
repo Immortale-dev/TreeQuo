@@ -42,33 +42,6 @@ namespace forest{
 		using tree_node_type = tree_t::Node::nodes_type;
 		using tree_keys_type = tree_t::Node::keys_type;
 		
-		/*
-		using child_lengths_vec_ptr = std::vector<uint_t>*;
-		using child_keys_vec_ptr = std::vector<tree_t::key_type>*;
-		using child_values_vec_ptr = std::vector<tree_t::val_type>*;
-		using child_nodes_vec_ptr = std::vector<string>*;
-		
-		struct tree_leaf_read_t {
-			child_keys_vec_ptr child_keys;
-			child_lengths_vec_ptr child_lengths;
-			uint_t start_data;
-			DBFS::File* file;
-			string left_leaf, right_leaf;
-		};
-		struct tree_intr_read_t {
-			NODE_TYPES childs_type;
-			child_keys_vec_ptr child_keys;
-			child_nodes_vec_ptr child_values;
-		};
-		struct tree_base_read_t {
-			TREE_TYPES type;
-			NODE_TYPES branch_type;
-			uint_t count;
-			int factor;
-			string branch;
-		};*/
-		
-		
 		public:
 			Tree();
 			Tree(string path);
@@ -102,6 +75,7 @@ namespace forest{
 			tree_leaf_read_t read_leaf(string filename);
 			void materialize_leaf(tree_t::node_ptr node);
 			void unmaterialize_leaf(tree_t::node_ptr node);
+			static DBFS::File* create_leaf_file(string filename, bool lock_for_limit=false);
 			
 			// Tree methods
 			tree_base_read_t read_base(string filename);
@@ -148,7 +122,6 @@ namespace forest{
 			static void write_leaf_item_n(DBFS::File* file, tree_t::val_type& data);
 			
 			// Other
-			//driver_t* init_driver();
 			tree_t::node_ptr create_node(string path, NODE_TYPES node_type);
 			tree_t::node_ptr create_node(string path, NODE_TYPES node_type, bool empty);
 			

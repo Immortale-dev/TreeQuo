@@ -288,7 +288,7 @@ DESCRIBE("Test multi threads", {
 		
 		AFTER_ALL({
 			forest::fold();
-			std::cout << "AFTER_ALL!!!\n";
+			//std::cout << "AFTER_ALL!!!\n";
 			// Remove dirs?
 		});
 		

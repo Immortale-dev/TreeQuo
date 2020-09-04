@@ -11,6 +11,9 @@ namespace forest{
 	uint_t SAVIOR_IDLE_TIME_MS = 50;
 	uint_t SAVIOR_DEPEND_CLUSTER_LIMIT = 10;
 	uint_t SAVIOR_DEPEND_CLUSTER_REDUCE_LENGTH = SAVIOR_DEPEND_CLUSTER_LIMIT * 0.75;
+	std::atomic<int> opened_files_count = 0;
+	std::mutex opened_files_m;
+	std::condition_variable opened_files_cv;
 }
 
 forest::Savior::Savior()
@@ -539,15 +542,28 @@ void forest::Savior::save_item(save_key item, bool sync)
 					//DBFS::move(cur_f->name(), newnamef);
 					//cur_f->open(newnamef);
 					//====//std::cout << "SAVE_ITEM_LEAF_MOVE_START---"+item+"\n";
+					
+					// preserve limit
+					std::unique_lock<std::mutex> flock(forest::opened_files_m);
+					while(forest::opened_files_count > forest::OPENED_FILES_LIMIT){
+						forest::opened_files_cv.wait(flock);
+					}
+					forest::opened_files_count++;
+					flock.unlock();
+					
 					auto locked = cur_f->get_lock();
 					cur_f->move(DBFS::random_filename());
 					cur_f->on_close([](DBFS::File* file){
+						// preserve limit
+						forest::opened_files_count--;
+						forest::opened_files_cv.notify_all();
 						file->remove();
 					});
 					//====//std::cout << "SAVE_ITEM_LEAF_MOVE_END---"+item+"\n";
 				}
 			}
-			std::shared_ptr<DBFS::File> fp = std::shared_ptr<DBFS::File>(DBFS::create(cur_name));
+			
+			std::shared_ptr<DBFS::File> fp = std::shared_ptr<DBFS::File>(Tree::create_leaf_file(cur_name));
 			get_data(node).f = fp;
 			save_leaf(node, fp);
 			
@@ -588,8 +604,16 @@ void forest::Savior::save_item(save_key item, bool sync)
 			std::shared_ptr<DBFS::File> cur_f = get_data(node).f;
 			//if(cur_f){
 			if(cur_f){
+				std::unique_lock<std::mutex> flock(forest::opened_files_m);
+				while(forest::opened_files_count > forest::OPENED_FILES_LIMIT){
+					forest::opened_files_cv.wait(flock);
+				}
+				forest::opened_files_count++;
+				flock.unlock();
 				//====//std::cout << "PUT_ON_DIE_LEAF: " + cur_f->name() + "\n";
 				cur_f->on_close([](DBFS::File* file){
+					forest::opened_files_count--;
+					forest::opened_files_cv.notify_all();
 					//====//std::cout << "REMOVE_LEAF: " + file->name() + "\n";
 					file->remove();
 				});
@@ -679,6 +703,7 @@ void forest::Savior::save_item(save_key item, bool sync)
 	map.erase(item);
 	saving_items.erase(item);
 	locking_items.erase(item);
+	items_queue.remove(item);
 	//std::cout << "_SV remove_item_from_map " + item + "\n"; 
 	// Free item
 	//it->m.unlock();
