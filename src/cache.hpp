@@ -20,7 +20,6 @@ namespace forest{
 		struct leaf_cache_ref_t{
 			tree_t::node_ptr first;
 			int second;
-			//int items;
 		};
 		
 		void init_cache();
@@ -55,7 +54,6 @@ namespace forest{
 		
 		void clear_node_cache(tree_t::node_ptr& node);
 		
-		
 		void _intr_insert(tree_t::node_ptr& node);
 		void _leaf_insert(tree_t::node_ptr& node);
 		
@@ -72,44 +70,33 @@ namespace forest{
 		
 		extern std::queue<string> savior_save;
 		extern std::mutex savior_save_m;
-		//extern std::unordered_map<uintptr_t, std::unordered_map<int, int> > leaf_cache_i;
 	}
 }
 
 
 inline void forest::cache::insert_item(tree_t::child_item_type_ptr& item)
 {
-	//======//log_info_private("[cache::insert_item] ("+path+":"+std::to_string(pos)+") start");
 	item->item->second->res_c++;
-	//======//log_info_private("[cache::insert_item] end");
 }
 
 inline void forest::cache::remove_item(tree_t::child_item_type_ptr& item)
 {
-	//======//log_info_private("[cache::remove_item] ("+path+":"+std::to_string(pos)+") start");
 	item->item->second->res_c--;
-	//======//log_info_private("[cache::remove_item] end");
 }
 
 inline void forest::cache::intr_lock()
 {
-	//======//log_info_private("[cache::intr_lock] start");
 	intr_cache_m.lock();
-	//======//log_info_private("[cache::intr_lock] end");
 }
 
 inline void forest::cache::intr_unlock()
 {
-	//======//log_info_private("[cache::intr_unlock] start");
 	intr_cache_m.unlock();
-	//======//log_info_private("[cache::intr_unlock] end");
 }
 
 inline void forest::cache::leaf_lock()
 {
-	//======//log_info_private("[cache::leaf_lock] start");
 	leaf_cache_m.lock();
-	//======//log_info_private("[cache::leaf_lock] end");
 }
 
 inline std::lock_guard<std::mutex> forest::cache::get_intr_lock()
@@ -125,38 +112,26 @@ inline std::lock_guard<std::mutex> forest::cache::get_leaf_lock()
 
 inline void forest::cache::reserve_intr_node(string& path)
 {
-	//======//log_info_private("[cache::reserve_intr_node] ("+path+") start");
 	intr_cache_r[path].second++;
-	//======//log_info_private("[cache::reserve_intr_node] end");
 }
 
 inline void forest::cache::release_intr_node(string& path)
 {
-	//======//log_info_private("[cache::release_intr_node] ("+path+") start");
-	///assert(intr_cache_r.count(path));
-	///assert(intr_cache_r[path].second>0);
 	if(--intr_cache_r[path].second == 0){
 		check_intr_ref(path);
 	}
-	//======//log_info_private("[cache::release_intr_node] end");
 }
 
 inline void forest::cache::reserve_leaf_node(string& path)
 {
-	//======//log_info_private("[cache::reserve_leaf_node] ("+path+") start");
 	leaf_cache_r[path].second++;
-	//======//log_info_private("[cache::reserve_leaf_node] end");
 }
 
 inline void forest::cache::release_leaf_node(string& path)
 {
-	//======//log_info_private("[cache::release_leaf_node] ("+path+") start");
-	///assert(leaf_cache_r.count(path));
-	///assert(leaf_cache_r[path].second>0);
 	if(--leaf_cache_r[path].second == 0){;
 		check_leaf_ref(path);
 	}
-	//======//log_info_private("[cache::release_leaf_node] end");
 }
 
 inline void forest::cache::_intr_insert(tree_t::node_ptr& node)

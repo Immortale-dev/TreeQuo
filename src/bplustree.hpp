@@ -80,21 +80,18 @@ template <class Key, class T>
 BPTIterator<Key, T>& BPTIterator<Key, T>::operator++()
 {
 	return dynamic_cast<BPTIterator<Key, T>& >(BPlusTreeBaseIterator<Key, T>::operator++());
-	//return *this;
 }
 
 template <class Key, class T>
 BPTIterator<Key, T>& BPTIterator<Key, T>::operator--()
 {
 	return dynamic_cast<BPTIterator<Key, T>& >(BPlusTreeBaseIterator<Key, T>::operator--());
-	//return *this;
 }
 
 template <class Key, class T>
 BPTLeaf<Key, T>::~BPTLeaf()
 {
 	if(data.f){
-		//std::cout << "DESCRUCT_LEAF: " + data.f->name() + " " + std::to_string(data.f.use_count()) + "\n";
 		data.f->close();
 	}
 }
@@ -190,7 +187,6 @@ class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key,
 template <class Key, class T, typename D>
 BPlusTree<Key, T, D>::BPlusTree(int factor, node_ptr node, long count, D* driver) : BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key, T>, BPTIterator<Key, T> >(factor), driver(driver) 
 {
-	//std::cout << "BPT_CREATED=========================================================================\n";
 	init(node);
 	this->v_count = count;
 }
@@ -236,46 +232,26 @@ void BPlusTree<Key, T, D>::init(node_ptr node)
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processSearchNodeStart(node_ptr node, PROCESS_TYPE type)
-{
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-	
+{	
 	driver->d_enter(node, type);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processSearchNodeEnd(node_ptr node, PROCESS_TYPE type)
-{
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-	
+{	
 	driver->d_leave(node, type);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processInsertNode(node_ptr node)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-
 	driver->d_insert(node);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processDeleteNode(node_ptr node)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-
 	driver->d_remove(node);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
@@ -293,190 +269,105 @@ void BPlusTree<Key, T, D>::processIteratorNodeReleased(node_ptr node)
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processIteratorMoveStart(childs_type_iterator item, int step)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-
 	driver->d_before_move(item, step);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processIteratorMoveEnd(childs_type_iterator item, int step)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-
 	driver->d_after_move(item, step);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processItemReserve(child_item_type_ptr item, PROCESS_TYPE type)
 {
-	auto p1 = std::chrono::high_resolution_clock::now();
-
 	driver->d_item_reserve(item, type);
-	
-	auto p2 = std::chrono::high_resolution_clock::now();
-	hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processItemRelease(child_item_type_ptr item, PROCESS_TYPE type)
 {
-	auto p1 = std::chrono::high_resolution_clock::now();
-	
 	driver->d_item_release(item, type);
-	
-	auto p2 = std::chrono::high_resolution_clock::now();
-	hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processItemMove(node_ptr node, child_item_type_ptr item)
 {
-	//std::cout << "WTDF!!!!!!!!!\n";
-	auto p1 = std::chrono::high_resolution_clock::now();
-
 	driver->d_item_move(node, item);
-	
-	auto p2 = std::chrono::high_resolution_clock::now();
-	hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processLeafReserve(node_ptr node, PROCESS_TYPE type)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-	
 	driver->d_reserve(node, type);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processLeafRelease(node_ptr node, PROCESS_TYPE type)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-	
 	driver->d_release(node, type);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processLeafInsertItem(node_ptr node, child_item_type_ptr item)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-	
 	driver->d_leaf_insert(node, item);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processLeafDeleteItem(node_ptr node, child_item_type_ptr item)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-	
 	driver->d_leaf_delete(node, item);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processLeafSplit(node_ptr node, node_ptr new_node, node_ptr link_node)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-	
 	driver->d_leaf_split(node, new_node, link_node);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processLeafJoin(node_ptr node, node_ptr join_node, node_ptr link_node)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-
 	driver->d_leaf_join(node, join_node, link_node);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processLeafShift(node_ptr node, node_ptr shift_node)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-	
 	driver->d_leaf_shift(node, shift_node);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processLeafLock(node_ptr node)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-	
 	driver->d_leaf_lock(node);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processLeafFree(node_ptr node)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-	
 	driver->d_leaf_free(node);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processLeafRef(node_ptr node, node_ptr ref_node, LEAF_REF ref)
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-
 	driver->d_leaf_ref(node, ref_node, ref);
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::save_base()
 {
-	/*======*///auto p1 = std::chrono::high_resolution_clock::now();
-	
-	//node_ptr stem = this->get_stem();
-	//processSearchNodeStart(stem, PROCESS_TYPE::WRITE);
 	lock_write();
 	node_ptr stem = this->get_stem();
 	driver->d_save_base(stem);
-	//processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
 	unlock_write();
-	
-	/*======*///auto p2 = std::chrono::high_resolution_clock::now();
-	/*======*///hooks_time += std::chrono::duration_cast<std::chrono::microseconds>(p2-p1).count();
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::lock_read()
 {
-	//std::cout << "__LOCK_TREE_READ__ " << this << std::endl;
 	node_ptr stem = this->get_stem();
 	processSearchNodeStart(stem, PROCESS_TYPE::READ);
 }
@@ -484,11 +375,8 @@ void BPlusTree<Key, T, D>::lock_read()
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::lock_write()
 {
-	//std::cout << std::this_thread::get_id() << " __LOCK_TREE_WRITE-START__ " << std::endl;
 	node_ptr stem = this->get_stem();
-	assert((bool)stem);
 	processSearchNodeStart(stem, PROCESS_TYPE::WRITE);
-	//std::cout << std::this_thread::get_id() << " __LOCK_TREE_WRITE-END__ " << this << std::endl;
 }
 
 template <class Key, class T, typename D>
@@ -496,17 +384,14 @@ void BPlusTree<Key, T, D>::unlock_read()
 {
 	node_ptr stem = this->get_stem();
 	processSearchNodeEnd(stem, PROCESS_TYPE::READ);
-	//std::cout << "__UNLOCK_TREE_READ__ " << this << std::endl;
 }
 
 template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::unlock_write()
 {
-	//std::cout << std::this_thread::get_id() << " __UNLOCK_TREE_WRITE-START__ " << this << std::endl;
 	node_ptr stem = this->get_stem();
 	assert((bool)stem);
 	processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
-	//std::cout << std::this_thread::get_id() << " __UNLOCK_TREE_WRITE-END__ " << this << std::endl;
 }
 
 #endif //BPLUSTREE_H

@@ -63,7 +63,6 @@ namespace forest{
 			void_shared define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action, void_shared node);
 			save_value* own_item(save_key item);
 			void free_item(save_key item);
-			void schedule_save(bool sync);
 			void remove_item(save_key item);
 			void run_scheduler();
 			void delayed_save();

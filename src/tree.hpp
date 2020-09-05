@@ -118,9 +118,6 @@ namespace forest{
 			static void write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t data);
 			static void write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data);
 			
-			static void write_leaf_n(DBFS::File* file, tree_leaf_read_t data);
-			static void write_leaf_item_n(DBFS::File* file, tree_t::val_type& data);
-			
 			// Other
 			tree_t::node_ptr create_node(string path, NODE_TYPES node_type);
 			tree_t::node_ptr create_node(string path, NODE_TYPES node_type, bool empty);

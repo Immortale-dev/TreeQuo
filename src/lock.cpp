@@ -135,7 +135,6 @@ void forest::change_lock_read(tree_t::node_ptr& node)
 void forest::change_lock_read(tree_t::Node* node)
 {
 	auto& ch_node = get_data(node).change_locks;
-	//ch_node.g.lock();
 	std::unique_lock<std::mutex> lock(ch_node.g);
 	while(ch_node.promote){
 		ch_node.p_cond.wait(lock);
@@ -143,7 +142,6 @@ void forest::change_lock_read(tree_t::Node* node)
 	if(ch_node.c++ == 0){
 		ch_node.m.lock();
 	}
-	//ch_node.g.unlock();
 }
 
 void forest::change_unlock_read(tree_t::node_ptr& node)
