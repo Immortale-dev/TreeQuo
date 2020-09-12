@@ -1,27 +1,14 @@
 #include "savior.hpp"
 
-std::string thread_id_str()
-{
-	std::stringstream ss;
-	ss << std::this_thread::get_id();
-	return ss.str();
-}
-
 namespace forest{
-	uint_t SAVIOR_IDLE_TIME_MS = 50;
-	uint_t SAVIOR_DEPEND_CLUSTER_LIMIT = 10;
-	uint_t SAVIOR_DEPEND_CLUSTER_REDUCE_LENGTH = SAVIOR_DEPEND_CLUSTER_LIMIT * 0.75;
 	std::atomic<int> opened_files_count = 0;
 	std::mutex opened_files_m;
 	std::condition_variable opened_files_cv;
-	int SCHEDULE_TIMER = 2500;
 }
 
 forest::Savior::Savior()
 {
-	set_cluster_limit(SAVIOR_DEPEND_CLUSTER_LIMIT);
-	set_cluster_reduce_length(SAVIOR_DEPEND_CLUSTER_REDUCE_LENGTH);
-	set_timer(SAVIOR_IDLE_TIME_MS);
+
 }
 
 forest::Savior::~Savior()
@@ -115,21 +102,6 @@ void forest::Savior::lock_map()
 void forest::Savior::unlock_map()
 {
 	map_mtx.unlock();
-}
-
-void forest::Savior::set_timer(uint_t time)
-{
-	time = time;
-}
-
-void forest::Savior::set_cluster_limit(uint_t limit)
-{
-	cluster_limit = limit;
-}
-
-void forest::Savior::set_cluster_reduce_length(uint_t length)
-{
-	cluster_reduce_length = length;
 }
 
 

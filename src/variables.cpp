@@ -13,4 +13,5 @@ namespace forest{
 	int CACHE_BYTES = 4096;
 	int CHUNK_SIZE = 4096;
 	int OPENED_FILES_LIMIT = 200;
+	int SCHEDULE_TIMER = 2500;
 }

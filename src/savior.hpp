@@ -12,10 +12,6 @@
 
 namespace forest{
 	
-	extern uint_t SAVIOR_IDLE_TIME_MS;
-	extern uint_t SAVIOR_DEPEND_CLUSTER_LIMIT;
-	extern uint_t SAVIOR_DEPEND_CLUSTER_REDUCE_LENGTH;
-	
 	extern std::atomic<int> opened_files_count;
 	extern std::mutex opened_files_m;
 	extern std::condition_variable opened_files_cv;
@@ -50,10 +46,6 @@ namespace forest{
 			
 			void lock_map();
 			void unlock_map();
-			
-			void set_timer(uint_t time);
-			void set_cluster_limit(uint_t limit);
-			void set_cluster_reduce_length(uint_t length);
 			
 		private:
 			void put_leaf(save_key item, void_shared node);
