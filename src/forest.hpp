@@ -34,6 +34,18 @@ namespace forest{
 	void bloom(string path);
 	void fold();
 	
+	/* Configurations */
+	void config_root_factor(int root_factor);
+	void config_default_factor(int default_factor);
+	void config_root_tree(string root_tree);
+	void config_intr_cache_length(int length);
+	void config_leaf_cache_length(int length);
+	void config_tree_cache_length(int length);
+	void config_cache_bytes(int bytes);
+	void config_chunk_bytes(int bytes);
+	void config_opened_files_limit(int count);
+	void config_save_schedule_mks(int mks);
+	
 	//////////// Private? ////////////
 	
 	// Other

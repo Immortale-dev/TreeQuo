@@ -208,6 +208,62 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key, RECO
 }
 
 
+/* Configurations */
+
+void forest::config_root_factor(int root_factor)
+{
+	ROOT_FACTOR = root_factor;
+}
+
+void forest::config_default_factor(int default_factor)
+{
+	DEFAULT_FACTOR = default_factor;
+}
+
+void forest::config_root_tree(string root_tree)
+{
+	ROOT_TREE = root_tree;
+}
+
+void forest::config_intr_cache_length(int length)
+{
+	INTR_CACHE_LENGTH = length;
+}
+
+void forest::config_leaf_cache_length(int length)
+{
+	LEAF_CACHE_LENGTH = length;
+}
+
+void forest::config_tree_cache_length(int length)
+{
+	TREE_CACHE_LENGTH = length;
+}
+
+void forest::config_cache_bytes(int bytes)
+{
+	CACHE_BYTES = bytes;
+}
+
+void forest::config_chunk_bytes(int bytes)
+{
+	CHUNK_SIZE = bytes;
+}
+
+void forest::config_opened_files_limit(int count)
+{
+	OPENED_FILES_LIMIT = count;
+}
+
+void forest::config_save_schedule_mks(int mks)
+{
+	SCHEDULE_TIMER = mks;
+}
+
+/*********************************************************************************/
+
+
+
 void forest::create_root_file()
 {
 	Tree::seed(TREE_TYPES::KEY_STRING, ROOT_TREE, ROOT_FACTOR);

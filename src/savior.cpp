@@ -47,13 +47,13 @@ void forest::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
 	run_scheduler();
 }
 
-void forest::Savior::save(save_key item, bool sync, bool lock_leaf)
+void forest::Savior::save(save_key item, bool sync)
 {
 	if(sync){
-		save_item(item, true);
+		save_item(item);
 	} else {
 		std::thread t([this, item](){
-			save_item(item, false);
+			save_item(item);
 		});
 		t.detach();
 	}
@@ -209,7 +209,7 @@ DBFS::File* forest::Savior::save_base(tree_ptr tree)
 }
 
 
-void forest::Savior::save_item(save_key item, bool sync)
+void forest::Savior::save_item(save_key item)
 {
 	std::unique_lock<std::mutex> lock(map_mtx);
 	
