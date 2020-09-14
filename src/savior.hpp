@@ -27,7 +27,6 @@ namespace forest{
 			SAVE_TYPES type;
 			ACTION_TYPE action;
 			bool using_now = false;
-			std::mutex m;
 		};
 		
 		public:
@@ -53,8 +52,6 @@ namespace forest{
 			void put_base(save_key item, void_shared node);
 			void save_item(save_key item);
 			void_shared define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action, void_shared node);
-			save_value* own_item(save_key item);
-			void free_item(save_key item);
 			void remove_item(save_key item);
 			void run_scheduler();
 			void delayed_save();
@@ -64,7 +61,7 @@ namespace forest{
 			
 			callback_t callback;
 		
-			std::mutex mtx, map_mtx, save_mtx;
+			std::mutex map_mtx;
 			std::condition_variable cv;
 			
 			uint_t time;

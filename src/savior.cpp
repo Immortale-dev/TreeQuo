@@ -14,6 +14,7 @@ forest::Savior::Savior()
 forest::Savior::~Savior()
 {
 	save_all();
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 void forest::Savior::put(save_key item, SAVE_TYPES type, void_shared node)
@@ -382,25 +383,6 @@ void forest::Savior::delayed_save()
 		map_mtx.unlock();
 		save(item, false);
 	}
-}
-
-forest::Savior::save_value* forest::Savior::own_item(save_key item)
-{
-	std::unique_lock<std::mutex> lock(map_mtx);
-	while(map.count(item) && map[item]->using_now){
-		cv.wait(lock);
-	}
-	map[item]->m.lock();
-	map[item]->using_now = true;
-	return map[item];
-}
-
-void forest::Savior::free_item(save_key item)
-{
-	std::unique_lock<std::mutex> lock(map_mtx);
-	map[item]->using_now = false;
-	map[item]->m.unlock();
-	cv.notify_all();
 }
 
 forest::void_shared forest::Savior::define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action, void_shared node)

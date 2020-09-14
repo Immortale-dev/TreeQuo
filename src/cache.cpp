@@ -85,9 +85,11 @@ void forest::cache::check_leaf_ref(string& key)
 		own_unlock(node);
 		
 		if(savior->has(key)){
+			savior->unlock_map();
 			savior->save(key, false);
+		} else {
+			savior->unlock_map();
 		}
-		savior->unlock_map();
 	}
 }
 
