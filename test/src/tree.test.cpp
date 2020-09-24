@@ -348,8 +348,6 @@ DESCRIBE("Test multi threads", {
 			});
 		});
 		
-		
-		
 		DESCRIBE("Add 100 trees in random shuffle", {
 			vector<int> nums;
 			int cnt = 100;

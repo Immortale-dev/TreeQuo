@@ -303,7 +303,6 @@ void forest::Savior::save_item(save_key item)
 					file->remove();
 				});
 			}
-			
 			get_data(node).f = nullptr;
 		}
 		
@@ -316,7 +315,11 @@ void forest::Savior::save_item(save_key item)
 		lock.unlock();
 		
 		if(it->action == ACTION_TYPE::SAVE){
+			
+			node_ptr root_node = tree->get_tree()->get_root_pub();
+			change_lock_write(root_node);
 			DBFS::File* base_f = save_base(tree);
+			change_unlock_write(root_node);
 			
 			string base_file_name = tree->get_name();
 			string new_base_file_name = base_f->name();

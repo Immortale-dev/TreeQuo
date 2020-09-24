@@ -310,9 +310,11 @@ void forest::erase_tree(string path)
 {	
 	tree_ptr t = open_tree(path);
 	
-	t->get_tree()->clear();
-	
+	t->get_tree()->lock_write();
 	savior->remove(path, SAVE_TYPES::BASE, t);
+	t->get_tree()->unlock_write();
+	
+	t->get_tree()->clear();
 
 	// Clear cache
 	cache::tree_cache_m.lock();
