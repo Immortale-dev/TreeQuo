@@ -12,7 +12,7 @@ namespace forest{
 	 * 0b - Public members
 	 * 1b - Private members
 	 * 2b - Detailed Logs
-	 * 3b - More details
+	 * 3b - Custom details
 	 */
 	int LOG_DETAILS = 0b0111;
 	

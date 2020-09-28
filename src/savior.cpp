@@ -316,10 +316,13 @@ void forest::Savior::save_item(save_key item)
 		
 		if(it->action == ACTION_TYPE::SAVE){
 			
+			// Lock root node before accessing
 			node_ptr root_node = tree->get_tree()->get_root_pub();
+			lock_write(root_node);
 			change_lock_write(root_node);
 			DBFS::File* base_f = save_base(tree);
 			change_unlock_write(root_node);
+			unlock_write(root_node);
 			
 			string base_file_name = tree->get_name();
 			string new_base_file_name = base_f->name();
