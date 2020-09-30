@@ -9,8 +9,6 @@
 #include <condition_variable>
 #include "BPlusTreeBase.hpp"
 
-extern int hooks_time;
-
 namespace forest{
 	struct node_addition{
 		struct{

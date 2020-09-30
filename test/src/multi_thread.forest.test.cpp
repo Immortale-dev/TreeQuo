@@ -1,52 +1,24 @@
-#include "forest.hpp"
-
-int hooks_time = 0, hooks_time_inner = 0;
-int hook_d_enter_time=0, 
-	hook_d_leave_time=0, 
-	hook_d_insert_time=0, 
-	hook_d_remove_time=0, 
-	hook_d_reserve_time=0, 
-	hook_d_release_time=0, 
-	hook_d_insert_leaf_time=0,
-	hook_d_split_time=0,
-	hook_d_ref_time=0,
-	hook_d_base_time=0,
-	hook_unmaterialize_leaf=0,
-	hook_unmaterialize_intr=0,
-	hook_remove_leaf=0,
-	hook_read_leaf=0;
-	
-
-
 
 DESCRIBE("Test multi threads", {
 	DESCRIBE("Initialize forest at tmp/t2", {
 		
-		//std::cout << "HER!" << std::endl;
-		
-		mutex mt;
-		
 		BEFORE_ALL({
-			config_high();
+			config_low();
 			forest::bloom("tmp/t2");
 		});
 		
 		AFTER_ALL({
 			forest::fold();
-			//std::cout << "AFTER_ALL!!!\n";
-			// Remove dirs?
 		});
 		
 		DESCRIBE("Add 100 trees in 10 threads", {
 			BEFORE_ALL({
 				vector<thread> trds;
 				for(int i=0;i<10;i++){
-					thread t([&mt](int i){
+					thread t([](int i){
 						while(i<100){
-							//mt.lock();
 							forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(i));
 							i+=10;
-							//mt.unlock();
 						}
 					},i);
 					trds.push_back(move(t));
@@ -59,7 +31,6 @@ DESCRIBE("Test multi threads", {
 			IT("Trees should be created", {
 				int fc = dir_count("tmp/t2");
 				TEST_SUCCEED();
-				//EXPECT(fc).toBeGreaterThanOrEqual(102);
 				INFO_PRINT("Dirs count: " + to_string(fc));
 			});
 			
@@ -67,12 +38,10 @@ DESCRIBE("Test multi threads", {
 				BEFORE_ALL({
 					vector<thread> trds;
 					for(int i=0;i<10;i++){
-						thread t([&mt](int i){
+						thread t([](int i){
 							while(i<100){
-								//mt.lock();
 								forest::delete_tree("test_string_tree_"+to_string(i));
 								i+=10;
-								//mt.unlock();
 							}
 						},i);
 						trds.push_back(move(t));
@@ -86,7 +55,6 @@ DESCRIBE("Test multi threads", {
 					int fc = dir_count("tmp/t2");
 					// After savior implementation not all files is going to be delete immediatelu
 					// So increasing the value to not block the project with tests reimplenemtation.
-					//EXPECT(fc).toBeLessThanOrEqual(20);
 					TEST_SUCCEED();
 					INFO_PRINT("Dirs count: " + to_string(fc));
 				});
@@ -108,12 +76,10 @@ DESCRIBE("Test multi threads", {
 				vector<thread> trds;
 				
 				for(int i=0;i<100;i++){
-					thread t([&cnt,&nums,&mt](int i){
+					thread t([&cnt,&nums](int i){
 						while(i<cnt){
-							//mt.lock();
 							forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(nums[i]));
 							i+=100;
-							//mt.unlock();
 						}
 					},i);
 					trds.push_back(move(t));
@@ -125,7 +91,6 @@ DESCRIBE("Test multi threads", {
 			
 			IT("Trees should be created", {
 				int fc = dir_count("tmp/t2");
-				//EXPECT(fc).toBeGreaterThanOrEqual(10);
 				TEST_SUCCEED();
 				INFO_PRINT("Dirs count: " + to_string(fc));
 			});
@@ -137,12 +102,10 @@ DESCRIBE("Test multi threads", {
 					}
 					vector<thread> trds;
 					for(int i=0;i<100;i++){
-						thread t([&cnt,&nums,&mt](int i){
+						thread t([&cnt,&nums](int i){
 							while(i<cnt){
-								//mt.lock();
 								forest::delete_tree("test_string_tree_"+to_string(nums[i]));
 								i+=100;
-								//mt.unlock();
 							}
 						},i);
 						trds.push_back(move(t));
@@ -154,9 +117,6 @@ DESCRIBE("Test multi threads", {
 				
 				IT("Trees should be deleted", {
 					int fc = dir_count("tmp/t2");
-					// After savior implementation not all files is going to be delete immediatelu
-					// So increasing the value to not block the project with tests reimplenemtation.
-					//EXPECT(fc).toBeLessThanOrEqual(100);
 					TEST_SUCCEED();
 					INFO_PRINT("Dirs count: " + to_string(fc));
 				});
@@ -170,9 +130,6 @@ DESCRIBE("Test multi threads", {
 			});
 			
 			AFTER_EACH({
-				//std::cout << "WAIT 3 SEC\n";
-				//std::this_thread::sleep_for(std::chrono::seconds(3));
-				//std::cout << "================================================\nSTART_DELETE_TREE\n";
 				forest::delete_tree("test");
 			});
 			
@@ -295,14 +252,10 @@ DESCRIBE("Test multi threads", {
 						int rnd = rand()%10000 + 200;
 						if(!check.count(rnd)){
 							check.insert(rnd);
-							//std::cout << "ADDED: p"+std::to_string(rnd) + "\n";
 							forest::insert_leaf("test", "p"+std::to_string(rnd), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
 						}
 					}
 					num_of_items = check.size();
-					
-					//std::cout << std::to_string(num_of_items) + " ITEMS INSERTED\n";
-					//assert(false);
 				});
 				
 				
@@ -347,9 +300,9 @@ DESCRIBE("Test multi threads", {
 					});
 				});
 				
-				DESCRIBE("Move throug all of the items in 100 threads in random shuffle", {
+				DESCRIBE("Move throug all of the items in 200 threads in random shuffle", {
 					
-					int tests_count = 400;
+					int tests_count = 200;
 					
 					vector<vector<string> > tree_keys_check(tests_count);
 					vector<thread> threads;
@@ -411,8 +364,6 @@ DESCRIBE("Test multi threads", {
 							thread t([&m, &q, &check, &tree_keys_check, &should_contains, &complete, &num_assert](int index, int rnd){
 								int cs = index%8;
 								if(cs == 1){
-									//return;
-									
 									auto it = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
 									vector<string> keys;
 									do{
@@ -441,8 +392,6 @@ DESCRIBE("Test multi threads", {
 									complete.push_back("move");
 								}
 								else if(cs == 2){
-									//return;
-									
 									auto it = forest::find_leaf("test", forest::RECORD_POSITION::END);
 									vector<string> keys;
 									do{
@@ -474,7 +423,6 @@ DESCRIBE("Test multi threads", {
 									// doesn't matter
 								}
 								else if(cs == 4){
-									//return; 
 									int p;
 									{
 										lock_guard<mutex> lock(m);
@@ -487,8 +435,6 @@ DESCRIBE("Test multi threads", {
 									}while(it->move_forward());
 								}
 								else if(cs == 5){
-									//return;
-									
 									int p;
 									{
 										lock_guard<mutex> lock(m);
@@ -501,7 +447,6 @@ DESCRIBE("Test multi threads", {
 									}while(it->move_back());
 								}
 								else if(cs == 6){
-									//return;
 									int p;
 									{
 										lock_guard<mutex> lock(m);
@@ -511,7 +456,6 @@ DESCRIBE("Test multi threads", {
 									forest::update_leaf("test", "p"+std::to_string(p), std::move(forest::leaf_value("new_" + std::to_string(rnd*rnd))) );
 								}
 								else if(cs == 7){
-									//return;
 									int p;
 									{
 										lock_guard<mutex> lock(m);
@@ -524,7 +468,6 @@ DESCRIBE("Test multi threads", {
 									complete.push_back("erase");
 								}
 								else{
-									//return;
 									{
 										lock_guard<mutex> lock(m);
 										if(check.count(rnd)){
@@ -533,10 +476,7 @@ DESCRIBE("Test multi threads", {
 										check.insert(rnd);
 									}
 									forest::file_data_ptr tmp = forest::leaf_value("val_" + std::to_string(rnd*rnd));
-									//forest::uint_t pt_int = (forest::uint_t)tmp.get();
-									//std::cout << "TRY_TO_INSERT: " + std::to_string(pt_int) + "\n";
 									forest::insert_leaf("test", "p" + std::to_string(rnd), std::move(tmp) );
-									//std::cout << "LEAF_INSERT_DONE: " + std::to_string(pt_int) + "\n";
 									lock_guard<mutex> lock(m);
 									complete.push_back("insert");
 								}
@@ -563,226 +503,13 @@ DESCRIBE("Test multi threads", {
 				});
 			});
 		});
-		
-		
-		DESCRIBE("Performance Tests", {
-					
-			int time_free;
-			chrono::high_resolution_clock::time_point p1,p2;
-			//int time_to_create_value=0;
-			
-			BEFORE_ALL({
-				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_else", 500);
-			});
-			
-			BEFORE_EACH({
-				time_free =
-				hook_d_enter_time =
-				hook_d_leave_time =
-				hook_d_insert_time =
-				hook_d_remove_time =
-				hook_d_reserve_time =
-				hook_d_release_time =
-				hook_d_insert_leaf_time =
-				hook_d_split_time =
-				hook_d_ref_time =
-				hook_d_base_time =
-				hook_remove_leaf =
-				hook_read_leaf =
-				hooks_time = 0;
-			});
-			
-			AFTER_ALL({
-				forest::delete_tree("test_else");
-			});
-			
-			DESCRIBE_SKIP("Ordered requests", {
-				
-				int rec_count = 1000000;
-				
-				IT("Insert 100000 items [0,100000)", {
-					p1 = chrono::system_clock::now();
-					forest::tree_ptr tree = forest::find_tree("test_else");
-					for(int i=0;i<rec_count;i++){
-						int rnd = i;//rand()%1000000 + 11200;
-						
-						tree->insert(to_str(rnd), forest::leaf_value("some pretty basic value to insert into the database"));
-						//forest::insert_leaf("test_else", to_str(rnd), forest::leaf_value("some pretty basic value to insert into the database"));
-					}
-					forest::leave_tree(tree);
-					p2 = chrono::system_clock::now();
-					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
-					TEST_SUCCEED();
-					INFO_PRINT("Time For Insert: " + to_string(time_free) + "ms");
-					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
-					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
-					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
-					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
-					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
-					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
-					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
-					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
-					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
-					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
-					INFO_PRINT("remove_leaf Time: " + to_string(hook_remove_leaf/1000));
-					INFO_PRINT("read_leaf Time: " + to_string(hook_read_leaf/1000));
-					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
-				});
-				
-				IT("Get all items independently", {
-					p1 = chrono::system_clock::now();
-					for(int i=0;i<rec_count;i++){
-						int rnd = i;
-						auto rc = forest::find_leaf("test_else", to_str(rnd));
-						EXPECT(forest::read_leaf_item(rc->val())).toBe("some pretty basic value to insert into the database");
-					}
-					p2 = chrono::system_clock::now();
-					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
-					TEST_SUCCEED();
-					INFO_PRINT("Time For Find: " + to_string(time_free) + "ms");
-					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
-					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
-					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
-					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
-					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
-					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
-					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
-					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
-					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
-					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
-					INFO_PRINT("remove_leaf Time: " + to_string(hook_remove_leaf/1000));
-					INFO_PRINT("read_leaf Time: " + to_string(hook_read_leaf/1000));
-					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
-				});
-				
-				IT("Move through the all values", {
-					p1 = chrono::system_clock::now();
-					auto rc = forest::find_leaf("test_else", forest::RECORD_POSITION::BEGIN);
-					int cnt = 0;
-					do{
-						EXPECT(forest::read_leaf_item(rc->val())).toBe("some pretty basic value to insert into the database");
-						cnt++;
-					}while(rc->move_forward());
-					EXPECT(cnt).toBe(rec_count);
-					INFO_PRINT("CNT: " + std::to_string(cnt));
-					p2 = chrono::system_clock::now();
-					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
-					TEST_SUCCEED();
-					INFO_PRINT("Time For Move: " + to_string(time_free) + "ms");
-					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
-					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
-					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
-					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
-					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
-					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
-					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
-					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
-					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
-					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
-					INFO_PRINT("remove_leaf Time: " + to_string(hook_remove_leaf/1000));
-					INFO_PRINT("read_leaf Time: " + to_string(hook_read_leaf/1000));
-					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
-				});
-				
-				IT("Remove all records", {
-					p1 = chrono::system_clock::now();
-					for(int i=0;i<rec_count;i++){
-						int rnd = i;
-						forest::erase_leaf("test_else", to_str(rnd));
-					}
-					p2 = chrono::system_clock::now();
-					time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
-					TEST_SUCCEED();
-					INFO_PRINT("Time For Remove: " + to_string(time_free) + "ms");
-					INFO_PRINT("d_enter Time: " + to_string(hook_d_enter_time/1000));
-					INFO_PRINT("d_leave Time: " + to_string(hook_d_leave_time/1000));
-					INFO_PRINT("d_insert Time: " + to_string(hook_d_insert_time/1000));
-					INFO_PRINT("d_remove Time: " + to_string(hook_d_remove_time/1000));
-					INFO_PRINT("d_reserve Time: " + to_string(hook_d_reserve_time/1000));
-					INFO_PRINT("d_release Time: " + to_string(hook_d_release_time/1000));
-					INFO_PRINT("d_leaf_insert Time: " + to_string(hook_d_insert_leaf_time/1000));
-					INFO_PRINT("d_leaf_split Time: " + to_string(hook_d_split_time/1000));
-					INFO_PRINT("d_ref Time: " + to_string(hook_d_ref_time/1000));
-					INFO_PRINT("d_base Time: " + to_string(hook_d_base_time/1000));
-					INFO_PRINT("remove_leaf Time: " + to_string(hook_remove_leaf/1000));
-					INFO_PRINT("read_leaf Time: " + to_string(hook_read_leaf/1000));
-					INFO_PRINT("HOOKS_TIME: " + to_string(hooks_time/1000));
-				});
-			});
-		});
 	});
 	
-	DESCRIBE_SKIP("Initialize forest at tmp/mem", {
-		
-		AFTER_ALL({
-			int a;
-			cout << "COMPLETE" << endl;
-			cin >> a;
+	DESCRIBE("Check all files deleted", {
+		IT("Should not find any not deleted files", {
+			int fc = dir_count("tmp/t2");
+			// root tree and one leaf folders
+			EXPECT(fc).toBe(2);
 		});
-		
-		DESCRIBE("TEST FOR MEMORY LEAKS", {
-		
-			BEFORE_ALL({
-				forest::bloom("tmp/mem");
-				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 10);
-			});
-			
-			IT_ONLY("Should add 10000 records, and the memory should not increase infinitely", {
-				for(int i=0;i<10000;i++){
-					forest::insert_leaf("test", "t"+std::to_string(i), forest::leaf_value("test_values"));
-					//if(i%100 == 0){
-					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << " | " << active_nodes_count << endl;
-					//}
-				}
-			});
-			
-			IT_ONLY("Should move through 10000 records, and the memory should not increase infinitely", {
-				auto it = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
-				//int i=0;
-					
-				do{					
-					string sval = forest::read_leaf_item(it->val());
-					//if(i++%100 == 0){
-					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << endl;
-					//}
-				}while(it->move_forward());
-			
-			});
-			
-			IT_ONLY("Should delete 10000 records, and the memory should not increase infinitely", {
-				for(int i=0;i<10000;i++){
-					forest::erase_leaf("test", "t"+std::to_string(i));
-					//if(i%100 == 0){
-					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << endl;
-					//}
-				}
-			});
-			
-			IT_ONLY("Should create 1000 trees, and the memory should not increase infinitely", {
-				for(int i=0;i<1000;i++){
-					forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_"+to_string(i), 10);
-					//if(i%100 == 0){
-					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << endl;
-					//}
-				}
-			});
-			
-			IT_ONLY("Should delete 1000 trees, and the memory should not increase infinitely", {
-				for(int i=0;i<1000;i++){
-					forest::delete_tree("test_"+to_string(i));
-					//if(i%100 == 0){
-					//	cout << i << ": " << ccp << "-" << ccm << " " << cip << "-" << cim << " " << ffp << "-" << ffm << endl;
-					//}
-				}
-			});
-			
-			AFTER_ALL({
-				forest::delete_tree("test");
-				forest::fold();
-				// Remove dirs?
-			});
-		
-		});
-		
 	});
 });

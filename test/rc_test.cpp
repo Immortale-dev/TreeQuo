@@ -10,30 +10,14 @@
 
 #include "qtest.hpp"
 using namespace std;
-#include "src/helper.cpp"
-
 #include "forest.hpp"
-
-int hooks_time = 0, hooks_time_inner = 0;
-int hook_d_enter_time=0, 
-	hook_d_leave_time=0, 
-	hook_d_insert_time=0, 
-	hook_d_remove_time=0, 
-	hook_d_reserve_time=0, 
-	hook_d_release_time=0, 
-	hook_d_insert_leaf_time=0,
-	hook_d_split_time=0,
-	hook_d_ref_time=0,
-	hook_d_base_time=0,
-	hook_unmaterialize_leaf=0,
-	hook_unmaterialize_intr=0,
-	hook_remove_leaf=0,
-	hook_read_leaf=0;
+#include "src/helper.cpp"
 
 
 DESCRIBE("[RC]", {
     
     BEFORE_ALL({
+		config_low();
         forest::bloom("tmp/t3");
     });
     
@@ -42,8 +26,8 @@ DESCRIBE("[RC]", {
         // Remove dirs?
     });
     
-    DESCRIBE("Do 200 operations in 200 threads", {
-        int tests_count = 200;
+    DESCRIBE("Do 400 operations in 400 threads", {
+        int tests_count = 400;
         
         vector<vector<string> > tree_keys_check;
         vector<thread> threads;
@@ -62,7 +46,7 @@ DESCRIBE("[RC]", {
             unordered_set<int> check;
             //int num_of_items;
             
-            for(int i=0;i<150;i++){
+            for(int i=0;i<300;i++){
                 int rnd = rand()%10000 + 200;
                 if(!check.count(rnd)){
                     check.insert(rnd);
@@ -187,6 +171,5 @@ DESCRIBE("[RC]", {
         });
     });
 });
-
 
 int main(){ return 0; }

@@ -227,17 +227,17 @@ void forest::config_root_tree(string root_tree)
 
 void forest::config_intr_cache_length(int length)
 {
-	INTR_CACHE_LENGTH = length;
+	cache::set_intr_cache_length(length);
 }
 
 void forest::config_leaf_cache_length(int length)
 {
-	LEAF_CACHE_LENGTH = length;
+	cache::set_leaf_cache_length(length);
 }
 
 void forest::config_tree_cache_length(int length)
 {
-	TREE_CACHE_LENGTH = length;
+	cache::set_tree_cache_length(length);
 }
 
 void forest::config_cache_bytes(int bytes)
