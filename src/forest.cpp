@@ -16,12 +16,12 @@ void forest::bloom(string path)
 
 	DBFS::root = path;
 	if(!DBFS::exists(ROOT_TREE)){
-		create_root_file();
+		details::create_root_file();
 	}
 
 	savior = new Savior();
 	
-	open_root();
+	details::open_root();
 
 	blossomed = true;
 	
@@ -40,7 +40,7 @@ void forest::fold()
 	
 	delete savior;
 	
-	close_root();
+	details::close_root();
 	
 	cache::release_cache();
 	
@@ -65,7 +65,7 @@ void forest::create_tree(TREE_TYPES type, string name, int factor, string annota
 	
 	tree_ptr tree = tree_ptr(new Tree(file_name, type, factor, annotation));
 	
-	insert_tree(name, file_name, tree);
+	details::insert_tree(name, file_name, tree);
 }
 
 void forest::delete_tree(string name)
@@ -88,7 +88,7 @@ void forest::delete_tree(string name)
 	FOREST->erase(name);
 	
 	// Erase tree
-	erase_tree(path);
+	details::erase_tree(path);
 }
 
 void forest::leave_tree(string path)
@@ -127,7 +127,7 @@ forest::tree_ptr forest::open_tree(string path)
 	L_PUB("[forest::open_tree]-" + path);
 	
 	cache::tree_cache_m.lock();
-	tree_ptr t = get_tree(path);
+	tree_ptr t = details::get_tree(path);
 	cache::tree_cache_r[path].second++;
 	cache::tree_cache_m.unlock();
 	return t;
@@ -374,23 +374,22 @@ void forest::config_save_schedule_mks(int mks)
 /*********************************************************************************/
 
 
-
-void forest::create_root_file()
+void forest::details::create_root_file()
 {
 	Tree::seed(TREE_TYPES::KEY_STRING, ROOT_TREE, ROOT_FACTOR);
 }
 
-void forest::open_root()
+void forest::details::open_root()
 {
 	FOREST = tree_ptr(new Tree(ROOT_TREE));
 }
 
-void forest::close_root()
+void forest::details::close_root()
 {
 	FOREST = nullptr;
 }
 
-void forest::insert_tree(string name, string file_name, tree_ptr tree)
+void forest::details::insert_tree(string name, string file_name, tree_ptr tree)
 {
 	cache::tree_cache_m.lock();
 	cache::tree_cache.push(file_name, tree);
@@ -410,7 +409,7 @@ void forest::insert_tree(string name, string file_name, tree_ptr tree)
 	cache::tree_cache_m.unlock();
 }
 
-void forest::erase_tree(string path)
+void forest::details::erase_tree(string path)
 {	
 	tree_ptr t = open_tree(path);
 	
@@ -430,7 +429,7 @@ void forest::erase_tree(string path)
 	leave_tree(path);
 }
 
-forest::tree_ptr forest::get_tree(string path)
+forest::tree_ptr forest::details::get_tree(string path)
 {
 	return Tree::get(path);
 }
@@ -446,4 +445,3 @@ forest::string forest::read_leaf_item(file_data_ptr item)
 	
 	return ret;
 }
-

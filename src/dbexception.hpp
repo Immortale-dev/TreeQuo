@@ -4,43 +4,43 @@
 #include <stdexcept>
 #include <string>
 
-class DBException : public std::exception {
-    
-    public:
-		enum class ERRORS{
-			CANNOT_CREATE_ROOT,
-			CANNOT_CREATE_FILE,
-			NOT_VALID_TREE_TYPE,
-			TREE_DOES_NOT_EXISTS,
-			TREE_ALREADY_EXISTS,
-			LEAF_DOES_NOT_EXISTS,
-			CANNOT_READ_FILE,
-			CANNOT_WRITE_FILE
-		};
+namespace forest{
+	class DBException : public std::exception {
 		
-		DBException(ERRORS code)
-		{
-			msg = error_messages[(int)code];
-		}
-		const char * what () const throw ()
-		{
-			return msg.c_str();
-		}
-		
-	private:
-		std::string msg;
-		static inline const std::string error_messages[8] = {
-			"Cannot create root files",
-			"Cannot create files",
-			"Not valid tree type",
-			"Trying to open not valid tree type",
-			"Tree with name you trying to create is already exists",
-			"Leaf does not exists in the tree",
-			"Cannot read file",
-			"Cannot write to file"
-		};
-			   
-};
+		public:
+			enum class ERRORS{
+				CANNOT_CREATE_ROOT,
+				CANNOT_CREATE_FILE,
+				NOT_VALID_TREE_TYPE,
+				TREE_DOES_NOT_EXISTS,
+				TREE_ALREADY_EXISTS,
+				LEAF_DOES_NOT_EXISTS,
+				CANNOT_READ_FILE,
+				CANNOT_WRITE_FILE
+			};
+			
+			DBException(ERRORS code)
+			{
+				msg = error_messages[(int)code];
+			}
+			const char * what () const throw ()
+			{
+				return msg.c_str();
+			}
+			
+		private:
+			std::string msg;
+			static inline const std::string error_messages[8] = {
+				"Cannot create root files",
+				"Cannot create files",
+				"Not valid tree type",
+				"Trying to open not valid tree type",
+				"Tree with name you trying to create is already exists",
+				"Leaf does not exists in the tree",
+				"Cannot read file",
+				"Cannot write to file"
+			};  
+	};
+}
 
 #endif //DBEXCEPTION_H
-

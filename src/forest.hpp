@@ -55,20 +55,23 @@ namespace forest{
 	void config_opened_files_limit(int count);
 	void config_save_schedule_mks(int mks);
 	
-	//////////// Private? ////////////
-	
 	// Other
 	string read_leaf_item(file_data_ptr item);
 	
-	// Root methods
-	void open_root();
-	void close_root();
-	void create_root_file();
-	
-	// Tree methods
-	void insert_tree(string name, string file_name, tree_ptr tree);
-	void erase_tree(string path);
-	tree_ptr get_tree(string path);
+	//////////// Private? ////////////
+		
+	namespace details{
+		
+		// Root methods
+		void open_root();
+		void close_root();
+		void create_root_file();
+		
+		// Tree methods
+		void insert_tree(string name, string file_name, tree_ptr tree);
+		void erase_tree(string path);
+		tree_ptr get_tree(string path);
+	}
 }
 
 #endif //FOREST_H

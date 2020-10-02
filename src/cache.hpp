@@ -76,12 +76,12 @@ namespace forest{
 
 inline void forest::cache::insert_item(tree_t::child_item_type_ptr& item)
 {
-	item->item->second->res_c++;
+	++item->item->second->res_c;
 }
 
 inline void forest::cache::remove_item(tree_t::child_item_type_ptr& item)
 {
-	item->item->second->res_c--;
+	--item->item->second->res_c;
 }
 
 inline void forest::cache::intr_lock()
@@ -108,7 +108,6 @@ inline std::lock_guard<std::mutex> forest::cache::get_leaf_lock()
 {
 	return std::lock_guard<std::mutex>(leaf_cache_m);
 }
-
 
 inline void forest::cache::reserve_intr_node(string& path)
 {
@@ -149,6 +148,5 @@ inline void forest::cache::_leaf_insert(tree_t::node_ptr& node)
 	cache::leaf_cache_r[path] = {node, 0};
 	cache::leaf_cache.push(path, node);
 }
-
 
 #endif // FOREST_CACHE

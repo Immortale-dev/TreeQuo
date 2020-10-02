@@ -14,6 +14,8 @@ forest::Savior::Savior()
 forest::Savior::~Savior()
 {
 	save_all();
+	
+	// Wait for threads to finish
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 

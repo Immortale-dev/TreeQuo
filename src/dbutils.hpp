@@ -20,7 +20,6 @@
 #include "bplustree.hpp"
 #include "dbexception.hpp"
 
-
 namespace forest{
 	
 	extern int CACHE_BYTES;

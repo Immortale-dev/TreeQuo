@@ -80,6 +80,3 @@ namespace forest{
 
 
 #endif // FOREST_SAVIOR_H
-
-
-
