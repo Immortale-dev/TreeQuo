@@ -1,6 +1,3 @@
-[submodule "inc/listcache"]
-	path = inc/listcache
-	url = git@github.com:webdeveloperukraine/listcache.git
 [submodule "inc/dbfs"]
 	path = inc/dbfs
 	url = git@github.com:webdeveloperukraine/dbfs.git
