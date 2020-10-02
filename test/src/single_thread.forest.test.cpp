@@ -242,5 +242,27 @@ DESCRIBE("Test single thread", {
 				});
 			});
 		});
+		
+		DESCRIBE("Add 20 trees with annotations", {
+			BEFORE_ALL({
+				for(int i=0;i<20;i++){
+					forest::create_tree(forest::TREE_TYPES::KEY_STRING, "gt_" + std::to_string(i), 10, "annotation provided");
+				}
+			});
+			
+			IT("Every tree annotation should be equal to `annotation provided`", {
+				for(int i=0;i<20;i++){
+					forest::tree_ptr tree = forest::find_tree("gt_" + std::to_string(i));
+					EXPECT(tree->get_annotation()).toBe("annotation provided");
+					forest::leave_tree(tree);
+				}
+			});
+			
+			AFTER_ALL({
+				for(int i=0;i<20;i++){
+					forest::delete_tree("gt_" + std::to_string(i));
+				}
+			});
+		});
 	});
 });

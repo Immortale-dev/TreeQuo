@@ -17,19 +17,28 @@ namespace forest{
 	using tree_ptr = std::shared_ptr<Tree>;
 	using child_item_type_ptr = tree_t::child_item_type_ptr;
 	
-	void create_tree(TREE_TYPES type, string name, int factor = 0);
+	void create_tree(TREE_TYPES type, string name, int factor = 0, string annotation = "");
 	void delete_tree(string name);
 	tree_ptr find_tree(string name);
 	tree_ptr open_tree(string path);
 	void leave_tree(string path);
 	void leave_tree(tree_ptr tree);
 	
+	// Tree operations with name
 	void insert_leaf(string name, tree_t::key_type key, tree_t::val_type val);
 	void update_leaf(string name, tree_t::key_type key, tree_t::val_type val);
 	void erase_leaf(string name, tree_t::key_type key);
 	LeafRecord_ptr find_leaf(string name, tree_t::key_type key);
 	LeafRecord_ptr find_leaf(string name, RECORD_POSITION position = RECORD_POSITION::BEGIN);
 	LeafRecord_ptr find_leaf(string name, tree_t::key_type key, RECORD_POSITION position);
+	
+	// Tree operations with tree
+	void insert_leaf(tree_ptr tree, tree_t::key_type key, tree_t::val_type val);
+	void update_leaf(tree_ptr tree, tree_t::key_type key, tree_t::val_type val);
+	void erase_leaf(tree_ptr tree, tree_t::key_type key);
+	LeafRecord_ptr find_leaf(tree_ptr tree, tree_t::key_type key);
+	LeafRecord_ptr find_leaf(tree_ptr tree, RECORD_POSITION position = RECORD_POSITION::BEGIN);
+	LeafRecord_ptr find_leaf(tree_ptr tree, tree_t::key_type key, RECORD_POSITION position);
 			
 	void bloom(string path);
 	void fold();
@@ -57,7 +66,6 @@ namespace forest{
 	void create_root_file();
 	
 	// Tree methods
-	void insert_tree(string name, string path);
 	void insert_tree(string name, string file_name, tree_ptr tree);
 	void erase_tree(string path);
 	tree_ptr get_tree(string path);

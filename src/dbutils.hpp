@@ -1,6 +1,8 @@
 #ifndef FOREST_DBUTILS_H
 #define FOREST_DBUTILS_H
 
+//#define DEBUG
+
 #include <cstring>
 #include <functional>
 #include <memory>
@@ -16,7 +18,6 @@
 #include "log.hpp"
 #include "dbfs.hpp"
 #include "bplustree.hpp"
-#include "dbdriver.hpp"
 #include "dbexception.hpp"
 
 
@@ -44,7 +45,6 @@ namespace forest{
 	
 	using file_data_ptr = std::shared_ptr<file_data_t>;
 	
-	using driver_t = DBDriver<string, file_data_ptr>;
 	using tree_t = BPlusTree<string, file_data_ptr, Tree>;
 	
 	using tree_ptr = std::shared_ptr<Tree>;
@@ -73,6 +73,7 @@ namespace forest{
 		uint_t count;
 		int factor;
 		string branch;
+		string annotation;
 	};
 	
 	////////////////////////////////////////////////////////////////

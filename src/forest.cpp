@@ -6,6 +6,8 @@ namespace forest{
 
 void forest::bloom(string path)
 {	
+	L_PUB("[forest::bloom]-start");
+	
 	if(blossomed){
 		return;
 	}
@@ -22,10 +24,14 @@ void forest::bloom(string path)
 	open_root();
 
 	blossomed = true;
+	
+	L_PUB("[forest::bloom]-end");
 }
 
 void forest::fold()
 {	
+	L_PUB("[forest::fold]-start");
+	
 	if(!blossomed){
 		return;
 	}
@@ -34,14 +40,17 @@ void forest::fold()
 	
 	delete savior;
 	
-	
 	close_root();
 	
 	cache::release_cache();
+	
+	L_PUB("[forest::fold]-end");
 }
 
-void forest::create_tree(TREE_TYPES type, string name, int factor)
+void forest::create_tree(TREE_TYPES type, string name, int factor, string annotation)
 {
+	L_PUB("[forest::create_tree]-" + name);
+	
 	if(!factor){
 		factor = DEFAULT_FACTOR;
 	}
@@ -54,13 +63,15 @@ void forest::create_tree(TREE_TYPES type, string name, int factor)
 	
 	string file_name = DBFS::random_filename();
 	
-	tree_ptr tree = tree_ptr(new Tree(file_name, type, factor));
+	tree_ptr tree = tree_ptr(new Tree(file_name, type, factor, annotation));
 	
 	insert_tree(name, file_name, tree);
 }
 
 void forest::delete_tree(string name)
 {
+	L_PUB("[forest::delete_tree]-" + name);
+	
 	string path;
 	// Not exist
 	{
@@ -81,7 +92,8 @@ void forest::delete_tree(string name)
 }
 
 void forest::leave_tree(string path)
-{
+{	
+	L_PUB("[forest::leave_tree]-" + path);
 	cache::tree_cache_m.lock();
 	assert(cache::tree_cache_r.count(path));
 	assert(cache::tree_cache_r[path].second > 0);
@@ -97,6 +109,8 @@ void forest::leave_tree(tree_ptr tree)
 
 forest::tree_ptr forest::find_tree(string name)
 {	
+	L_PUB("[forest::find_tree]-" + name);
+	
 	// Error if not exists
 	auto it = FOREST->get_tree()->find(name);
 	if(it == FOREST->get_tree()->end()){
@@ -110,6 +124,8 @@ forest::tree_ptr forest::find_tree(string name)
 
 forest::tree_ptr forest::open_tree(string path)
 {	
+	L_PUB("[forest::open_tree]-" + path);
+	
 	cache::tree_cache_m.lock();
 	tree_ptr t = get_tree(path);
 	cache::tree_cache_r[path].second++;
@@ -120,28 +136,60 @@ forest::tree_ptr forest::open_tree(string path)
 void forest::insert_leaf(string name, tree_t::key_type key, tree_t::val_type val)
 {	
 	tree_ptr tree = find_tree(name);
+	
+	L_PUB("[forest::insert_leaf]-" + tree->get_name() + "_" + key);
+	
 	tree->insert(key, std::move(val));
 	leave_tree(tree->get_name());
+}
+
+void forest::insert_leaf(tree_ptr tree, tree_t::key_type key, tree_t::val_type val)
+{
+	L_PUB("[forest::insert_leaf]-" + tree->get_name() + "_" + key);
+	
+	tree->insert(key, std::move(val));
 }
 
 void forest::update_leaf(string name, tree_t::key_type key, tree_t::val_type val)
 {	
 	tree_ptr tree = find_tree(name);
+	
+	L_PUB("[forest::update_leaf]-" + tree->get_name() + "_" + key);
+	
 	tree->insert(key, std::move(val), true);
 	leave_tree(tree->get_name());
+}
+
+void forest::update_leaf(tree_ptr tree, tree_t::key_type key, tree_t::val_type val)
+{	
+	L_PUB("[forest::update_leaf]-" + tree->get_name() + "_" + key);
+	
+	tree->insert(key, std::move(val), true);
 }
 
 void forest::erase_leaf(string name, tree_t::key_type key)
 {	
 	tree_ptr tree = find_tree(name);
+	
+	L_PUB("[forest::erase_leaf]-" + tree->get_name() + "_" + key);
+	
 	tree->erase(key);
 	leave_tree(tree->get_name());
+}
+
+void forest::erase_leaf(tree_ptr tree, tree_t::key_type key)
+{	
+	L_PUB("[forest::erase_leaf]-" + tree->get_name() + "_" + key);
+	
+	tree->erase(key);
 }
 
 forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key)
 {	
 	tree_ptr tree = find_tree(name);
 	try{
+		L_PUB("[forest::find_leaf]-KEY_" + key);
+		
 		tree_t::iterator t = tree->find(key);
 		
 		LeafRecord_ptr rc = LeafRecord_ptr(new LeafRecord(t, tree));
@@ -159,6 +207,8 @@ forest::LeafRecord_ptr forest::find_leaf(string name, RECORD_POSITION position)
 {	
 	tree_ptr tree = find_tree(name);
 	try{
+		L_PUB("[forest::find_leaf]-POS_" + to_string((int)position));
+		
 		tree_t::iterator t;
 		if(position == RECORD_POSITION::BEGIN){
 			t = tree->get_tree()->begin();
@@ -187,6 +237,8 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key, RECO
 	
 	tree_ptr tree = find_tree(name);
 	try{
+		L_PUB("[forest::find_leaf]-BNT_" + key + "_" + to_string((int)position));
+		
 		tree_t::iterator t;
 		if(position == RECORD_POSITION::LOWER){
 			t = tree->get_tree()->lower_bound(key);
@@ -203,6 +255,65 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key, RECO
 	}
 	catch(DBException& e) {
 		leave_tree(tree->get_name());
+		throw e;
+	}
+}
+
+
+forest::LeafRecord_ptr forest::find_leaf(tree_ptr tree, tree_t::key_type key)
+{	
+	try{
+		L_PUB("[forest::find_leaf]-KEY_" + key);
+		tree_t::iterator t = tree->find(key);
+		
+		LeafRecord_ptr rc = LeafRecord_ptr(new LeafRecord(t, tree));
+		
+		return rc;
+	} catch(DBException& e) {
+		throw e;
+	}
+}
+
+forest::LeafRecord_ptr forest::find_leaf(tree_ptr tree, RECORD_POSITION position)
+{	
+	try{
+		L_PUB("[forest::find_leaf]-POS_" + to_string((int)position));
+		
+		tree_t::iterator t;
+		if(position == RECORD_POSITION::BEGIN){
+			t = tree->get_tree()->begin();
+		} else {
+			t = --tree->get_tree()->end();
+		}
+		
+		LeafRecord_ptr rc = LeafRecord_ptr(new LeafRecord(t, tree));
+		
+		return rc;
+	} catch(DBException& e) {
+		throw e;
+	}
+}
+
+forest::LeafRecord_ptr forest::find_leaf(tree_ptr tree, tree_t::key_type key, RECORD_POSITION position)
+{	
+	if(position == RECORD_POSITION::BEGIN || position == RECORD_POSITION::END){
+		return find_leaf(tree, position);
+	}
+	
+	try{
+		L_PUB("[forest::find_leaf]-BNT_" + key + "_" + to_string((int)position));
+		
+		tree_t::iterator t;
+		if(position == RECORD_POSITION::LOWER){
+			t = tree->get_tree()->lower_bound(key);
+		} else {
+			t = tree->get_tree()->upper_bound(key);
+		}
+		
+		LeafRecord_ptr rc = LeafRecord_ptr(new LeafRecord(t, tree));
+		
+		return rc;
+	} catch(DBException& e) {
 		throw e;
 	}
 }
@@ -297,13 +408,6 @@ void forest::insert_tree(string name, string file_name, tree_ptr tree)
 	cache::tree_cache_r[file_name].second--;
 	cache::check_tree_ref(file_name);
 	cache::tree_cache_m.unlock();
-}
-
-void forest::insert_tree(string name, string file_name)
-{
-	//REMOVE???
-	file_data_ptr tmp = file_data_ptr(new file_data_t(file_name.c_str(), file_name.size()));
-	FOREST->insert(name, tmp);
 }
 
 void forest::erase_tree(string path)

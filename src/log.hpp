@@ -3,6 +3,21 @@
 
 #include <string>
 #include "logger.hpp"
+#include "dbutils.hpp"
+
+#ifdef DEBUG
+	#define L_ERR(text) log_error(text)
+	#define L_PUB(text) log_info_public(text)
+	#define L_PRI(text) log_info_private(text)
+	#define L_DET(text) log_info_details(text)
+	#define L_EXT(text) log_info_extended(text)
+#else
+	#define L_ERR(text)
+	#define L_PUB(text) 
+	#define L_PRI(text) 
+	#define L_DET(text)
+	#define L_EXT(text)
+#endif
 
 namespace forest{
 	

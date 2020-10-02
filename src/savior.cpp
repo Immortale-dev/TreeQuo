@@ -203,6 +203,9 @@ DBFS::File* forest::Savior::save_base(tree_ptr tree)
 		node_data_ptr base_data = get_node_data(root_node);
 		base_d.branch = base_data->path;
 	}
+	
+	base_d.annotation = tree->annotation;
+	
 	forest::Tree::write_base(base_f, base_d);
 	base_f->close();
 	

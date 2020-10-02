@@ -45,10 +45,13 @@ namespace forest{
 		public:
 			Tree();
 			Tree(string path);
-			Tree(string path, TREE_TYPES type, int factor);
+			Tree(string path, TREE_TYPES type, int factor, string annotation);
 			~Tree();
 			
 			string get_name();
+			
+			string get_annotation();
+			void set_annotation(string annotation);
 			
 			TREE_TYPES get_type();
 			void set_type(TREE_TYPES type);
@@ -125,6 +128,7 @@ namespace forest{
 			tree_t* tree;
 			TREE_TYPES type;
 			string name;
+			string annotation;
 			mutex tree_m;
 	};
 }
