@@ -4,6 +4,7 @@ namespace forest{
 	Savior* savior;
 }
 
+
 void forest::bloom(string path)
 {	
 	L_PUB("[forest::bloom]-start");
@@ -17,7 +18,7 @@ void forest::bloom(string path)
 	DBFS::root = path;
 	if(!DBFS::exists(ROOT_TREE)){
 		details::create_root_file();
-	}
+	} 
 
 	savior = new Savior();
 	

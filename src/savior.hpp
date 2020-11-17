@@ -37,6 +37,7 @@ namespace forest{
 			virtual ~Savior();
 			void put(save_key item, SAVE_TYPES type, void_shared node);
 			void remove(save_key item, SAVE_TYPES type, void_shared node);
+			void leave(save_key item, SAVE_TYPES type, void_shared node);
 			void save(save_key item, bool async = false);
 			void get(save_key item);
 			void save_all();

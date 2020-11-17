@@ -39,8 +39,8 @@ generate_t:
 	${CC} ${INCL} -o test.exe test/test.o -pthread ${OBJS} ${LIBS_O}
 	
 custom: generate_o
-	$(CC) $(CFLAGS) $(INCL) test/mtest.cpp -o test/mtest.o
-	${CC} ${INCL} -o mtest.exe test/mtest.o ${OBJS} ${LIBS_O}
+	$(CC) $(CFLAGS) $(INCL) test/mtest.cpp -o test/mtest.o -pthread
+	${CC} ${INCL} -o mtest.exe test/mtest.o ${OBJS} ${LIBS_O} -pthread
 
 %.o: %.cpp
-	${CC} ${CFLAGS} ${INCL} ${OPT} -pthread $< -o $@
+	${CC} ${CFLAGS} ${INCL} ${OPT} $< -o $@ -pthread

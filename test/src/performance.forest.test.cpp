@@ -1,3 +1,4 @@
+
 DESCRIBE("Initialize forest at tmp/perf", {
 	BEFORE_ALL({
 		config_high();

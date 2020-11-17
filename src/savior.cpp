@@ -50,6 +50,22 @@ void forest::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
 	run_scheduler();
 }
 
+void forest::Savior::leave(save_key item, SAVE_TYPES type, void_shared nodef)
+{
+	std::unique_lock<std::mutex> lock(map_mtx);
+	
+	if(!map.count(item)){
+		if(type == SAVE_TYPES::LEAF){
+			node_ptr node = std::static_pointer_cast<tree_t::Node>(nodef);
+			auto f = get_data(node).f;
+			if(f){
+				f->close();
+				get_data(node).f = nullptr;
+			}
+		}
+	}
+}
+
 void forest::Savior::save(save_key item, bool sync)
 {
 	if(sync){

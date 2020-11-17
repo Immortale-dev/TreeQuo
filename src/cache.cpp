@@ -73,23 +73,14 @@ void forest::cache::check_leaf_ref(string& key)
 		node->set_prev_leaf(nullptr);
 		
 		// Close file if there if it should be closed
-		savior->lock_map();
-		if(!savior->has(key) && get_data(node).f){
-			get_data(node).f->close();
-		}
-		
+		savior->leave(key, SAVE_TYPES::LEAF, node);
 		leaf_cache_r.erase(key);
 		
 		own_lock(node);
 		get_data(node).bloomed = false;
 		own_unlock(node);
 		
-		if(savior->has(key)){
-			savior->unlock_map();
-			savior->save(key, false);
-		} else {
-			savior->unlock_map();
-		}
+		savior->save(key, false);
 	}
 }
 

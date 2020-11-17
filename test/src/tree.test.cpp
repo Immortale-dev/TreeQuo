@@ -17,7 +17,7 @@ int hook_d_enter_time=0,
 	hook_read_leaf=0;
 	
 
-
+SCENARIO_START
 
 DESCRIBE("Test multi threads", {
 	DESCRIBE("Initialize forest at tmp/t2", {
@@ -786,3 +786,5 @@ DESCRIBE("Test multi threads", {
 		
 	});
 });
+
+SCENARIO_END
