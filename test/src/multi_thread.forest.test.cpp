@@ -11,7 +11,7 @@ DESCRIBE("Test multi threads", {
 			forest::fold();
 		});
 		
-		DESCRIBE("Add 100 trees in 10 threads", {
+		DESCRIBE_ONLY("Add 100 trees in 10 threads", {
 			BEFORE_ALL({
 				vector<thread> trds;
 				for(int i=0;i<10;i++){
@@ -61,7 +61,7 @@ DESCRIBE("Test multi threads", {
 			});
 		});
 		
-		DESCRIBE("Add 100 trees in random shuffle", {
+		DESCRIBE_ONLY("Add 100 trees in random shuffle", {
 			vector<int> nums;
 			int cnt = 100;
 			

@@ -29,6 +29,7 @@ namespace forest{
 		std::weak_ptr<void> original;
 		bool bloomed = true;
 		bool is_original = false;
+		bool leaved = false;
 	};
 }
 

@@ -54,9 +54,14 @@ void forest::Savior::leave(save_key item, SAVE_TYPES type, void_shared nodef)
 {
 	std::unique_lock<std::mutex> lock(map_mtx);
 	
-	if(!map.count(item)){
-		if(type == SAVE_TYPES::LEAF){
-			node_ptr node = std::static_pointer_cast<tree_t::Node>(nodef);
+	while(locking_items.count(item)){
+		cv.wait(lock);
+	}
+	
+	if(type == SAVE_TYPES::LEAF){
+		node_ptr node = std::static_pointer_cast<tree_t::Node>(nodef);
+		get_data(node).leaved = true;
+		if(!map.count(item)){
 			auto f = get_data(node).f;
 			if(f){
 				f->close();
@@ -299,6 +304,7 @@ void forest::Savior::save_item(save_key item)
 					cur_f->move(DBFS::random_filename());
 					cur_f->on_close([](DBFS::File* file){
 						// preserve limit
+						std::unique_lock<std::mutex> flock(forest::opened_files_m);
 						forest::opened_files_count--;
 						forest::opened_files_cv.notify_all();
 						file->remove();
@@ -319,6 +325,7 @@ void forest::Savior::save_item(save_key item)
 				forest::opened_files_count++;
 				flock.unlock();
 				cur_f->on_close([](DBFS::File* file){
+					std::unique_lock<std::mutex> flock(forest::opened_files_m);
 					forest::opened_files_count--;
 					forest::opened_files_cv.notify_all();
 					file->remove();
@@ -326,6 +333,14 @@ void forest::Savior::save_item(save_key item)
 			}
 			get_data(node).f = nullptr;
 		}
+		
+		lock.lock();
+		auto& data = get_data(node);
+		if(data.leaved && data.f){
+			data.f->close();
+			data.f = nullptr;
+		}
+		lock.unlock();
 		
 		change_unlock_write(node);
 	} else {
@@ -360,14 +375,14 @@ void forest::Savior::save_item(save_key item)
 	// Remove item
 	lock.lock();
 	
-	if(it->type == SAVE_TYPES::LEAF){
+	/*if(it->type == SAVE_TYPES::LEAF){
 		node_ptr node = std::static_pointer_cast<tree_t::Node>(it->node);
 		auto& data = get_data(node);
 		if(!data.bloomed && data.f){
 			data.f->close();
 			data.f = nullptr;
 		}
-	}
+	}*/
 	
 	map.erase(item);
 	saving_items.erase(item);
