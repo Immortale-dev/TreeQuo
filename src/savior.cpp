@@ -4,6 +4,8 @@ namespace forest{
 	std::atomic<int> opened_files_count = 0;
 	std::mutex opened_files_m;
 	std::condition_variable opened_files_cv;
+	std::mutex thr;
+	std::vector<std::thread> thrds;
 }
 
 forest::Savior::Savior()
@@ -14,6 +16,11 @@ forest::Savior::Savior()
 forest::Savior::~Savior()
 {
 	save_all();
+	
+	std::lock_guard<std::mutex> lock(thr);
+	for(auto& it : thrds){
+		it.join();
+	}
 	
 	// Wait for threads to finish
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -76,10 +83,12 @@ void forest::Savior::save(save_key item, bool sync)
 	if(sync){
 		save_item(item);
 	} else {
+		std::lock_guard<std::mutex> lock(thr);
 		std::thread t([this, item](){
 			save_item(item);
 		});
-		t.detach();
+		thrds.push_back(std::move(t));
+		//t.detach();
 	}
 }
 
@@ -401,10 +410,12 @@ void forest::Savior::run_scheduler()
 	
 	scheduler_running = true;
 	
+	std::lock_guard<std::mutex> lock(thr);
 	std::thread t([this](){		
 		delayed_save();
 	});
-	t.detach();
+	thrds.push_back(std::move(t));
+	//t.detach();
 }
 
 void forest::Savior::delayed_save()

@@ -1,7 +1,7 @@
 .PHONY: all rc generate_o generate_t generate_libs custom
 
 CC=g++
-OPT=-O3
+OPT=-g
 CFLAGS=-c -Wall -std=c++17 
 LDFLAGS=
 SRCPATH:=src/
