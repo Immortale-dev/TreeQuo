@@ -98,6 +98,8 @@ namespace forest{
 			void d_item_reserve(tree_t::child_item_type_ptr& item, tree_t::PROCESS_TYPE type);
 			void d_item_release(tree_t::child_item_type_ptr& item, tree_t::PROCESS_TYPE type);
 			void d_item_move(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item);
+			void d_offset_reserve(tree_t::node_ptr& node, int offset);
+			void d_offset_release(tree_t::node_ptr& node, int offset);
 			void d_leaf_insert(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item);
 			void d_leaf_delete(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item);
 			void d_leaf_split(tree_t::node_ptr& node, tree_t::node_ptr& new_node, tree_t::node_ptr& link_node);
@@ -114,6 +116,11 @@ namespace forest{
 			tree_t::node_ptr get_original(tree_t::node_ptr node);
 			tree_t::node_ptr extract_node(tree_t::child_item_type_ptr item);
 			tree_t::node_ptr extract_locked_node(tree_t::child_item_type_ptr item, bool w_prior=false);
+			
+			// Savers
+			static void save_intr(node_ptr node, DBFS::File* f);
+			static void save_leaf(node_ptr node, std::shared_ptr<DBFS::File> fp);
+			static void save_base(tree_ptr tree, DBFS::File* f);
 			
 			// Writers
 			static void write_intr(DBFS::File* file, tree_intr_read_t data);

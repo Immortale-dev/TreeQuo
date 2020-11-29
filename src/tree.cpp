@@ -774,6 +774,94 @@ forest::tree_t::node_ptr forest::Tree::extract_locked_node(tree_t::child_item_ty
 	return node;
 }
 
+
+void forest::Tree::save_intr(node_ptr node, DBFS::File* f)
+{
+	//DBFS::File* f = DBFS::create();
+	tree_intr_read_t intr_d;
+	intr_d.childs_type = ((node->first_child_node()->is_leaf()) ? NODE_TYPES::LEAF : NODE_TYPES::INTR);
+	int c = node->get_nodes()->size();
+	auto* keys = new std::vector<tree_t::key_type>(node->keys_iterator(), node->keys_iterator_end());
+	auto* nodes = new std::vector<string>(c);
+	
+	for(int i=0;i<c;i++){
+		node_data_ptr d = get_node_data( (*(node->get_nodes()))[i] );
+		(*nodes)[i] = d->path;
+	}
+	intr_d.child_keys = keys;
+	intr_d.child_values = nodes;
+	forest::Tree::write_intr(f, intr_d);
+	
+	f->close();
+	//return f;
+}
+
+void forest::Tree::save_leaf(node_ptr node, std::shared_ptr<DBFS::File> fp)
+{	
+	tree_leaf_read_t leaf_d;
+	auto* keys = new std::vector<tree_t::key_type>();
+	auto* lengths = new std::vector<uint_t>();
+	
+	node_data_ptr data = get_node_data(node);
+	
+	leaf_d.left_leaf = data->prev;
+	leaf_d.right_leaf = data->next;
+	
+	auto* childs = node->get_childs();
+	tree_t::childs_type_iterator start;
+	
+	start = childs->begin();
+	while(start != childs->end()){
+		keys->push_back(start->data->item->first);
+		lengths->push_back(start->data->item->second->size());
+		start = childs->find_next(start);
+	}
+	
+	leaf_d.child_keys = keys;
+	leaf_d.child_lengths = lengths;
+	forest::Tree::write_leaf(fp, leaf_d);
+	
+	auto lock = fp->get_lock();
+	
+	start = childs->begin();
+	while(start != childs->end()){
+		forest::Tree::write_leaf_item(fp, start->data->item->second);
+		start = childs->find_next(start);
+	}
+	
+	fp->stream().flush();
+	
+	//return fp.get();
+}
+
+void forest::Tree::save_base(tree_ptr tree, DBFS::File* base_f)
+{
+	//DBFS::File* base_f = DBFS::create();
+	tree_base_read_t base_d;
+	base_d.type = tree->get_type();
+	
+	base_d.count = tree->get_tree()->size();
+	base_d.factor = tree->get_tree()->get_factor();
+	
+	tree_t::node_ptr root_node = tree->get_tree()->get_root_pub();
+	
+	base_d.branch_type = (root_node->is_leaf() ? NODE_TYPES::LEAF : NODE_TYPES::INTR);
+	if(!has_data(root_node)){
+		base_d.branch = LEAF_NULL;
+	} else {		
+		node_data_ptr base_data = get_node_data(root_node);
+		base_d.branch = base_data->path;
+	}
+	
+	base_d.annotation = tree->annotation;
+	
+	forest::Tree::write_base(base_f, base_d);
+	base_f->close();
+	
+	//return base_f;
+}
+
+
 void forest::Tree::write_intr(DBFS::File* file, tree_intr_read_t data)
 {
 	auto* keys = data.child_keys;
@@ -983,6 +1071,7 @@ void forest::Tree::d_before_move(tree_t::childs_type_iterator& item, int_t step)
 	tree_t::node_ptr node = extract_locked_node(item->data, true);
 	cache::reserve_node(node, true);
 	
+	/*
 	if( ( step < 0 && node->get_childs()->find_prev(item) == node->childs_iterator_end() ) || ( step > 0 && node->get_childs()->find_next(item) == node->childs_iterator_end() ) ){
 		
 		tree_t::node_ptr new_node = nullptr;
@@ -1017,6 +1106,7 @@ void forest::Tree::d_before_move(tree_t::childs_type_iterator& item, int_t step)
 		/// }own_lock
 		own_unlock(node);
 	}
+	*/
 }
 
 void forest::Tree::d_after_move(tree_t::childs_type_iterator& item, int_t step)
@@ -1025,34 +1115,36 @@ void forest::Tree::d_after_move(tree_t::childs_type_iterator& item, int_t step)
 		return;
 	}
 	
-	cache::leaf_lock();
-	/// lock{
 	tree_t::node_ptr node = extract_node(item->data);
-	tree_t::node_ptr node_old;
+	//tree_t::node_ptr node_old;
 
 	string& path = get_node_data(node)->path;
-	string path_old;
+	//string path_old;
 	
+	cache::leaf_lock();
+	/// lock{
 	node = get_original(node);
 	
+	/*
 	if( (step > 0 && node->get_childs()->find_prev(item) == node->childs_iterator_end()) || (step < 0 && node->get_childs()->find_next(item) == node->childs_iterator_end()) ){
 		path_old = (step > 0) ? get_node_data(node)->prev : get_node_data(node)->next;
 		if(path_old != LEAF_NULL){
 			node_old = get_leaf(path_old);
 		}
 	}
+	*/
 	
 	// Release prev node if applicable
-	if(node_old){
-		cache::release_leaf_node(path_old);
-	}
+	//if(node_old){
+	//	cache::release_leaf_node(path_old);
+	//}
 	cache::release_leaf_node(path);
 	/// }lock
 	cache::leaf_unlock();
 	
-	if(node_old){
-		change_unlock_read(node_old);
-	}
+	//if(node_old){
+	//	change_unlock_read(node_old);
+	//}
 	change_unlock_read(node);
 }
 
@@ -1167,6 +1259,61 @@ void forest::Tree::d_item_move(tree_t::node_ptr& node, tree_t::child_item_type_p
 	}
 	
 	cache::leaf_unlock();
+}
+
+void forest::Tree::d_offset_reserve(tree_t::node_ptr& node, int step)
+{
+	tree_t::node_ptr new_node = nullptr;
+	string new_path = (step > 0) ? get_node_data(node)->next : get_node_data(node)->prev;
+	
+	// If no next node - break
+	if(new_path != LEAF_NULL){
+		
+		// Reserve node (anti rc)
+		cache::leaf_lock();
+		/// lock{
+		new_node = get_leaf(new_path);
+		cache::reserve_leaf_node(new_path);
+		/// }lock
+		cache::leaf_unlock();
+		
+		change_lock_read(new_node);
+	}
+	
+	// Reassign refs if necessary
+	own_lock(node);
+	/// own_lock{
+	if(step > 0){
+		if( ( new_node && (!node->next_leaf() || node->next_leaf().get() != new_node.get()) ) || ( !new_node && node->next_leaf() ) ){
+			node->set_next_leaf(new_node);
+		}
+	} else {
+		if( ( new_node && (!node->prev_leaf() || node->prev_leaf().get() != new_node.get()) ) || ( !new_node && node->prev_leaf() ) ){
+			node->set_prev_leaf(new_node);
+		}
+	}
+	/// }own_lock
+	own_unlock(node);
+}
+
+void forest::Tree::d_offset_release(tree_t::node_ptr& node, int offset)
+{
+	if(offset != 0){
+		assert(false);
+	}
+	
+	if(!node){
+		return;
+	}
+	
+	cache::leaf_lock();
+	/// lock{
+	node = get_original(node);
+	cache::release_node(node);
+	/// }lock
+	cache::leaf_unlock();
+	
+	change_unlock_read(node);
 }
 
 void forest::Tree::d_leaf_insert(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item)
