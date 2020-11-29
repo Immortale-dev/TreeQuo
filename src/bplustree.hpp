@@ -142,6 +142,8 @@ class BPlusTree : public BPlusTreeBase<Key, T, BPTInternal<Key, T>, BPTLeaf<Key,
 		void processItemReserve(child_item_type_ptr item, PROCESS_TYPE type);
 		void processItemRelease(child_item_type_ptr item, PROCESS_TYPE type);
 		void processItemMove(node_ptr node, child_item_type_ptr item);
+		void processOffsetLeafReserve(node_ptr node, int offset);
+		void processOffsetLeafRelease(node_ptr node, int offset);
 		void processLeafReserve(node_ptr node, PROCESS_TYPE type);
 		void processLeafRelease(node_ptr node, PROCESS_TYPE type);
 		void processLeafInsertItem(node_ptr node, child_item_type_ptr item);
@@ -266,6 +268,18 @@ template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::processItemMove(node_ptr node, child_item_type_ptr item)
 {
 	driver->d_item_move(node, item);
+}
+
+template <class Key, class T, typename D>
+void BPlusTree<Key, T, D>::processOffsetLeafReserve(node_ptr node, int offset)
+{
+	driver->d_offset_reserve(node, offset);
+}
+
+template <class Key, class T, typename D>
+void BPlusTree<Key, T, D>::processOffsetLeafRelease(node_ptr node, int offset)
+{
+	driver->d_offset_release(node, offset);
 }
 
 template <class Key, class T, typename D>

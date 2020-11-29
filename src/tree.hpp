@@ -98,6 +98,8 @@ namespace forest{
 			void d_item_reserve(tree_t::child_item_type_ptr& item, tree_t::PROCESS_TYPE type);
 			void d_item_release(tree_t::child_item_type_ptr& item, tree_t::PROCESS_TYPE type);
 			void d_item_move(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item);
+			void d_offset_reserve(tree_t::node_ptr& node, int offset);
+			void d_offset_release(tree_t::node_ptr& node, int offset);
 			void d_leaf_insert(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item);
 			void d_leaf_delete(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item);
 			void d_leaf_split(tree_t::node_ptr& node, tree_t::node_ptr& new_node, tree_t::node_ptr& link_node);
