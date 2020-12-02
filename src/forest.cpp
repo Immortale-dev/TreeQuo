@@ -2,6 +2,7 @@
 
 namespace forest{
 	Savior* savior;
+	bool folding = false;
 }
 
 
@@ -37,6 +38,7 @@ void forest::fold()
 		return;
 	}
 		
+	folding = true;
 	blossomed = false;
 	
 	delete savior;
@@ -44,6 +46,10 @@ void forest::fold()
 	details::close_root();
 	
 	cache::release_cache();
+	
+	Thread_wait::wait();
+	
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	
 	L_PUB("[forest::fold]-end");
 }

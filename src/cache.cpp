@@ -48,15 +48,11 @@ void forest::cache::check_tree_ref(string key)
 	if(!tree_cache_r.count(key)){
 		return;
 	}
-	if(tree_cache_r[key].second == 0 && !tree_cache.has(key)){
+	auto& tree_cache_ref = tree_cache_r[key];
+	if(tree_cache_ref.second == 0 && !tree_cache.has(key)){
+		tree_ptr tree = tree_cache_ref.first;
 		tree_cache_r.erase(key);
-		savior->lock_map();
-		if(savior->has(key)){
-			savior->unlock_map();			
-			savior->save(key, false);
-		} else {
-			savior->unlock_map();
-		}
+		savior->leave(key, SAVE_TYPES::BASE, tree);
 	}
 }
 
@@ -72,15 +68,10 @@ void forest::cache::check_leaf_ref(string& key)
 		node->set_next_leaf(nullptr);
 		node->set_prev_leaf(nullptr);
 		
-		// Close file if there if it should be closed
-		savior->leave(key, SAVE_TYPES::LEAF, node);
 		leaf_cache_r.erase(key);
-		
-		own_lock(node);
 		get_data(node).bloomed = false;
-		own_unlock(node);
 		
-		savior->save(key, false);
+		savior->leave(key, SAVE_TYPES::LEAF, node);
 	}
 }
 
@@ -91,15 +82,10 @@ void forest::cache::check_intr_ref(string& key)
 	}
 	auto& intr_cache_ref = intr_cache_r[key];
 	if(intr_cache_ref.second == 0 && !intr_cache.has(key)){
-		savior->lock_map();
-		if(savior->has(key)){
-			savior->unlock_map();
-			savior->save(key, false);
-		} else {
-			savior->unlock_map();
-		}
-		get_data(intr_cache_ref.first).bloomed = false;
+		tree_t::node_ptr node = intr_cache_ref.first;
+		get_data(node).bloomed = false;
 		intr_cache_r.erase(key);
+		savior->leave(key, SAVE_TYPES::INTR, node);
 	}
 }
 

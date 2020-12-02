@@ -199,6 +199,39 @@ namespace forest{
 		delete[] buf;
 		return ret;
 	}
+	
+	struct Thread_wait{
+		static void inc(){
+			std::unique_lock<std::mutex> lock(m);
+			++count;
+		}
+		static void dec(){
+			std::unique_lock<std::mutex> lock(m);
+			if(--count == 0){
+				cv.notify_all();
+			}
+		}
+		template<typename T, typename... Args>
+		static void detached_run(T fn, Args... args){
+			inc();
+			std::thread([](T fn, Args... args){
+				fn(args...);
+				dec();
+			}, fn, args...).detach();
+		}
+		static void wait(){
+			std::unique_lock<std::mutex> lock(m);
+			while (count > 0) {
+				cv.wait(lock);
+			}
+		}
+		
+		private:
+			inline static int count = 0;
+			inline static std::mutex m;
+			inline static std::condition_variable cv;
+	};
+
 }
 
 #endif //FOREST_DBUTILS_H

@@ -117,6 +117,11 @@ namespace forest{
 			tree_t::node_ptr extract_node(tree_t::child_item_type_ptr item);
 			tree_t::node_ptr extract_locked_node(tree_t::child_item_type_ptr item, bool w_prior=false);
 			
+			// Savers
+			static void save_intr(node_ptr node, DBFS::File* f);
+			static void save_leaf(node_ptr node, std::shared_ptr<DBFS::File> fp);
+			static void save_base(tree_ptr tree, DBFS::File* f);
+			
 			// Writers
 			static void write_intr(DBFS::File* file, tree_intr_read_t data);
 			static void write_base(DBFS::File* file, tree_base_read_t data);

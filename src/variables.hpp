@@ -7,6 +7,7 @@ namespace forest{
 	// Variables
 	extern tree_ptr FOREST;
 	extern bool blossomed;
+	extern bool folding;
 	extern int DEFAULT_FACTOR;
 	extern int INTR_CACHE_LENGTH;
 	extern int LEAF_CACHE_LENGTH;

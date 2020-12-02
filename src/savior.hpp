@@ -41,24 +41,22 @@ namespace forest{
 			void save(save_key item, bool async = false);
 			void get(save_key item);
 			void save_all();
-			bool has(save_key item);
-			int size();
-			
-			void lock_map();
-			void unlock_map();
 			
 		private:
-			void put_leaf(save_key item, void_shared node);
-			void put_internal(save_key item, void_shared node);
-			void put_base(save_key item, void_shared node);
 			void save_item(save_key item);
-			void_shared define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action, void_shared node);
-			void remove_item(save_key item);
+			save_value* define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action, void_shared node);
 			void run_scheduler();
 			void delayed_save();
-			DBFS::File* save_intr(node_ptr node);
-			DBFS::File* save_leaf(node_ptr node, std::shared_ptr<DBFS::File> fp);
-			DBFS::File* save_base(tree_ptr tree);
+			void schedule_save(save_key& item);
+			static void remove_file_async(string name);
+			save_value* get_item(save_key& item);
+			save_value* lock_item(save_key& item);
+			void pop_item(save_key& item);
+			void lazy_delete_file(std::shared_ptr<DBFS::File> f);
+			bool has(save_key& item);
+			bool has_locking(save_key& item);
+			void lock_map();
+			void unlock_map();
 			
 			callback_t callback;
 		
@@ -68,7 +66,7 @@ namespace forest{
 			uint_t time;
 			uint_t cluster_limit;
 			uint_t cluster_reduce_length;
-			std::unordered_map<save_key, save_value*> map;
+			std::unordered_map<save_key, std::queue<save_value*>> map;
 			std::unordered_set<save_key> saving_items, locking_items;
 			std::queue<save_key> save_queue;
 			bool saving = false;
@@ -77,6 +75,9 @@ namespace forest{
 			ListCache<save_key, bool> items_queue;
 			bool scheduler_running = false;
 	};
+	
+	void opened_files_inc();
+	void opened_files_dec();
 }
 
 
