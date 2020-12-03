@@ -14,9 +14,9 @@ using namespace std;
 #include "src/helper.cpp"
 
 SCENARIO_START
-//#include "src/single_thread.forest.test.cpp"
+#include "src/single_thread.forest.test.cpp"
 #include "src/multi_thread.forest.test.cpp"
-//#include "src/performance.forest.test.cpp"
+#include "src/performance.forest.test.cpp"
 SCENARIO_END
 
 

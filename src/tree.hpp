@@ -49,6 +49,11 @@ namespace forest{
 			~Tree();
 			
 			string get_name();
+			void set_name(string name);
+			
+			void lock();
+			void unlock();
+			void ready();
 			
 			string get_annotation();
 			void set_annotation(string annotation);
@@ -81,7 +86,7 @@ namespace forest{
 			static DBFS::File* create_leaf_file(string filename, bool lock_for_limit=false);
 			
 			// Tree methods
-			tree_base_read_t read_base(string filename);
+			static tree_base_read_t read_base(string filename);
 			static void seed_tree(DBFS::File* file, TREE_TYPES type, int factor);
 			void tree_reserve();
 			void tree_release();
@@ -129,8 +134,8 @@ namespace forest{
 			static void write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data);
 			
 			// Other
-			tree_t::node_ptr create_node(string path, NODE_TYPES node_type);
-			tree_t::node_ptr create_node(string path, NODE_TYPES node_type, bool empty);
+			static tree_t::node_ptr create_node(string path, NODE_TYPES node_type);
+			static tree_t::node_ptr create_node(string path, NODE_TYPES node_type, bool empty);
 			
 			tree_t* tree;
 			TREE_TYPES type;

@@ -11,7 +11,7 @@ DESCRIBE("Test multi threads", {
 			forest::fold();
 		});
 		
-		DESCRIBE_ONLY("Add 100 trees in 10 threads", {
+		DESCRIBE("Add 100 trees in 10 threads", {
 			BEFORE_ALL({
 				vector<thread> trds;
 				for(int i=0;i<10;i++){
@@ -61,7 +61,7 @@ DESCRIBE("Test multi threads", {
 			});
 		});
 		
-		DESCRIBE_ONLY("Add 100 trees in random shuffle", {
+		DESCRIBE("Add 100 trees in random shuffle", {
 			vector<int> nums;
 			int cnt = 100;
 			
@@ -120,6 +120,34 @@ DESCRIBE("Test multi threads", {
 					TEST_SUCCEED();
 					INFO_PRINT("Dirs count: " + to_string(fc));
 				});
+			});
+		});
+		
+		DESCRIBE("Add 10 trees", {
+			vector<std::thread> threads;
+			
+			BEFORE_ALL({
+				for(int i=0;i<10;i++){
+					forest::create_tree(forest::TREE_TYPES::KEY_STRING, "tree_"+std::to_string(i), 3);
+				}
+			});
+			
+			AFTER_ALL({
+				for(int i=0;i<10;i++){
+					forest::delete_tree("tree_"+std::to_string(i));
+				}
+			});
+			
+			IT("Add 100 items to 10 trees in 100 threads randomly", {
+				for(int i=0;i<100;i++){
+					std::thread t([](int ind, int tree_id){
+						forest::insert_leaf("tree_"+std::to_string(tree_id), "key_"+std::to_string(ind), forest::leaf_value("value_"+std::to_string(ind*2)));
+					}, i, rand()%10);
+					threads.push_back(std::move(t));
+				}
+				for(auto& it : threads){
+					it.join();
+				}
 			});
 		});
 		

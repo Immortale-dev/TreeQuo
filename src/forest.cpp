@@ -137,6 +137,7 @@ forest::tree_ptr forest::open_tree(string path)
 	tree_ptr t = details::get_tree(path);
 	cache::tree_cache_r[path].second++;
 	cache::tree_cache_m.unlock();
+	t->ready();
 	return t;
 }
 

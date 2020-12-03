@@ -56,11 +56,11 @@ forest::tree_ptr forest::Tree::get(string path)
 {
 	tree_ptr t;
 	
-	std::unique_lock<std::mutex> tree_lock(cache::tree_cv_m);
+	//std::unique_lock<std::mutex> tree_lock(cache::tree_cv_m);
 	
-	while(!cache::tree_cache_r.count(path) && cache::tree_cache_q.count(path)){
-		cache::tree_cv.wait(tree_lock);
-	}
+	//while(!cache::tree_cache_r.count(path) && cache::tree_cache_q.count(path)){
+	//	cache::tree_cv.wait(tree_lock);
+	//}
 	
 	// Try to get from cache
 	if(cache::tree_cache.has(path)){
@@ -75,25 +75,40 @@ forest::tree_ptr forest::Tree::get(string path)
 		return t;
 	}
 	
-	cache::tree_cache_q.insert(path);
+	//cache::tree_cache_q.insert(path);
 	
 	// Unlock global mutexes
-	tree_lock.unlock();
-	cache::tree_cache_m.unlock();
+	//tree_lock.unlock();
+	
 	
 	// Get from file
-	t = tree_ptr(new Tree(path));
+	t = tree_ptr(new Tree());
+	t->lock();
+	cache::tree_cache_r[path] = std::make_pair(t,1);
 	
-	// Fill in cache and send future event
+	cache::tree_cache_m.unlock();
+	
+	// Read Tree data
+	tree_base_read_t base = read_base(path);
+	
+	// Fill tree
+	t->set_name(path);
+	t->set_type(base.type);
+	t->set_annotation(base.annotation);
+	
+	// Init BPT
+	t->set_tree(new tree_t(base.factor, create_node(base.branch, base.branch_type), base.count, t.get()));
+	
 	cache::tree_cache_m.lock();
-	tree_lock.lock();
+	//tree_lock.lock();
 	
 	cache::tree_cache.push(path, t);
-	cache::tree_cache_r[path] = std::make_pair(t,0);
-	cache::tree_cache_q.erase(path);
+	cache::tree_cache_r[path].second--;
+	t->unlock();
+	//cache::tree_cache_q.erase(path);
 	
 	// Notify all threads
-	cache::tree_cv.notify_all();
+	//cache::tree_cv.notify_all();
 	
 	// return value
 	return t;
@@ -535,6 +550,27 @@ forest::node_ptr forest::Tree::create_node(string path, NODE_TYPES node_type, bo
 forest::string forest::Tree::get_name()
 {
 	return name;
+}
+
+void forest::Tree::set_name(string name)
+{
+	this->name = name;
+}
+
+void forest::Tree::lock()
+{
+	tree_m.lock();
+}
+
+void forest::Tree::unlock()
+{
+	tree_m.unlock();
+}
+
+void forest::Tree::ready()
+{
+	lock();
+	unlock();
 }
 
 forest::string forest::Tree::get_annotation()
