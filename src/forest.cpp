@@ -41,15 +41,15 @@ void forest::fold()
 	folding = true;
 	blossomed = false;
 	
+	cache::release_cache();
+	
 	delete savior;
 	
 	details::close_root();
 	
-	cache::release_cache();
-	
 	Thread_wait::wait();
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	
 	L_PUB("[forest::fold]-end");
 }

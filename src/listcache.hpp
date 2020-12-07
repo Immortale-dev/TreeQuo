@@ -148,8 +148,11 @@ void ListCache<Key, T>::set_callback(callback_t fn)
 template<typename Key, typename T>
 void ListCache<Key, T>::clear()
 {
-	list.clear();
-	container.clear();
+	while(size()){
+		pop();
+	}
+	//list.clear();
+	//container.clear();
 }
 
 template<typename Key, typename T>

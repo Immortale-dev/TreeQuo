@@ -13,6 +13,7 @@
 #include <utility>
 #include <unordered_map>
 #include <unordered_set>
+#include <queue>
 #include <cstdint>
 #include <iostream> //for debug
 #include "log.hpp"
@@ -215,8 +216,8 @@ namespace forest{
 		static void detached_run(T fn, Args... args){
 			inc();
 			std::thread([](T fn, Args... args){
+				destruct_dec w;
 				fn(args...);
-				dec();
 			}, fn, args...).detach();
 		}
 		static void wait(){
@@ -227,9 +228,70 @@ namespace forest{
 		}
 		
 		private:
+			struct destruct_dec{
+				~destruct_dec(){ Thread_wait::dec(); }
+			};
+		
 			inline static int count = 0;
 			inline static std::mutex m;
 			inline static std::condition_variable cv;
+			
+	};
+	
+	class Thread_worker{
+		typedef std::function<void()> work_fn;
+		typedef std::unique_lock<std::mutex> lock_t;
+		
+		public:
+			Thread_worker(){
+				t = std::thread([this]{
+					while(true){
+						work_fn fn;
+						{
+							auto lock = get_lock();
+							while(q.empty()){
+								busy = false;
+								notify();
+								if(!active) return;
+								cv.wait(lock);
+							}
+							busy = true;
+							fn = q.front();
+							q.pop();
+						}
+						fn();
+					}
+				});
+			};
+			~Thread_worker(){ close(); t.join(); };
+			void close(){
+				auto lock = get_lock();
+				active = false;
+				notify(); 
+			};
+			void work(work_fn f){
+				auto lock = get_lock();
+				q.push(f);
+				notify();
+			};
+			void wait(){
+				auto lock = get_lock();
+				while(busy){
+					cv.wait(lock);
+				}
+			};
+			bool is_busy(){ return busy; };
+		
+		private:
+			void notify(){ cv.notify_all(); };
+			lock_t get_lock(){ return lock_t(m); };
+			
+			std::queue<work_fn> q;
+			std::condition_variable cv;
+			std::mutex m;
+			bool active = true;
+			bool busy = false;
+			std::thread t;
 	};
 
 }

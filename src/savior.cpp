@@ -14,7 +14,13 @@ forest::Savior::Savior()
 forest::Savior::~Savior()
 {
 	save_all();
-	Thread_wait::wait();
+	
+	// Wait workers to finish current work
+	joiner.wait();
+	file_deleter.wait();
+	
+	// Just to make sure there is no any threads anymore
+	wait_for_threads();
 }
 
 void forest::Savior::put(save_key item, SAVE_TYPES type, void_shared node)
@@ -56,7 +62,7 @@ void forest::Savior::leave(save_key item, SAVE_TYPES type, void_shared nodef)
 	}
 	
 	if(has(item)){
-		save(item);
+		save(item, false);
 	}
 }
 
@@ -65,9 +71,13 @@ void forest::Savior::save(save_key item, bool sync)
 	if(sync){
 		save_item(item);
 	} else {
-		Thread_wait::detached_run([this, item]{
+		
+		join_mtx.lock();
+		thrds.push(std::thread([this](string item){
 			save_item(item);
-		});
+		}, item));
+		join_mtx.unlock();
+		joiner.work([this]{ wait_for_threads(); });
 	}
 }
 
@@ -151,7 +161,7 @@ void forest::Savior::save_item(save_key item)
 			DBFS::move(new_name, cur_name);
 		} else { // REMOVE
 			node_data_ptr data = get_node_data(node);
-			forest::Savior::remove_file_async(data->path);
+			remove_file_async(data->path);
 		}
 		
 		forest::unlock_write(node);
@@ -245,7 +255,7 @@ void forest::Savior::run_scheduler()
 	
 	scheduler_running = true;
 
-	Thread_wait::detached_run([this]{
+	scheduler_worker.work([this]{
 		delayed_save();
 	});
 }
@@ -265,8 +275,8 @@ void forest::Savior::delayed_save()
 		save_key item = items_queue.back().first;
 		items_queue.pop();
 		///}
-		unlock_map();
 		save(item, false);
+		unlock_map();
 	}
 }
 
@@ -291,14 +301,9 @@ forest::Savior::save_value* forest::Savior::define_item(save_key item, SAVE_TYPE
 
 void forest::Savior::remove_file_async(string name)
 {
-	if (forest::folding) {
+	file_deleter.work([name]{
 		DBFS::remove(name);
-		return;
-	}
-	
-	Thread_wait::detached_run([](string name){
-		DBFS::remove(name);
-	}, name);
+	});
 }
 
 forest::Savior::save_value* forest::Savior::get_item(save_key& item)
@@ -330,11 +335,26 @@ void forest::Savior::pop_item(save_key& item)
 
 void forest::Savior::lazy_delete_file(std::shared_ptr<DBFS::File> f)
 {
-	f->on_close([](DBFS::File* file){
+	f->on_close([this](DBFS::File* file){
 		// preserve limit
 		forest::opened_files_dec();
-		forest::Savior::remove_file_async(file->name());
+		remove_file_async(file->name());
 	});
+}
+
+void forest::Savior::wait_for_threads()
+{
+	while(true){
+		join_mtx.lock();
+		if(thrds.empty()){
+			join_mtx.unlock();
+			return;
+		}
+		auto t = std::move(thrds.front());
+		thrds.pop();
+		join_mtx.unlock();
+		t.join();
+	}
 }
 
 // forest methods

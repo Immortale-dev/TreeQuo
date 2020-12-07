@@ -48,7 +48,7 @@ namespace forest{
 			void run_scheduler();
 			void delayed_save();
 			void schedule_save(save_key& item);
-			static void remove_file_async(string name);
+			void remove_file_async(string name);
 			save_value* get_item(save_key& item);
 			save_value* lock_item(save_key& item);
 			void pop_item(save_key& item);
@@ -57,10 +57,15 @@ namespace forest{
 			bool has_locking(save_key& item);
 			void lock_map();
 			void unlock_map();
+			void wait_for_threads();
+			
+			Thread_worker scheduler_worker;
+			Thread_worker joiner;
+			Thread_worker file_deleter;
 			
 			callback_t callback;
 		
-			std::mutex map_mtx;
+			std::mutex map_mtx, join_mtx;
 			std::condition_variable cv;
 			
 			uint_t time;
@@ -74,6 +79,8 @@ namespace forest{
 			
 			ListCache<save_key, bool> items_queue;
 			bool scheduler_running = false;
+			
+			std::queue<std::thread> thrds;
 	};
 	
 	void opened_files_inc();
