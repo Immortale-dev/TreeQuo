@@ -83,7 +83,6 @@ namespace forest{
 			tree_leaf_read_t read_leaf(string filename);
 			void materialize_leaf(tree_t::node_ptr node);
 			void unmaterialize_leaf(tree_t::node_ptr node);
-			static DBFS::File* create_leaf_file(string filename, bool lock_for_limit=false);
 			
 			// Tree methods
 			static tree_base_read_t read_base(string filename);
@@ -124,14 +123,14 @@ namespace forest{
 			
 			// Savers
 			static void save_intr(node_ptr node, DBFS::File* f);
-			static void save_leaf(node_ptr node, std::shared_ptr<DBFS::File> fp);
+			static void save_leaf(node_ptr node, file_ptr fp);
 			static void save_base(tree_ptr tree, DBFS::File* f);
 			
 			// Writers
 			static void write_intr(DBFS::File* file, tree_intr_read_t data);
 			static void write_base(DBFS::File* file, tree_base_read_t data);
-			static void write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t data);
-			static void write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data);
+			static void write_leaf(file_ptr file, tree_leaf_read_t data);
+			static void write_leaf_item(file_ptr file, tree_t::val_type& data);
 			
 			// Other
 			static tree_t::node_ptr create_node(string path, NODE_TYPES node_type);

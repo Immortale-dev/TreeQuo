@@ -1,14 +1,8 @@
 #include "savior.hpp"
 
-namespace forest{
-	std::atomic<int> opened_files_count = 0;
-	std::mutex opened_files_m;
-	std::condition_variable opened_files_cv;
-}
-
 forest::Savior::Savior()
 {
-
+	// ctor
 }
 
 forest::Savior::~Savior()
@@ -176,7 +170,7 @@ void forest::Savior::save_item(save_key item)
 			string cur_name = data->path;
 			
 			{
-				std::shared_ptr<DBFS::File> cur_f = get_data(node).f;
+				file_ptr cur_f = get_data(node).f;
 				if(cur_f){
 					forest::opened_files_inc();
 					auto locked = cur_f->get_lock();
@@ -185,11 +179,11 @@ void forest::Savior::save_item(save_key item)
 				}
 			}
 			
-			std::shared_ptr<DBFS::File> fp = std::shared_ptr<DBFS::File>(Tree::create_leaf_file(cur_name));
+			file_ptr fp = file_ptr(new DBFS::File(cur_name));
 			get_data(node).f = fp;
 			forest::Tree::save_leaf(node, fp);
 		} else { // REMOVE
-			std::shared_ptr<DBFS::File> cur_f = get_data(node).f;
+			file_ptr cur_f = get_data(node).f;
 			if(cur_f){
 				opened_files_inc();
 				lazy_delete_file(cur_f);
@@ -333,7 +327,7 @@ void forest::Savior::pop_item(save_key& item)
 	}
 }
 
-void forest::Savior::lazy_delete_file(std::shared_ptr<DBFS::File> f)
+void forest::Savior::lazy_delete_file(file_ptr f)
 {
 	f->on_close([this](DBFS::File* file){
 		// preserve limit
@@ -355,20 +349,4 @@ void forest::Savior::wait_for_threads()
 		join_mtx.unlock();
 		t.join();
 	}
-}
-
-// forest methods
-void forest::opened_files_inc()
-{
-	std::unique_lock<std::mutex> flock(forest::opened_files_m);
-	while(forest::opened_files_count > forest::OPENED_FILES_LIMIT){
-		forest::opened_files_cv.wait(flock);
-	}
-	forest::opened_files_count++;
-}
-
-void forest::opened_files_dec()
-{
-	forest::opened_files_count--;
-	forest::opened_files_cv.notify_all();
 }

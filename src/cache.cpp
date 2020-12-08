@@ -11,17 +11,7 @@ namespace forest{
 		std::unordered_map<string, std::pair<tree_ptr, int> > tree_cache_r;
 		std::unordered_map<string, leaf_cache_ref_t> leaf_cache_r;
 		std::unordered_map<string, std::pair<tree_t::node_ptr, int> > intr_cache_r;
-		
-		std::unordered_set<string> tree_cache_q; //?
-		std::condition_variable tree_cv; //?
-		std::mutex tree_cv_m; //?
-		
-		std::queue<string> savior_save; //?
-		std::mutex savior_save_m; //?
 	}
-	
-	tree_ptr FOREST;
-	bool blossomed = false;
 }
 
 /////////////CACHE_METHODS//////////////
@@ -35,7 +25,6 @@ void forest::cache::init_cache()
 
 void forest::cache::release_cache()
 {
-	// Remove?
 	leaf_cache.clear();
 	intr_cache.clear();
 	tree_cache.clear();

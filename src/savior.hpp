@@ -52,7 +52,7 @@ namespace forest{
 			save_value* get_item(save_key& item);
 			save_value* lock_item(save_key& item);
 			void pop_item(save_key& item);
-			void lazy_delete_file(std::shared_ptr<DBFS::File> f);
+			void lazy_delete_file(file_ptr f);
 			bool has(save_key& item);
 			bool has_locking(save_key& item);
 			void lock_map();
@@ -82,9 +82,6 @@ namespace forest{
 			
 			std::queue<std::thread> thrds;
 	};
-	
-	void opened_files_inc();
-	void opened_files_dec();
 }
 
 

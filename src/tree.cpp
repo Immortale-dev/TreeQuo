@@ -56,12 +56,6 @@ forest::tree_ptr forest::Tree::get(string path)
 {
 	tree_ptr t;
 	
-	//std::unique_lock<std::mutex> tree_lock(cache::tree_cv_m);
-	
-	//while(!cache::tree_cache_r.count(path) && cache::tree_cache_q.count(path)){
-	//	cache::tree_cv.wait(tree_lock);
-	//}
-	
 	// Try to get from cache
 	if(cache::tree_cache.has(path)){
 		t = cache::tree_cache.get(path);
@@ -74,12 +68,6 @@ forest::tree_ptr forest::Tree::get(string path)
 		cache::tree_cache.push(path, t);
 		return t;
 	}
-	
-	//cache::tree_cache_q.insert(path);
-	
-	// Unlock global mutexes
-	//tree_lock.unlock();
-	
 	
 	// Get from file
 	t = tree_ptr(new Tree());
@@ -100,16 +88,11 @@ forest::tree_ptr forest::Tree::get(string path)
 	t->set_tree(new tree_t(base.factor, create_node(base.branch, base.branch_type), base.count, t.get()));
 	
 	cache::tree_cache_m.lock();
-	//tree_lock.lock();
 	
 	cache::tree_cache.push(path, t);
 	cache::tree_cache_r[path].second--;
 	t->unlock();
-	//cache::tree_cache_q.erase(path);
-	
-	// Notify all threads
-	//cache::tree_cv.notify_all();
-	
+
 	// return value
 	return t;
 }
@@ -289,7 +272,7 @@ forest::tree_leaf_read_t forest::Tree::read_leaf(string filename)
 	// Wait for file to be ready
 	savior->get(filename);
 	
-	DBFS::File* f = create_leaf_file(filename, true);
+	DBFS::File* f = new DBFS::File(filename);
 	
 	int c;
 	string left_leaf, right_leaf;
@@ -514,11 +497,6 @@ void forest::Tree::unmaterialize_leaf(tree_t::node_ptr node)
 	cache::release_node(n, true);
 }
 
-DBFS::File* forest::Tree::create_leaf_file(string filename, bool lock_for_limit)
-{
-	return new DBFS::File(filename);
-}
-
 forest::node_ptr forest::Tree::create_node(string path, NODE_TYPES node_type)
 {
 	tree_t::Node* node;
@@ -686,7 +664,7 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	std::vector<tree_t::key_type>* keys_ptr = leaf_d.child_keys;
 	std::vector<uint_t>* vals_length = leaf_d.child_lengths;
 	uint_t start_data = leaf_d.start_data;
-	std::shared_ptr<DBFS::File> f(leaf_d.file);
+	file_ptr f(leaf_d.file);
 	get_data(leaf_data).f = f;
 	int c = keys_ptr->size();
 	uint_t last_len = 0;
@@ -813,7 +791,6 @@ forest::tree_t::node_ptr forest::Tree::extract_locked_node(tree_t::child_item_ty
 
 void forest::Tree::save_intr(node_ptr node, DBFS::File* f)
 {
-	//DBFS::File* f = DBFS::create();
 	tree_intr_read_t intr_d;
 	intr_d.childs_type = ((node->first_child_node()->is_leaf()) ? NODE_TYPES::LEAF : NODE_TYPES::INTR);
 	int c = node->get_nodes()->size();
@@ -829,10 +806,9 @@ void forest::Tree::save_intr(node_ptr node, DBFS::File* f)
 	forest::Tree::write_intr(f, intr_d);
 	
 	f->close();
-	//return f;
 }
 
-void forest::Tree::save_leaf(node_ptr node, std::shared_ptr<DBFS::File> fp)
+void forest::Tree::save_leaf(node_ptr node, file_ptr fp)
 {	
 	tree_leaf_read_t leaf_d;
 	auto* keys = new std::vector<tree_t::key_type>();
@@ -866,13 +842,10 @@ void forest::Tree::save_leaf(node_ptr node, std::shared_ptr<DBFS::File> fp)
 	}
 	
 	fp->stream().flush();
-	
-	//return fp.get();
 }
 
 void forest::Tree::save_base(tree_ptr tree, DBFS::File* base_f)
 {
-	//DBFS::File* base_f = DBFS::create();
 	tree_base_read_t base_d;
 	base_d.type = tree->get_type();
 	
@@ -893,8 +866,6 @@ void forest::Tree::save_base(tree_ptr tree, DBFS::File* base_f)
 	
 	forest::Tree::write_base(base_f, base_d);
 	base_f->close();
-	
-	//return base_f;
 }
 
 
@@ -934,7 +905,7 @@ void forest::Tree::write_base(DBFS::File* file, tree_base_read_t data)
 	}
 }
 
-void forest::Tree::write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t data)
+void forest::Tree::write_leaf(file_ptr file, tree_leaf_read_t data)
 {
 	auto* keys = data.child_keys;
 	auto* lengths = data.child_lengths;
@@ -964,7 +935,7 @@ void forest::Tree::write_leaf(std::shared_ptr<DBFS::File> file, tree_leaf_read_t
 	}
 }
 
-void forest::Tree::write_leaf_item(std::shared_ptr<DBFS::File> file, tree_t::val_type& data)
+void forest::Tree::write_leaf_item(file_ptr file, tree_t::val_type& data)
 {
 	int_t start_data = file->tellp();
 	
@@ -1106,43 +1077,6 @@ void forest::Tree::d_before_move(tree_t::childs_type_iterator& item, int_t step)
 	
 	tree_t::node_ptr node = extract_locked_node(item->data, true);
 	cache::reserve_node(node, true);
-	
-	/*
-	if( ( step < 0 && node->get_childs()->find_prev(item) == node->childs_iterator_end() ) || ( step > 0 && node->get_childs()->find_next(item) == node->childs_iterator_end() ) ){
-		
-		tree_t::node_ptr new_node = nullptr;
-		string new_path = (step > 0) ? get_node_data(node)->next : get_node_data(node)->prev;
-		
-		// If no next node - break
-		if(new_path != LEAF_NULL){
-			
-			// Reserve node (anti rc)
-			cache::leaf_lock();
-			/// lock{
-			new_node = get_leaf(new_path);
-			cache::reserve_leaf_node(new_path);
-			/// }lock
-			cache::leaf_unlock();
-			
-			change_lock_read(new_node);
-		}
-		
-		// Reassign refs if necessary
-		own_lock(node);
-		/// own_lock{
-		if(step > 0){
-			if( ( new_node && (!node->next_leaf() || node->next_leaf().get() != new_node.get()) ) || ( !new_node && node->next_leaf() ) ){
-				node->set_next_leaf(new_node);
-			}
-		} else {
-			if( ( new_node && (!node->prev_leaf() || node->prev_leaf().get() != new_node.get()) ) || ( !new_node && node->prev_leaf() ) ){
-				node->set_prev_leaf(new_node);
-			}
-		}
-		/// }own_lock
-		own_unlock(node);
-	}
-	*/
 }
 
 void forest::Tree::d_after_move(tree_t::childs_type_iterator& item, int_t step)
@@ -1152,35 +1086,15 @@ void forest::Tree::d_after_move(tree_t::childs_type_iterator& item, int_t step)
 	}
 	
 	tree_t::node_ptr node = extract_node(item->data);
-	//tree_t::node_ptr node_old;
-
 	string& path = get_node_data(node)->path;
-	//string path_old;
 	
 	cache::leaf_lock();
 	/// lock{
 	node = get_original(node);
-	
-	/*
-	if( (step > 0 && node->get_childs()->find_prev(item) == node->childs_iterator_end()) || (step < 0 && node->get_childs()->find_next(item) == node->childs_iterator_end()) ){
-		path_old = (step > 0) ? get_node_data(node)->prev : get_node_data(node)->next;
-		if(path_old != LEAF_NULL){
-			node_old = get_leaf(path_old);
-		}
-	}
-	*/
-	
-	// Release prev node if applicable
-	//if(node_old){
-	//	cache::release_leaf_node(path_old);
-	//}
 	cache::release_leaf_node(path);
 	/// }lock
 	cache::leaf_unlock();
-	
-	//if(node_old){
-	//	change_unlock_read(node_old);
-	//}
+
 	change_unlock_read(node);
 }
 

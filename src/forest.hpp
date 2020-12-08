@@ -55,9 +55,6 @@ namespace forest{
 	void config_opened_files_limit(int count);
 	void config_save_schedule_mks(int mks);
 	
-	// Other
-	string read_leaf_item(file_data_ptr item);
-	
 	//////////// Private? ////////////
 		
 	namespace details{

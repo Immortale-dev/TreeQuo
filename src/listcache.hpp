@@ -151,8 +151,6 @@ void ListCache<Key, T>::clear()
 	while(size()){
 		pop();
 	}
-	//list.clear();
-	//container.clear();
 }
 
 template<typename Key, typename T>

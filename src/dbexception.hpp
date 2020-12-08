@@ -16,7 +16,8 @@ namespace forest{
 				TREE_ALREADY_EXISTS,
 				LEAF_DOES_NOT_EXISTS,
 				CANNOT_READ_FILE,
-				CANNOT_WRITE_FILE
+				CANNOT_WRITE_FILE,
+				FOREST_FOLDED
 			};
 			
 			DBException(ERRORS code)
@@ -30,7 +31,7 @@ namespace forest{
 			
 		private:
 			std::string msg;
-			static inline const std::string error_messages[8] = {
+			static inline const std::string error_messages[9] = {
 				"Cannot create root files",
 				"Cannot create files",
 				"Not valid tree type",
@@ -38,7 +39,8 @@ namespace forest{
 				"Tree with name you trying to create is already exists",
 				"Leaf does not exists in the tree",
 				"Cannot read file",
-				"Cannot write to file"
+				"Cannot write to file",
+				"Forest already folded"
 			};  
 	};
 }

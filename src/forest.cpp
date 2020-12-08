@@ -3,6 +3,9 @@
 namespace forest{
 	Savior* savior;
 	bool folding = false;
+		
+	tree_ptr FOREST;
+	bool blossomed = false;
 }
 
 
@@ -440,16 +443,4 @@ void forest::details::erase_tree(string path)
 forest::tree_ptr forest::details::get_tree(string path)
 {
 	return Tree::get(path);
-}
-
-forest::string forest::read_leaf_item(file_data_ptr item)
-{	
-	int sz = item->size();
-	char* buf = new char[sz];
-	auto reader = item->get_reader();
-	reader.read(buf,sz);
-	string ret(buf,sz);
-	delete[] buf;
-	
-	return ret;
 }
