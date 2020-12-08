@@ -376,7 +376,6 @@ template <class Key, class T, typename D>
 void BPlusTree<Key, T, D>::unlock_write()
 {
 	node_ptr stem = this->get_stem();
-	assert((bool)stem);
 	processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
 }
 

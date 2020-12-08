@@ -41,6 +41,9 @@ void forest::cache::check_tree_ref(string key)
 		return;
 	}
 	auto& tree_cache_ref = tree_cache_r[key];
+	
+	ASSERT(tree_cache_ref.second >= 0);
+	
 	if(tree_cache_ref.second == 0 && !tree_cache.has(key)){
 		tree_ptr tree = tree_cache_ref.first;
 		tree_cache_r.erase(key);
@@ -54,6 +57,9 @@ void forest::cache::check_leaf_ref(string& key)
 		return;
 	}
 	auto& leaf_cache_ref = leaf_cache_r[key];
+	
+	ASSERT(leaf_cache_ref.second >= 0);
+	
 	if(leaf_cache_ref.second == 0 && !leaf_cache.has(key)){
 		tree_t::node_ptr node = leaf_cache_ref.first;
 		
@@ -73,6 +79,9 @@ void forest::cache::check_intr_ref(string& key)
 		return;
 	}
 	auto& intr_cache_ref = intr_cache_r[key];
+	
+	ASSERT(intr_cache_ref.second >= 0);
+	
 	if(intr_cache_ref.second == 0 && !intr_cache.has(key)){
 		tree_t::node_ptr node = intr_cache_ref.first;
 		get_data(node).bloomed = false;
@@ -107,7 +116,8 @@ void forest::cache::set_leaf_cache_length(int length)
 
 void forest::cache::reserve_node(tree_t::node_ptr& node, bool w_lock)
 {
-	assert(has_data(node));
+	ASSERT(has_data(node));
+	
 	bool is_leaf = node->is_leaf();
 	string& path = get_node_data(node)->path;
 	

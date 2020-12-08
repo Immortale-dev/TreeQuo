@@ -35,6 +35,7 @@ forest::file_data_ptr forest::leaf_value(string str)
 
 forest::string forest::to_string(int num)
 {
+	ASSERT(num >= 0);
 	if(!num){
 		return "0";
 	}
@@ -73,6 +74,7 @@ void forest::opened_files_inc()
 
 void forest::opened_files_dec()
 {
+	ASSERT(forest::opened_files_count > 0);
 	forest::opened_files_count--;
 	forest::opened_files_cv.notify_all();
 }

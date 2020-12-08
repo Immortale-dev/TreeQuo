@@ -2,6 +2,7 @@
 #define FOREST_LOG_H
 
 #include <string>
+#include <cassert>
 #include "logger.hpp"
 #include "dbutils.hpp"
 
@@ -11,12 +12,14 @@
 	#define L_PRI(text) log_info_private(text)
 	#define L_DET(text) log_info_details(text)
 	#define L_EXT(text) log_info_extended(text)
+	#define ASSERT(cond) assert(cond)
 #else
 	#define L_ERR(text)
 	#define L_PUB(text) 
 	#define L_PRI(text) 
 	#define L_DET(text)
 	#define L_EXT(text)
+	#define ASSERT(cond)
 #endif
 
 namespace forest{

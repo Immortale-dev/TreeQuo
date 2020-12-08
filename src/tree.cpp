@@ -161,8 +161,8 @@ void forest::Tree::tree_reserve()
 		return;
 	}
 	cache::tree_cache_m.lock();
-	assert(cache::tree_cache_r.count(name));
-	assert(cache::tree_cache_r[name].second > 0);
+	ASSERT(cache::tree_cache_r.count(name));
+	ASSERT(cache::tree_cache_r[name].second > 0);
 	cache::tree_cache_r[name].second++;
 	cache::tree_cache_m.unlock();
 }
@@ -173,8 +173,8 @@ void forest::Tree::tree_release()
 		return;
 	}
 	cache::tree_cache_m.lock();
-	assert(cache::tree_cache_r.count(name));
-	assert(cache::tree_cache_r[name].second > 0);
+	ASSERT(cache::tree_cache_r.count(name));
+	ASSERT(cache::tree_cache_r[name].second > 0);
 	cache::tree_cache_r[name].second--;
 	cache::check_tree_ref(name);
 	cache::tree_cache_m.unlock();
@@ -696,7 +696,7 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	if(!cache::leaf_cache.has(path)){
 		cache::leaf_cache.push(path, leaf_data);
 	}
-	assert(cache::leaf_cache_r[path].second > 0);
+	ASSERT(cache::leaf_cache_r[path].second > 0);
 	cache::leaf_cache_r[path].second--;
 	change_unlock_write(leaf_data);
 	unlock_write(leaf_data);
@@ -1009,7 +1009,7 @@ void forest::Tree::d_insert(tree_t::node_ptr& node)
 		node_ptr n = get_original(node);
 		cache::leaf_unlock();
 		
-		assert(get_data(n).is_original);
+		ASSERT(get_data(n).is_original);
 		
 		node_data_ptr data = get_node_data(node);
 		string cur_name = data->path;
@@ -1247,9 +1247,7 @@ void forest::Tree::d_offset_reserve(tree_t::node_ptr& node, int step)
 
 void forest::Tree::d_offset_release(tree_t::node_ptr& node, int offset)
 {
-	if(offset != 0){
-		assert(false);
-	}
+	ASSERT(offset == 0);
 	
 	if(!node){
 		return;
@@ -1340,7 +1338,7 @@ void forest::Tree::d_leaf_lock(tree_t::node_ptr& node)
 		return;
 	}
 	
-	assert(has_data(node));
+	ASSERT(has_data(node));
 	
 	cache::leaf_lock();
 	/// lock{
@@ -1356,7 +1354,7 @@ void forest::Tree::d_leaf_free(tree_t::node_ptr& node)
 		return;
 	}
 	
-	assert(has_data(node));
+	ASSERT(has_data(node));
 	
 	cache::leaf_lock();
 	/// lock{
@@ -1370,7 +1368,7 @@ void forest::Tree::d_leaf_ref(tree_t::node_ptr& node, tree_t::node_ptr& ref_node
 {
 	string ref_path = LEAF_NULL;
 	if(ref_node){
-		assert(has_data(ref_node));
+		ASSERT(has_data(ref_node));
 		ref_path = get_node_data(ref_node)->path;
 	}
 	node_data_ptr data; 
@@ -1409,8 +1407,8 @@ void forest::Tree::d_save_base(tree_t::node_ptr& node)
 		t = FOREST;	
 	} else {
 		cache::tree_cache_m.lock();
-		assert(cache::tree_cache_r.count(base_file_name));
-		assert(cache::tree_cache_r[base_file_name].second > 0);
+		ASSERT(cache::tree_cache_r.count(base_file_name));
+		ASSERT(cache::tree_cache_r[base_file_name].second > 0);
 		t = cache::tree_cache_r[base_file_name].first;
 		cache::tree_cache_m.unlock();
 	}

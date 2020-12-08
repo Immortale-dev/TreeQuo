@@ -43,4 +43,4 @@ custom: generate_o
 	${CC} ${INCL} -o mtest.exe test/mtest.o ${OBJS} ${LIBS_O} -pthread
 
 %.o: %.cpp
-	${CC} ${CFLAGS} ${INCL} ${OPT} $< -o $@ -pthread
+	${CC} ${CFLAGS} ${INCL} ${OPT} $< -o $@

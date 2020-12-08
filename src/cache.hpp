@@ -81,6 +81,7 @@ inline void forest::cache::insert_item(tree_t::child_item_type_ptr& item)
 
 inline void forest::cache::remove_item(tree_t::child_item_type_ptr& item)
 {
+	ASSERT(item->item->second->res_c > 0);
 	--item->item->second->res_c;
 }
 
@@ -128,6 +129,7 @@ inline void forest::cache::reserve_leaf_node(string& path)
 
 inline void forest::cache::release_leaf_node(string& path)
 {
+	ASSERT(leaf_cache_r[path].second > 0);
 	if(--leaf_cache_r[path].second == 0){;
 		check_leaf_ref(path);
 	}

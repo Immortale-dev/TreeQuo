@@ -40,7 +40,7 @@ namespace forest{
 				"Leaf does not exists in the tree",
 				"Cannot read file",
 				"Cannot write to file",
-				"Forest already folded"
+				"Forest Folded"
 			};  
 	};
 }

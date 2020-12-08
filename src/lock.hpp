@@ -200,7 +200,7 @@ inline int forest::own_inc(tree_t::node_ptr& node)
 
 inline int forest::own_dec(tree_t::node_ptr& node)
 {
-	assert(get_data(node).owner_locks.c > 0);
+	ASSERT(get_data(node).owner_locks.c > 0);
 	return --get_data(node).owner_locks.c;
 }
 

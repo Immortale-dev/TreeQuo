@@ -42,6 +42,7 @@ namespace forest{
 			
 	void bloom(string path);
 	void fold();
+	bool blooms();
 	
 	/* Configurations */
 	void config_root_factor(int root_factor);
@@ -68,6 +69,10 @@ namespace forest{
 		void insert_tree(string name, string file_name, tree_ptr tree);
 		void erase_tree(string path);
 		tree_ptr get_tree(string path);
+		
+		// Other methods
+		void init_savior();
+		void release_savior();
 	}
 }
 

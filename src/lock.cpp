@@ -173,14 +173,14 @@ void forest::change_lock_promote(tree_t::Node* node)
 	auto& ch_node = get_data(node).change_locks;
 	std::unique_lock<std::mutex> lock(ch_node.g);
 	
-	assert(!ch_node.promote);
+	ASSERT(!ch_node.promote);
 	
 	ch_node.promote = true;
 	while(ch_node.c > 1){
 		ch_node.p_cond.wait(lock);
 	}
 	
-	assert(ch_node.c == 1);
+	ASSERT(ch_node.c == 1);
 	
 	--ch_node.c;
 	ch_node.promote = false;
