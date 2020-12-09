@@ -24,8 +24,8 @@ INCL=-Isrc -Itest $(LIBS_SRC_I)
 all: generate_libs generate_o generate_t
 
 rc: generate_libs generate_o 
-	$(CC) $(CFLAGS) $(INCL) test/rc_test.cpp ${OPT} -pthread -o test/rc_test.o
-	${CC} ${INCL} -o rc_test.exe test/rc_test.o ${OBJS} ${LIBS_O}
+	$(CC) $(CFLAGS) $(INCL) test/rc_test.cpp ${OPT} -o test/rc_test.o
+	${CC} ${INCL} -o rc_test.exe test/rc_test.o ${OBJS} ${LIBS_O} -pthread
 
 generate_libs: ${LIBS_O}
 	
@@ -35,7 +35,7 @@ $(LIBS):
 generate_o: ${OBJS}
 
 generate_t: 
-	$(CC) $(CFLAGS) $(INCL) test/test.cpp ${OPT} -pthread -o test/test.o
+	$(CC) $(CFLAGS) $(INCL) test/test.cpp ${OPT} -o test/test.o
 	${CC} ${INCL} -o test.exe test/test.o -pthread ${OBJS} ${LIBS_O}
 	
 custom: generate_o

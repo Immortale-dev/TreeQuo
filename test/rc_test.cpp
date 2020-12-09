@@ -13,6 +13,7 @@ using namespace std;
 #include "forest.hpp"
 #include "src/helper.cpp"
 
+SCENARIO_START
 
 DESCRIBE("[RC]", {
     
@@ -44,7 +45,6 @@ DESCRIBE("[RC]", {
             forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 10);
             
             unordered_set<int> check;
-            //int num_of_items;
             
             for(int i=0;i<300;i++){
                 int rnd = rand()%10000 + 200;
@@ -53,7 +53,6 @@ DESCRIBE("[RC]", {
                     forest::insert_leaf("test", "p"+std::to_string(rnd), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
                 }
             }
-            //num_of_items = check.size();
             
             for(auto& it : check){
                 q.push(it);
@@ -171,5 +170,8 @@ DESCRIBE("[RC]", {
         });
     });
 });
+
+SCENARIO_END
+
 
 int main(){ return 0; }
