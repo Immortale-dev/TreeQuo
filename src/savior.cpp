@@ -2,11 +2,15 @@
 
 forest::Savior::Savior()
 {
-	// ctor
+	items_queue.resize(SAVIOUR_QUEUE_LENGTH);
+	items_queue.set_callback([this](save_key item){
+		save(item, false);
+	});
 }
 
 forest::Savior::~Savior()
 {
+	// Save everything in sync mode
 	save_all();
 	
 	// Wait workers to finish current work
@@ -22,7 +26,8 @@ void forest::Savior::put(save_key item, SAVE_TYPES type, void_shared node)
 	std::unique_lock<std::mutex> lock(map_mtx);
 	
 	if(has(item) && !has_locking(item)){
-		// Just return as its going to be saved
+		// Just schedule as its going to be saved
+		schedule_save(item);
 		return;
 	}
 	
@@ -35,7 +40,6 @@ void forest::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
 	std::unique_lock<std::mutex> lock(map_mtx);
 
 	define_item(item, type, ACTION_TYPE::REMOVE, node);
-	
 	schedule_save(item);
 }
 
@@ -43,6 +47,7 @@ void forest::Savior::leave(save_key item, SAVE_TYPES type, void_shared nodef)
 {
 	std::unique_lock<std::mutex> lock(map_mtx);
 	
+	// Implicitly close file if leaf is up to date
 	if(type == SAVE_TYPES::LEAF){
 		node_ptr node = std::static_pointer_cast<tree_t::Node>(nodef);
 		get_data(node).leaved = true;
@@ -65,7 +70,6 @@ void forest::Savior::save(save_key item, bool sync)
 	if(sync){
 		save_item(item);
 	} else {
-		
 		join_mtx.lock();
 		thrds.push(std::thread([this](string item){
 			save_item(item);
@@ -81,6 +85,12 @@ void forest::Savior::get(save_key item)
 	while(map.count(item)){
 		cv.wait(lock);
 	}
+}
+
+int forest::Savior::save_queue_size()
+{
+	std::unique_lock lock(map_mtx);
+	return items_queue.size();
 }
 
 void forest::Savior::save_all()
@@ -123,9 +133,12 @@ void forest::Savior::save_item(save_key item)
 {
 	std::unique_lock<std::mutex> lock(map_mtx);
 	
+	// Wait if it already saving
 	while(saving_items.count(item)){
 		cv.wait(lock);
 	}
+	
+	// Return if it's already up to date
 	if(!has(item)){
 		cv.notify_all();
 		return;
@@ -133,11 +146,14 @@ void forest::Savior::save_item(save_key item)
 	
 	save_value* it = get_item(item);
 	
+	// Mark item for saving
 	saving_items.insert(item);
 	lock.unlock();
 	
 	if(it->type == SAVE_TYPES::INTR){
 		node_ptr node = std::static_pointer_cast<tree_t::Node>(it->node);
+		
+		// To avoid any deadlocks and RC, lock the node
 		forest::lock_write(node);
 		
 		it = lock_item(item);
@@ -161,6 +177,8 @@ void forest::Savior::save_item(save_key item)
 		forest::unlock_write(node);
 	} else if(it->type == SAVE_TYPES::LEAF){
 		node_ptr node = std::static_pointer_cast<tree_t::Node>(it->node);
+		
+		// To avoid any deadlocks and RC, lock the node
 		change_lock_write(node);
 		
 		it = lock_item(item);
@@ -168,15 +186,17 @@ void forest::Savior::save_item(save_key item)
 		if(it->action == ACTION_TYPE::SAVE){
 			node_data_ptr data = get_node_data(node);
 			string cur_name = data->path;
-			
-			{
-				file_ptr cur_f = get_data(node).f;
-				if(cur_f){
-					forest::opened_files_inc();
-					auto locked = cur_f->get_lock();
-					cur_f->move(DBFS::random_filename());
-					lazy_delete_file(cur_f);
-				}
+		
+			file_ptr cur_f = get_data(node).f;
+			if(cur_f){
+				// Update count of opened files to not exceed the limit
+				forest::opened_files_inc();
+				auto locked = cur_f->get_lock();
+				cur_f->move(DBFS::random_filename());
+				
+				// Other could still reference this leaf, so delete file
+				// when no references left
+				lazy_delete_file(cur_f);
 			}
 			
 			file_ptr fp = file_ptr(new DBFS::File(cur_name));
@@ -186,6 +206,8 @@ void forest::Savior::save_item(save_key item)
 			file_ptr cur_f = get_data(node).f;
 			if(cur_f){
 				opened_files_inc();
+				
+				// Same as for saving
 				lazy_delete_file(cur_f);
 			}
 			get_data(node).f = nullptr;
@@ -194,6 +216,8 @@ void forest::Savior::save_item(save_key item)
 		change_unlock_write(node);
 	} else {
 		tree_ptr tree = std::static_pointer_cast<Tree>(it->node);
+		
+		// To avoid any deadlocks and RC, lock the node
 		tree->get_tree()->lock_write();
 		
 		it = lock_item(item);
@@ -216,6 +240,7 @@ void forest::Savior::save_item(save_key item)
 	
 	
 	lock.lock();
+	
 	// Remove item
 	saving_items.erase(item);
 	locking_items.erase(item);
@@ -223,11 +248,14 @@ void forest::Savior::save_item(save_key item)
 	SAVE_TYPES node_type = it->type;
 	auto void_node = it->node;
 	
+	// Remove item from map
 	pop_item(item);
 
 	// Close item if needed
 	if(!has(item)){
 		items_queue.remove(item);
+		
+		// Close file implicitly if leaf already left
 		if(node_type == SAVE_TYPES::LEAF){
 			node_ptr node = std::static_pointer_cast<tree_t::Node>(void_node);
 			auto& data = get_data(node);
@@ -238,6 +266,7 @@ void forest::Savior::save_item(save_key item)
 		}
 	}
 	
+	// Notify for changes
 	cv.notify_all();
 }
 

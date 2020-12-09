@@ -40,9 +40,14 @@ namespace forest{
 	LeafRecord_ptr find_leaf(tree_ptr tree, RECORD_POSITION position = RECORD_POSITION::BEGIN);
 	LeafRecord_ptr find_leaf(tree_ptr tree, tree_t::key_type key, RECORD_POSITION position);
 			
+	// Init methods
 	void bloom(string path);
 	void fold();
+	
+	// Status methods
 	bool blooms();
+	int get_save_queue_size();
+	int get_opened_files_count();
 	
 	/* Configurations */
 	void config_root_factor(int root_factor);
@@ -55,9 +60,10 @@ namespace forest{
 	void config_chunk_bytes(int bytes);
 	void config_opened_files_limit(int count);
 	void config_save_schedule_mks(int mks);
+	void config_savior_queue_size(int length);
 	
 	//////////// Private? ////////////
-		
+	
 	namespace details{
 		
 		// Root methods

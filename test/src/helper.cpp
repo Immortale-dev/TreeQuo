@@ -47,6 +47,7 @@ void config_high()
 	forest::config_cache_bytes(512);
 	forest::config_chunk_bytes(1024);
 	forest::config_opened_files_limit(100);
+	forest::config_savior_queue_size(200);
 }
 
 void config_low()
@@ -59,4 +60,5 @@ void config_low()
 	forest::config_cache_bytes(128);
 	forest::config_chunk_bytes(256);
 	forest::config_opened_files_limit(10);
+	forest::config_savior_queue_size(20);
 }

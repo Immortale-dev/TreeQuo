@@ -17,6 +17,7 @@ namespace forest{
 	extern std::condition_variable opened_files_cv;
 	
 	extern int SCHEDULE_TIMER;
+	extern int SAVIOUR_QUEUE_LENGTH;
 	
 	class Savior{
 		
@@ -40,7 +41,7 @@ namespace forest{
 			void leave(save_key item, SAVE_TYPES type, void_shared node);
 			void save(save_key item, bool async = false);
 			void get(save_key item);
-			void save_all();
+			int save_queue_size();
 			
 		private:
 			void save_item(save_key item);
@@ -58,6 +59,7 @@ namespace forest{
 			void lock_map();
 			void unlock_map();
 			void wait_for_threads();
+			void save_all();
 			
 			Thread_worker scheduler_worker;
 			Thread_worker joiner;
@@ -73,7 +75,6 @@ namespace forest{
 			uint_t cluster_reduce_length;
 			std::unordered_map<save_key, std::queue<save_value*>> map;
 			std::unordered_set<save_key> saving_items, locking_items;
-			std::queue<save_key> save_queue;
 			bool saving = false;
 			bool resolving = false;
 			

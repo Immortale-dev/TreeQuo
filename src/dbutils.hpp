@@ -1,6 +1,7 @@
 #ifndef FOREST_DBUTILS_H
 #define FOREST_DBUTILS_H
 
+// define it for saving logs and turning on asserts
 //#define DEBUG
 
 #include <cstring>
@@ -15,7 +16,7 @@
 #include <unordered_set>
 #include <queue>
 #include <cstdint>
-#include <iostream> //for debug
+//#include <iostream> //for debugging purposes
 
 #include "log.hpp"
 #include "dbfs.hpp"

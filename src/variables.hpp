@@ -20,6 +20,7 @@ namespace forest{
 	extern int CACHE_BYTES;
 	extern int CHUNK_SIZE;
 	extern int OPENED_FILES_LIMIT;
+	extern int SAVIOUR_QUEUE_LENGTH;
 }
 
 #endif // FOREST_VARIABLES

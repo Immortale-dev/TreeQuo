@@ -679,7 +679,6 @@ forest::tree_t::node_ptr forest::Tree::get_leaf(string path)
 	delete vals_length;
 	
 	// Update records positions
-	///int childs_size = leaf_data->childs_size();
 	auto childs = leaf_data->get_childs();
 	
 	// Update node for RBTree
@@ -709,15 +708,19 @@ forest::tree_t::node_ptr forest::Tree::get_original(tree_t::node_ptr node)
 {
 	node_ptr n;
 	
+	// return if current node is original
 	if(get_data(node).is_original){
 		return node;
 	}
 
+	// Try to get original node by references
 	auto orig = get_data(node).original.lock();
 	if(orig){
 		n = std::static_pointer_cast<tree_t::Node>(orig);
 		if(get_data(n).bloomed){
 			string& path = get_node_data(node)->path;
+			
+			// Update cache status
 			if(node->is_leaf()){
 				if(cache::leaf_cache.has(path)){
 					cache::leaf_cache.get(path);
@@ -737,13 +740,16 @@ forest::tree_t::node_ptr forest::Tree::get_original(tree_t::node_ptr node)
 	
 	string& path = get_node_data(node)->path;
 	
-	
+	// General way
 	if(node->is_leaf()){
 		n = get_leaf(path);
 	} else {
 		n = get_intr(path);
 	}
+	
+	// Update node ref
 	get_data(node).original = n;
+	
 	return n;
 }
 

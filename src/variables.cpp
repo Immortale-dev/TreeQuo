@@ -13,5 +13,6 @@ namespace forest{
 	int CACHE_BYTES = 128;
 	int CHUNK_SIZE = 512;
 	int OPENED_FILES_LIMIT = 20;
-	int SCHEDULE_TIMER = 5000;
+	int SCHEDULE_TIMER = 10000;
+	int SAVIOUR_QUEUE_LENGTH = 20;
 }

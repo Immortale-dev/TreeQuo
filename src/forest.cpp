@@ -55,6 +55,16 @@ bool forest::blooms()
 	return blossomed;
 }
 
+int forest::get_save_queue_size()
+{
+	return savior->save_queue_size();
+}
+
+int forest::get_opened_files_count()
+{
+	return forest::opened_files_count.load();
+}
+
 void forest::create_tree(TREE_TYPES type, string name, int factor, string annotation)
 {
 	L_PUB("[forest::create_tree]-" + name);
@@ -448,6 +458,11 @@ void forest::config_opened_files_limit(int count)
 void forest::config_save_schedule_mks(int mks)
 {
 	SCHEDULE_TIMER = mks;
+}
+
+void forest::config_savior_queue_size(int length)
+{
+	SAVIOUR_QUEUE_LENGTH = length;
 }
 
 /*********************************************************************************/
