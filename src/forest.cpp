@@ -65,12 +65,12 @@ int forest::get_opened_files_count()
 	return forest::opened_files_count.load();
 }
 
-void forest::create_tree(TREE_TYPES type, string name, int factor, string annotation)
+void forest::plant_tree(TREE_TYPES type, string name, int factor, string annotation)
 {
-	L_PUB("[forest::create_tree]-" + name);
+	L_PUB("[forest::plant_tree]-" + name);
 	
 	if(!blooms()){
-		throw DBException(DBException::ERRORS::FOREST_FOLDED);
+		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
 	if(!factor){
@@ -79,7 +79,7 @@ void forest::create_tree(TREE_TYPES type, string name, int factor, string annota
 	
 
 	if(FOREST->get_tree()->find(name) != FOREST->get_tree()->end()){
-		throw DBException(DBException::ERRORS::TREE_ALREADY_EXISTS);
+		throw TreeException(TreeException::ERRORS::TREE_ALREADY_EXISTS);
 	}
 
 	
@@ -90,12 +90,12 @@ void forest::create_tree(TREE_TYPES type, string name, int factor, string annota
 	details::insert_tree(name, file_name, tree);
 }
 
-void forest::delete_tree(string name)
+void forest::cut_tree(string name)
 {
-	L_PUB("[forest::delete_tree]-" + name);
+	L_PUB("[forest::cut_tree]-" + name);
 	
 	if(!blooms()){
-		throw DBException(DBException::ERRORS::FOREST_FOLDED);
+		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
 	string path;
@@ -122,7 +122,7 @@ void forest::leave_tree(string path)
 	L_PUB("[forest::leave_tree]-" + path);
 	
 	if(!blooms()){
-		throw DBException(DBException::ERRORS::FOREST_FOLDED);
+		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
 	cache::tree_cache_m.lock();
@@ -133,36 +133,36 @@ void forest::leave_tree(string path)
 	cache::tree_cache_m.unlock();
 }
 
-void forest::leave_tree(tree_ptr tree)
+void forest::leave_tree(tree tree)
 {
 	leave_tree(tree->get_name());
 }
 
-forest::tree_ptr forest::find_tree(string name)
+forest::tree forest::find_tree(string name)
 {	
 	L_PUB("[forest::find_tree]-" + name);
 	
 	if(!blooms()){
-		throw DBException(DBException::ERRORS::FOREST_FOLDED);
+		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
 	// Error if not exists
 	auto it = FOREST->get_tree()->find(name);
 	if(it == FOREST->get_tree()->end()){
-		throw DBException(DBException::ERRORS::TREE_DOES_NOT_EXISTS);
+		throw TreeException(TreeException::ERRORS::TREE_DOES_NOT_EXISTS);
 	}
 	
 	// Get tree path
 	string path = read_leaf_item(it->second);
-	return open_tree(path);
+	return reach_tree(path);
 }
 
-forest::tree_ptr forest::open_tree(string path)
+forest::tree forest::reach_tree(string path)
 {	
-	L_PUB("[forest::open_tree]-" + path);
+	L_PUB("[forest::reach_tree]-" + path);
 	
 	if(!blooms()){
-		throw DBException(DBException::ERRORS::FOREST_FOLDED);
+		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
 	cache::tree_cache_m.lock();
@@ -180,19 +180,19 @@ void forest::insert_leaf(string name, tree_t::key_type key, tree_t::val_type val
 	L_PUB("[forest::insert_leaf]-" + tree->get_name() + "_" + key);
 	
 	if(!blooms()){
-		throw DBException(DBException::ERRORS::FOREST_FOLDED);
+		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
 	tree->insert(key, std::move(val));
 	leave_tree(tree->get_name());
 }
 
-void forest::insert_leaf(tree_ptr tree, tree_t::key_type key, tree_t::val_type val)
+void forest::insert_leaf(tree tree, tree_t::key_type key, tree_t::val_type val)
 {
 	L_PUB("[forest::insert_leaf]-" + tree->get_name() + "_" + key);
 	
 	if(!blooms()){
-		throw DBException(DBException::ERRORS::FOREST_FOLDED);
+		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
 	tree->insert(key, std::move(val));
@@ -205,57 +205,57 @@ void forest::update_leaf(string name, tree_t::key_type key, tree_t::val_type val
 	L_PUB("[forest::update_leaf]-" + tree->get_name() + "_" + key);
 	
 	if(!blooms()){
-		throw DBException(DBException::ERRORS::FOREST_FOLDED);
+		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
 	tree->insert(key, std::move(val), true);
 	leave_tree(tree->get_name());
 }
 
-void forest::update_leaf(tree_ptr tree, tree_t::key_type key, tree_t::val_type val)
+void forest::update_leaf(tree tree, tree_t::key_type key, tree_t::val_type val)
 {	
 	L_PUB("[forest::update_leaf]-" + tree->get_name() + "_" + key);
 	
 	if(!blooms()){
-		throw DBException(DBException::ERRORS::FOREST_FOLDED);
+		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
 	tree->insert(key, std::move(val), true);
 }
 
-void forest::erase_leaf(string name, tree_t::key_type key)
+void forest::remove_leaf(string name, tree_t::key_type key)
 {	
 	tree_ptr tree = find_tree(name);
 	
-	L_PUB("[forest::erase_leaf]-" + tree->get_name() + "_" + key);
+	L_PUB("[forest::remove_leaf]-" + tree->get_name() + "_" + key);
 	
 	if(!blooms()){
-		throw DBException(DBException::ERRORS::FOREST_FOLDED);
+		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
 	tree->erase(key);
 	leave_tree(tree->get_name());
 }
 
-void forest::erase_leaf(tree_ptr tree, tree_t::key_type key)
+void forest::remove_leaf(tree tree, tree_t::key_type key)
 {	
-	L_PUB("[forest::erase_leaf]-" + tree->get_name() + "_" + key);
+	L_PUB("[forest::remove_leaf]-" + tree->get_name() + "_" + key);
 	
 	if(!blooms()){
-		throw DBException(DBException::ERRORS::FOREST_FOLDED);
+		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
 	tree->erase(key);
 }
 
-forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key)
+forest::leaf forest::find_leaf(string name, tree_t::key_type key)
 {	
 	tree_ptr tree = find_tree(name);
 	try{
 		L_PUB("[forest::find_leaf]-KEY_" + key);
 		
 		if(!blooms()){
-			throw DBException(DBException::ERRORS::FOREST_FOLDED);
+			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
 		tree_t::iterator t = tree->find(key);
@@ -265,24 +265,24 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key)
 		leave_tree(tree->get_name());
 		return rc;
 	} 
-	catch(DBException& e) {
+	catch(TreeException& e) {
 		leave_tree(tree->get_name());
 		throw e;
 	}
 }
 
-forest::LeafRecord_ptr forest::find_leaf(string name, RECORD_POSITION position)
+forest::leaf forest::find_leaf(string name, LEAF_POSITION position)
 {	
 	tree_ptr tree = find_tree(name);
 	try{
 		L_PUB("[forest::find_leaf]-POS_" + to_string((int)position));
 		
 		if(!blooms()){
-			throw DBException(DBException::ERRORS::FOREST_FOLDED);
+			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
 		tree_t::iterator t;
-		if(position == RECORD_POSITION::BEGIN){
+		if(position == LEAF_POSITION::BEGIN){
 			t = tree->get_tree()->begin();
 		}
 		else{
@@ -295,15 +295,15 @@ forest::LeafRecord_ptr forest::find_leaf(string name, RECORD_POSITION position)
 		
 		return rc;
 	}
-	catch(DBException& e) {
+	catch(TreeException& e) {
 		leave_tree(tree->get_name());
 		throw e;
 	}
 }
 
-forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key, RECORD_POSITION position)
+forest::leaf forest::find_leaf(string name, tree_t::key_type key, LEAF_POSITION position)
 {	
-	if(position == RECORD_POSITION::BEGIN || position == RECORD_POSITION::END){
+	if(position == LEAF_POSITION::BEGIN || position == LEAF_POSITION::END){
 		return find_leaf(name, position);
 	}
 	
@@ -312,11 +312,11 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key, RECO
 		L_PUB("[forest::find_leaf]-BNT_" + key + "_" + to_string((int)position));
 		
 		if(!blooms()){
-			throw DBException(DBException::ERRORS::FOREST_FOLDED);
+			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
 		tree_t::iterator t;
-		if(position == RECORD_POSITION::LOWER){
+		if(position == LEAF_POSITION::LOWER){
 			t = tree->get_tree()->lower_bound(key);
 		}
 		else {
@@ -329,20 +329,20 @@ forest::LeafRecord_ptr forest::find_leaf(string name, tree_t::key_type key, RECO
 		
 		return rc;
 	}
-	catch(DBException& e) {
+	catch(TreeException& e) {
 		leave_tree(tree->get_name());
 		throw e;
 	}
 }
 
 
-forest::LeafRecord_ptr forest::find_leaf(tree_ptr tree, tree_t::key_type key)
+forest::leaf forest::find_leaf(tree tree, tree_t::key_type key)
 {	
 	try{
 		L_PUB("[forest::find_leaf]-KEY_" + key);
 		
 		if(!blooms()){
-			throw DBException(DBException::ERRORS::FOREST_FOLDED);
+			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
 		tree_t::iterator t = tree->find(key);
@@ -350,22 +350,22 @@ forest::LeafRecord_ptr forest::find_leaf(tree_ptr tree, tree_t::key_type key)
 		LeafRecord_ptr rc = LeafRecord_ptr(new LeafRecord(t, tree));
 		
 		return rc;
-	} catch(DBException& e) {
+	} catch(TreeException& e) {
 		throw e;
 	}
 }
 
-forest::LeafRecord_ptr forest::find_leaf(tree_ptr tree, RECORD_POSITION position)
+forest::leaf forest::find_leaf(tree tree, LEAF_POSITION position)
 {	
 	try{
 		L_PUB("[forest::find_leaf]-POS_" + to_string((int)position));
 		
 		if(!blooms()){
-			throw DBException(DBException::ERRORS::FOREST_FOLDED);
+			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
 		tree_t::iterator t;
-		if(position == RECORD_POSITION::BEGIN){
+		if(position == LEAF_POSITION::BEGIN){
 			t = tree->get_tree()->begin();
 		} else {
 			t = --tree->get_tree()->end();
@@ -374,14 +374,14 @@ forest::LeafRecord_ptr forest::find_leaf(tree_ptr tree, RECORD_POSITION position
 		LeafRecord_ptr rc = LeafRecord_ptr(new LeafRecord(t, tree));
 		
 		return rc;
-	} catch(DBException& e) {
+	} catch(TreeException& e) {
 		throw e;
 	}
 }
 
-forest::LeafRecord_ptr forest::find_leaf(tree_ptr tree, tree_t::key_type key, RECORD_POSITION position)
-{	
-	if(position == RECORD_POSITION::BEGIN || position == RECORD_POSITION::END){
+forest::leaf forest::find_leaf(tree tree, tree_t::key_type key, LEAF_POSITION position)
+{
+	if(position == LEAF_POSITION::BEGIN || position == LEAF_POSITION::END){
 		return find_leaf(tree, position);
 	}
 	
@@ -389,11 +389,11 @@ forest::LeafRecord_ptr forest::find_leaf(tree_ptr tree, tree_t::key_type key, RE
 		L_PUB("[forest::find_leaf]-BNT_" + key + "_" + to_string((int)position));
 		
 		if(!blooms()){
-			throw DBException(DBException::ERRORS::FOREST_FOLDED);
+			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
 		tree_t::iterator t;
-		if(position == RECORD_POSITION::LOWER){
+		if(position == LEAF_POSITION::LOWER){
 			t = tree->get_tree()->lower_bound(key);
 		} else {
 			t = tree->get_tree()->upper_bound(key);
@@ -402,7 +402,7 @@ forest::LeafRecord_ptr forest::find_leaf(tree_ptr tree, tree_t::key_type key, RE
 		LeafRecord_ptr rc = LeafRecord_ptr(new LeafRecord(t, tree));
 		
 		return rc;
-	} catch(DBException& e) {
+	} catch(TreeException& e) {
 		throw e;
 	}
 }
@@ -515,7 +515,7 @@ void forest::details::insert_tree(string name, string file_name, tree_ptr tree)
 
 void forest::details::erase_tree(string path)
 {	
-	tree_ptr t = open_tree(path);
+	tree_ptr t = reach_tree(path);
 	
 	t->get_tree()->lock_write();
 	savior->remove(path, SAVE_TYPES::BASE, t);

@@ -17,7 +17,7 @@ DESCRIBE("Test multi threads", {
 				for(int i=0;i<10;i++){
 					thread t([](int i){
 						while(i<100){
-							forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(i));
+							forest::plant_tree(forest::TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(i));
 							i+=10;
 						}
 					},i);
@@ -40,7 +40,7 @@ DESCRIBE("Test multi threads", {
 					for(int i=0;i<10;i++){
 						thread t([](int i){
 							while(i<100){
-								forest::delete_tree("test_string_tree_"+to_string(i));
+								forest::cut_tree("test_string_tree_"+to_string(i));
 								i+=10;
 							}
 						},i);
@@ -78,7 +78,7 @@ DESCRIBE("Test multi threads", {
 				for(int i=0;i<100;i++){
 					thread t([&cnt,&nums](int i){
 						while(i<cnt){
-							forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(nums[i]));
+							forest::plant_tree(forest::TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(nums[i]));
 							i+=100;
 						}
 					},i);
@@ -104,7 +104,7 @@ DESCRIBE("Test multi threads", {
 					for(int i=0;i<100;i++){
 						thread t([&cnt,&nums](int i){
 							while(i<cnt){
-								forest::delete_tree("test_string_tree_"+to_string(nums[i]));
+								forest::cut_tree("test_string_tree_"+to_string(nums[i]));
 								i+=100;
 							}
 						},i);
@@ -128,13 +128,13 @@ DESCRIBE("Test multi threads", {
 			
 			BEFORE_ALL({
 				for(int i=0;i<10;i++){
-					forest::create_tree(forest::TREE_TYPES::KEY_STRING, "tree_"+std::to_string(i), 3);
+					forest::plant_tree(forest::TREE_TYPES::KEY_STRING, "tree_"+std::to_string(i), 3);
 				}
 			});
 			
 			AFTER_ALL({
 				for(int i=0;i<10;i++){
-					forest::delete_tree("tree_"+std::to_string(i));
+					forest::cut_tree("tree_"+std::to_string(i));
 				}
 			});
 			
@@ -154,11 +154,11 @@ DESCRIBE("Test multi threads", {
 		// Leaf insertions
 		DESCRIBE("Add `test` tree to the forest", {
 			BEFORE_EACH({
-				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 3);
+				forest::plant_tree(forest::TREE_TYPES::KEY_STRING, "test", 3);
 			});
 			
 			AFTER_EACH({
-				forest::delete_tree("test");
+				forest::cut_tree("test");
 			});
 			
 			DESCRIBE("Add 100 items with even keys and lower/upper bound records", {
@@ -179,9 +179,9 @@ DESCRIBE("Test multi threads", {
 							for(int j=0;j<10;j++){
 								string k="";
 								k.push_back('a'+j);
-								auto record = forest::find_leaf("test", k, forest::RECORD_POSITION::LOWER);
+								auto record = forest::find_leaf("test", k, forest::LEAF_POSITION::LOWER);
 								resl[ind].push_back(record->key());
-								record = forest::find_leaf("test", k, forest::RECORD_POSITION::UPPER);
+								record = forest::find_leaf("test", k, forest::LEAF_POSITION::UPPER);
 								resr[ind].push_back(record->key());
 							}
 						}, i);
@@ -291,8 +291,8 @@ DESCRIBE("Test multi threads", {
 					vector<string> tree_keys_f, tree_keys_b;
 					
 					BEFORE_ALL({
-						auto itf = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
-						auto itb = forest::find_leaf("test", forest::RECORD_POSITION::END);
+						auto itf = forest::find_leaf("test", forest::LEAF_POSITION::BEGIN);
+						auto itb = forest::find_leaf("test", forest::LEAF_POSITION::END);
 
 						thread t1([&itf, &tree_keys_f](){	
 							do{
@@ -338,7 +338,7 @@ DESCRIBE("Test multi threads", {
 					BEFORE_ALL({
 						for(int i=0;i<tests_count;i++){
 							thread t([&tree_keys_check](int index){
-								auto it = forest::find_leaf("test", (index%2 ? forest::RECORD_POSITION::BEGIN : forest::RECORD_POSITION::END));
+								auto it = forest::find_leaf("test", (index%2 ? forest::LEAF_POSITION::BEGIN : forest::LEAF_POSITION::END));
 								do{
 									tree_keys_check[index].push_back(it->key());
 									if( (index%2 == 1 && !it->move_forward()) || (index%2 == 0 && !it->move_back()) ){
@@ -392,7 +392,7 @@ DESCRIBE("Test multi threads", {
 							thread t([&m, &q, &check, &tree_keys_check, &should_contains, &complete, &num_assert](int index, int rnd){
 								int cs = index%8;
 								if(cs == 1){
-									auto it = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
+									auto it = forest::find_leaf("test", forest::LEAF_POSITION::BEGIN);
 									vector<string> keys;
 									do{
 										string key = it->key();
@@ -420,7 +420,7 @@ DESCRIBE("Test multi threads", {
 									complete.push_back("move");
 								}
 								else if(cs == 2){
-									auto it = forest::find_leaf("test", forest::RECORD_POSITION::END);
+									auto it = forest::find_leaf("test", forest::LEAF_POSITION::END);
 									vector<string> keys;
 									do{
 										string key = it->key();
@@ -490,7 +490,7 @@ DESCRIBE("Test multi threads", {
 										p = q.front();
 										q.pop();
 									}
-									forest::erase_leaf("test", "p"+std::to_string(p));
+									forest::remove_leaf("test", "p"+std::to_string(p));
 									lock_guard<mutex> lock(m);
 									should_contains.erase("p"+std::to_string(p));
 									complete.push_back("erase");

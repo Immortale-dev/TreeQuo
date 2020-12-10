@@ -1,5 +1,5 @@
-#ifndef FOREST_VARIABLES
-#define FOREST_VARIABLES
+#ifndef FOREST_VARIABLES_H
+#define FOREST_VARIABLES_H
 
 #include "dbutils.hpp"
 
@@ -23,4 +23,4 @@ namespace forest{
 	extern int SAVIOUR_QUEUE_LENGTH;
 }
 
-#endif // FOREST_VARIABLES
+#endif // FOREST_VARIABLES_H

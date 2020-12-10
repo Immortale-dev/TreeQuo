@@ -16,29 +16,31 @@ namespace forest{
 	
 	using tree_ptr = std::shared_ptr<Tree>;
 	using child_item_type_ptr = tree_t::child_item_type_ptr;
+	using leaf = LeafRecord_ptr;
+	using tree = tree_ptr;
 	
-	void create_tree(TREE_TYPES type, string name, int factor = 0, string annotation = "");
-	void delete_tree(string name);
-	tree_ptr find_tree(string name);
-	tree_ptr open_tree(string path);
+	void plant_tree(TREE_TYPES type, string name, int factor = 0, string annotation = "");
+	void cut_tree(string name);
+	tree find_tree(string name);
+	tree reach_tree(string path);
 	void leave_tree(string path);
-	void leave_tree(tree_ptr tree);
+	void leave_tree(tree tree);
 	
 	// Tree operations with name
 	void insert_leaf(string name, tree_t::key_type key, tree_t::val_type val);
 	void update_leaf(string name, tree_t::key_type key, tree_t::val_type val);
-	void erase_leaf(string name, tree_t::key_type key);
-	LeafRecord_ptr find_leaf(string name, tree_t::key_type key);
-	LeafRecord_ptr find_leaf(string name, RECORD_POSITION position = RECORD_POSITION::BEGIN);
-	LeafRecord_ptr find_leaf(string name, tree_t::key_type key, RECORD_POSITION position);
+	void remove_leaf(string name, tree_t::key_type key);
+	leaf find_leaf(string name, tree_t::key_type key);
+	leaf find_leaf(string name, LEAF_POSITION position = LEAF_POSITION::BEGIN);
+	leaf find_leaf(string name, tree_t::key_type key, LEAF_POSITION position);
 	
 	// Tree operations with tree
-	void insert_leaf(tree_ptr tree, tree_t::key_type key, tree_t::val_type val);
-	void update_leaf(tree_ptr tree, tree_t::key_type key, tree_t::val_type val);
-	void erase_leaf(tree_ptr tree, tree_t::key_type key);
-	LeafRecord_ptr find_leaf(tree_ptr tree, tree_t::key_type key);
-	LeafRecord_ptr find_leaf(tree_ptr tree, RECORD_POSITION position = RECORD_POSITION::BEGIN);
-	LeafRecord_ptr find_leaf(tree_ptr tree, tree_t::key_type key, RECORD_POSITION position);
+	void insert_leaf(tree tree, tree_t::key_type key, tree_t::val_type val);
+	void update_leaf(tree tree, tree_t::key_type key, tree_t::val_type val);
+	void remove_leaf(tree tree, tree_t::key_type key);
+	leaf find_leaf(tree tree, tree_t::key_type key);
+	leaf find_leaf(tree tree, LEAF_POSITION position = LEAF_POSITION::BEGIN);
+	leaf find_leaf(tree tree, tree_t::key_type key, LEAF_POSITION position);
 			
 	// Init methods
 	void bloom(string path);

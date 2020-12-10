@@ -1,5 +1,5 @@
-#ifndef FOREST_LOCK
-#define FOREST_LOCK
+#ifndef FOREST_LOCK_H
+#define FOREST_LOCK_H
 
 #include "dbutils.hpp"
 
@@ -234,4 +234,4 @@ inline void forest::change_unlock_type(tree_t::node_ptr& node, tree_t::PROCESS_T
 	(type == tree_t::PROCESS_TYPE::WRITE) ? change_unlock_write(node) : change_unlock_read(node);
 }
 
-#endif // FOREST_LOCK
+#endif // FOREST_LOCK_H

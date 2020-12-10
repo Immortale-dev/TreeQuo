@@ -1,4 +1,4 @@
-.PHONY: all rc generate_o generate_t generate_libs custom
+.PHONY: all rc generate_o generate_t generate_libs custom perf
 
 CC=g++
 OPT=-g
@@ -26,6 +26,11 @@ all: generate_libs generate_o generate_t
 rc: generate_libs generate_o 
 	$(CC) $(CFLAGS) $(INCL) test/rc_test.cpp ${OPT} -o test/rc_test.o
 	${CC} ${INCL} -o rc_test.exe test/rc_test.o ${OBJS} ${LIBS_O} -pthread
+	
+perf: OPT=-O3
+perf: generate_libs generate_o
+	$(CC) $(CFLAGS) $(INCL) test/perf_test.cpp ${OPT} -o test/perf_test.o
+	${CC} ${INCL} -o perf_test.exe test/perf_test.o ${OBJS} ${LIBS_O} -pthread
 
 generate_libs: ${LIBS_O}
 	

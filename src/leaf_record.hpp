@@ -1,5 +1,5 @@
-#ifndef FOREST_LEAF_ITEM
-#define FOREST_LEAF_ITEM
+#ifndef FOREST_LEAF_RECORD_H
+#define FOREST_LEAF_RECORD_H
 
 #include <memory>
 #include "dbutils.hpp"
@@ -27,4 +27,4 @@ namespace forest{
 	using LeafRecord_ptr = std::shared_ptr<LeafRecord>;
 }
 
-#endif // FOREST_LEAF_ITEM
+#endif // FOREST_LEAF_RECORD_H

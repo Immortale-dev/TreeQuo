@@ -1,11 +1,11 @@
-#ifndef DBEXCEPTION_H
-#define DBEXCEPTION_H
+#ifndef TREE_EXCEPTION_H
+#define TREE_EXCEPTION_H
 
 #include <stdexcept>
 #include <string>
 
 namespace forest{
-	class DBException : public std::exception {
+	class TreeException : public std::exception {
 		
 		public:
 			enum class ERRORS{
@@ -20,7 +20,7 @@ namespace forest{
 				FOREST_FOLDED
 			};
 			
-			DBException(ERRORS code)
+			TreeException(ERRORS code)
 			{
 				msg = error_messages[(int)code];
 			}
@@ -45,4 +45,4 @@ namespace forest{
 	};
 }
 
-#endif //DBEXCEPTION_H
+#endif //TREE_EXCEPTION_H

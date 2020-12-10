@@ -1,5 +1,5 @@
-#ifndef FOREST_CACHE
-#define FOREST_CACHE
+#ifndef FOREST_CACHE_H
+#define FOREST_CACHE_H
 
 #include <future>
 #include "variables.hpp"
@@ -151,4 +151,4 @@ inline void forest::cache::_leaf_insert(tree_t::node_ptr& node)
 	cache::leaf_cache.push(path, node);
 }
 
-#endif // FOREST_CACHE
+#endif // FOREST_CACHE_H

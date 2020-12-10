@@ -1,5 +1,5 @@
-#ifndef FOREST_NODE_ADDITION
-#define FOREST_NODE_ADDITION
+#ifndef FOREST_NODE_ADDITION_H
+#define FOREST_NODE_ADDITION_H
 
 #include <mutex>
 #include <condition_variable>
@@ -33,4 +33,4 @@ namespace forest{
 	};
 }
 
-#endif //FOREST_NODE_ADDITION
+#endif //FOREST_NODE_ADDITION_H

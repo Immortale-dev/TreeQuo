@@ -1,7 +1,9 @@
 #!/bin/bash
 
-rm ./src/*.o
-rm ./inc/dbfs/src/*.o
-rm ./inc/logger/src/*.o
-rm ./test.exe
-rm ./rc_test.exe
+rm -f ./src/*.o
+rm -f ./inc/dbfs/src/*.o
+rm -f ./inc/logger/src/*.o
+rm -f ./test/*.o
+rm -f ./test.exe
+rm -f ./rc_test.exe
+rm -f ./perf_test.exe

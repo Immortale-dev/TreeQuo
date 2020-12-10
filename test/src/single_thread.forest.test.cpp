@@ -20,34 +20,26 @@ DESCRIBE("Test single thread", {
 		DESCRIBE("Add 100 trees", {
 			BEFORE_ALL({
 				for(int i=0;i<100;i++){
-					forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(i));
+					forest::plant_tree(forest::TREE_TYPES::KEY_STRING, "test_string_tree_"+to_string(i));
 				}
 			});
 			
 			IT("Trees should be created", {
 				int fc = dir_count("tmp/t1");
-				//EXPECT(fc).toBeGreaterThanOrEqual(102);
 				INFO_PRINT("Dirs count: " + to_string(fc));
 				TEST_SUCCEED();
 			});
 		});
 		
 		DESCRIBE("Remove 100 trees", {
-			//int a;
-			//cout << "ENTER\n";
-			//cin >> a;
 			BEFORE_ALL({
 				for(int i=0;i<100;i++){
-					//std::cout << "delete_tree " << i << std::endl;
-					forest::delete_tree("test_string_tree_"+to_string(i));
+					forest::cut_tree("test_string_tree_"+to_string(i));
 				}
 			});
 			
 			IT("Trees should be deleted", {
 				int fc = dir_count("tmp/t1");
-				// After savior implementation not all files is going to be delete immediatelu
-				// So increasing the value to not block the project with tests reimplenemtation.
-				//EXPECT(fc).toBeLessThanOrEqual(20);
 				TEST_SUCCEED();
 				INFO_PRINT("Dirs count: " + to_string(fc));
 			});
@@ -65,13 +57,12 @@ DESCRIBE("Test single thread", {
 					swap(nums[i],nums[rand()%cnt]);
 				}
 				for(int i=0;i<cnt;i++){
-					forest::create_tree(forest::TREE_TYPES::KEY_STRING, "tree_"+to_string(nums[i]));
+					forest::plant_tree(forest::TREE_TYPES::KEY_STRING, "tree_"+to_string(nums[i]));
 				}
 			});
 			
 			IT("Trees should be created", {
 				int fc = dir_count("tmp/t1");
-				//EXPECT(fc).toBeGreaterThanOrEqual(cnt+2);
 				INFO_PRINT("Dirs count: " + to_string(fc));
 				TEST_SUCCEED();
 			});
@@ -82,15 +73,12 @@ DESCRIBE("Test single thread", {
 						swap(nums[i],nums[rand()%cnt]);
 					}
 					for(int i=0;i<cnt;i++){
-						forest::delete_tree("tree_"+to_string(nums[i]));
+						forest::cut_tree("tree_"+to_string(nums[i]));
 					}
 				});
 				
 				IT("Trees should be deleted", {
 					int fc = dir_count("tmp/t1");
-					// After savior implementation not all files is going to be delete immediatelu
-					// So increasing the value to not block the project with tests reimplenemtation.
-					//EXPECT(fc).toBeLessThanOrEqual(20);
 					TEST_SUCCEED();
 					INFO_PRINT("Dirs count: " + to_string(fc));
 				});
@@ -99,15 +87,15 @@ DESCRIBE("Test single thread", {
 		
 		DESCRIBE("Add `test` tree to the forest", {
 			BEFORE_EACH({
-				forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 100);
+				forest::plant_tree(forest::TREE_TYPES::KEY_STRING, "test", 100);
 			});
 			
 			AFTER_EACH({
-				forest::delete_tree("test");
+				forest::cut_tree("test");
 			});
 			
 			IT("move through the leaf should works", {
-				auto record = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
+				auto record = forest::find_leaf("test", forest::LEAF_POSITION::BEGIN);
 
 				record->move_forward();
 				record->move_forward();
@@ -123,9 +111,7 @@ DESCRIBE("Test single thread", {
 						char c = (i*2)+'a';
 						string k = "";
 						k.push_back(c);
-						//std::cout << "PUT " + k + "\n";
 						forest::insert_leaf("test", k, forest::leaf_value("value_" + std::to_string(i*2)));
-						//std::cout << "PUT_END " + k + "\n";
 					}
 					
 				});
@@ -134,24 +120,18 @@ DESCRIBE("Test single thread", {
 					TEST_SUCCEED();
 					
 					for(int i=0;i<10;i++){
-						//std::cout << "FIND_LEAF_" + std::to_string(i) + "\n";
 						char c = i + 'a';
 						string k = "";
 						k.push_back(c);
-						//std::cout << "BEFORE_FIND_LOWER\n";
-						auto record = forest::find_leaf("test", k, forest::RECORD_POSITION::LOWER);
-						//std::cout << "AFTER_FIND_LOWER\n";
+						auto record = forest::find_leaf("test", k, forest::LEAF_POSITION::LOWER);
 						string compare = "";
 						compare.push_back((char)(i-i%2)+'a');
 						EXPECT(record->key()).toBe(compare);
 						
-						//std::cout << "BEFORE_FIND_UPPER\n";
-						record = forest::find_leaf("test", k, forest::RECORD_POSITION::UPPER);
-						//std::cout << "AFTER_FIND_UPPER\n";
+						record = forest::find_leaf("test", k, forest::LEAF_POSITION::UPPER);
 						compare = "";
 						compare.push_back((char)(i-i%2+2)+'a');
 						EXPECT(record->key()).toBe(compare);
-						//std::cout << "END_FIND_LEAF\n";
 					}
 					
 				});
@@ -246,7 +226,7 @@ DESCRIBE("Test single thread", {
 		DESCRIBE("Add 20 trees with annotations", {
 			BEFORE_ALL({
 				for(int i=0;i<20;i++){
-					forest::create_tree(forest::TREE_TYPES::KEY_STRING, "gt_" + std::to_string(i), 10, "annotation provided");
+					forest::plant_tree(forest::TREE_TYPES::KEY_STRING, "gt_" + std::to_string(i), 10, "annotation provided");
 				}
 			});
 			
@@ -260,7 +240,7 @@ DESCRIBE("Test single thread", {
 			
 			AFTER_ALL({
 				for(int i=0;i<20;i++){
-					forest::delete_tree("gt_" + std::to_string(i));
+					forest::cut_tree("gt_" + std::to_string(i));
 				}
 			});
 		});

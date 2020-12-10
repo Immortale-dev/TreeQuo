@@ -1,5 +1,5 @@
-#ifndef BPLUSTREE_H
-#define BPLUSTREE_H
+#ifndef FOREST_BPLUSTREE_H
+#define FOREST_BPLUSTREE_H
 
 #include <string>
 #include <memory>
@@ -379,4 +379,4 @@ void BPlusTree<Key, T, D>::unlock_write()
 	processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
 }
 
-#endif //BPLUSTREE_H
+#endif //FOREST_BPLUSTREE_H

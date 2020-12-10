@@ -6,7 +6,7 @@ namespace forest{
 	extern int OPENED_FILES_LIMIT;
 	
 	enum class TREE_TYPES { KEY_STRING };
-	enum class RECORD_POSITION{ BEGIN, END, LOWER, UPPER };
+	enum class LEAF_POSITION{ BEGIN, END, LOWER, UPPER };
 	enum class KEY_TYPES { STRING };
 	enum class NODE_TYPES { INTR, LEAF };
 	enum class SAVE_TYPES{ LEAF, INTR, BASE };

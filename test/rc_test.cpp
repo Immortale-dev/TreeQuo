@@ -42,7 +42,7 @@ DESCRIBE("[RC]", {
         
         BEFORE_ALL({
             
-            forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test", 10);
+            forest::plant_tree(forest::TREE_TYPES::KEY_STRING, "test", 10);
             
             unordered_set<int> check;
             
@@ -66,7 +66,7 @@ DESCRIBE("[RC]", {
                     int cs = index%4;
                     if(cs == 1){
 						//return;
-                        auto it = forest::find_leaf("test", forest::RECORD_POSITION::BEGIN);
+                        auto it = forest::find_leaf("test", forest::LEAF_POSITION::BEGIN);
                         vector<string> keys;
                         do{
                             string key = it->key();
@@ -94,7 +94,7 @@ DESCRIBE("[RC]", {
                         complete.push_back("move");
                     } else if (cs == 2){
 						//return;
-                        auto it = forest::find_leaf("test", forest::RECORD_POSITION::END);
+                        auto it = forest::find_leaf("test", forest::LEAF_POSITION::END);
                         vector<string> keys;
                         do{
                             string key = it->key();
@@ -128,7 +128,7 @@ DESCRIBE("[RC]", {
                             p = q.front();
                             q.pop();
                         }
-                        forest::erase_leaf("test", "p"+std::to_string(p));
+                        forest::remove_leaf("test", "p"+std::to_string(p));
                         lock_guard<mutex> lock(m);
                         should_contains.erase("p"+std::to_string(p));
                         complete.push_back("erase");
@@ -153,7 +153,7 @@ DESCRIBE("[RC]", {
         });
         
         AFTER_ALL({
-            forest::delete_tree("test");
+            forest::cut_tree("test");
         });
         
         IT("All expected records should be iterated", {

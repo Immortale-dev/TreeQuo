@@ -17,17 +17,17 @@ int main(){
     {
 		forest::bloom("tmp/mtest");
 		
-		forest::create_tree(forest::TREE_TYPES::KEY_STRING, "test");
+		forest::plant_tree(forest::TREE_TYPES::KEY_STRING, "test");
 		forest::insert_leaf("test", "leaf_1", forest::leaf_value("Woohoo!!! Its fucking works!!!"));
 		for(int i=0;i<100;i++){
 			forest::insert_leaf("test", "test_"+to_string(i), forest::leaf_value("Yes it is! jst for test and number - "+to_string(i)));
 		}
 		
 		for(int i=70;i>=10;i--){
-			forest::erase_leaf("test", "test_"+to_string(i));
+			forest::remove_leaf("test", "test_"+to_string(i));
 		}
 		
-		forest::delete_tree("test");
+		forest::cut_tree("test");
 	
 		forest::fold();
 	}

@@ -1,5 +1,5 @@
-#ifndef LISTCACHE_H
-#define LISTCACHE_H
+#ifndef FOREST_LISTCACHE_H
+#define FOREST_LISTCACHE_H
 
 #include <unordered_map>
 #include <utility>
@@ -169,4 +169,4 @@ void ListCache<Key, T>::remove_overflow()
 }
 
 
-#endif // LISTCACHE
+#endif // FOREST_LISTCACHE_H

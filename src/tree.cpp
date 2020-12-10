@@ -123,7 +123,7 @@ forest::tree_t::iterator forest::Tree::find(tree_t::key_type key)
 {
 	auto it = tree->find(key);
 	if(it == tree->end()){
-		throw DBException(DBException::ERRORS::LEAF_DOES_NOT_EXISTS);
+		throw TreeException(TreeException::ERRORS::LEAF_DOES_NOT_EXISTS);
 	}
 	return it;
 }
@@ -137,7 +137,7 @@ void forest::Tree::seed_tree(DBFS::File* f, TREE_TYPES type, int factor)
 	if(f->fail()){
 		L_ERR("[Tree::seed_tree]-(cannot create file)");
 		delete f;
-		throw DBException(DBException::ERRORS::CANNOT_CREATE_FILE);
+		throw TreeException(TreeException::ERRORS::CANNOT_CREATE_FILE);
 		return;
 	}
 	
@@ -215,7 +215,7 @@ forest::tree_base_read_t forest::Tree::read_base(string filename)
 	if(f->fail()){
 		L_ERR("[Tree::read_base]-(cannot read file)");
 		delete f;
-		throw DBException(DBException::ERRORS::CANNOT_READ_FILE);
+		throw TreeException(TreeException::ERRORS::CANNOT_READ_FILE);
 	}
 
 	f->close();
@@ -253,7 +253,7 @@ forest::tree_intr_read_t forest::Tree::read_intr(string filename)
 		delete keys;
 		delete vals;
 		delete f;
-		throw DBException(DBException::ERRORS::CANNOT_READ_FILE);
+		throw TreeException(TreeException::ERRORS::CANNOT_READ_FILE);
 	}
 	
 	f->close();
@@ -298,7 +298,7 @@ forest::tree_leaf_read_t forest::Tree::read_leaf(string filename)
 		delete keys;
 		delete vals_lengths;
 		delete f;
-		throw DBException(DBException::ERRORS::CANNOT_READ_FILE);
+		throw TreeException(TreeException::ERRORS::CANNOT_READ_FILE);
 	}
 	
 	tree_leaf_read_t t;
@@ -898,7 +898,7 @@ void forest::Tree::write_intr(DBFS::File* file, tree_intr_read_t data)
 	
 	if(file->fail()){
 		L_ERR("[Tree::write_intr]-(cannot write file)");
-		throw DBException(DBException::ERRORS::CANNOT_WRITE_FILE);
+		throw TreeException(TreeException::ERRORS::CANNOT_WRITE_FILE);
 	}
 }
 
@@ -907,7 +907,7 @@ void forest::Tree::write_base(DBFS::File* file, tree_base_read_t data)
 	file->write( to_string(data.count) + " " + to_string(data.factor) + " " + to_string((int)data.type) + " " + data.branch + " " + to_string((int)data.branch_type) + " " + to_string(data.annotation.size()) + " " + data.annotation + "\n" );
 	if(file->fail()){
 		L_ERR("[Tree::write_base]-(cannot write file)");
-		throw DBException(DBException::ERRORS::CANNOT_WRITE_FILE);
+		throw TreeException(TreeException::ERRORS::CANNOT_WRITE_FILE);
 	}
 }
 
@@ -937,7 +937,7 @@ void forest::Tree::write_leaf(file_ptr file, tree_leaf_read_t data)
 	
 	if(file->fail()){
 		L_ERR("[Tree::write_leaf]-(cannot write file)");
-		throw DBException(DBException::ERRORS::CANNOT_WRITE_FILE);
+		throw TreeException(TreeException::ERRORS::CANNOT_WRITE_FILE);
 	}
 }
 
@@ -956,7 +956,7 @@ void forest::Tree::write_leaf_item(file_ptr file, tree_t::val_type& data)
 		}
 	} catch(...){
 		L_ERR("[Tree::write_leaf_item]-(cannot write file)");
-		throw DBException(DBException::ERRORS::CANNOT_WRITE_FILE);
+		throw TreeException(TreeException::ERRORS::CANNOT_WRITE_FILE);
 	}
 	
 	delete[] buf;
