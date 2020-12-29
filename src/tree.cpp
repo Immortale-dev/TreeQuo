@@ -1275,7 +1275,7 @@ void forest::Tree::d_leaf_insert(tree_t::node_ptr& node, tree_t::child_item_type
 	/// lock{
 	string& path = get_node_data(node)->path;
 	node = get_original(node);
-	cache::leaf_cache_r[path].second++;
+	cache::reserve_leaf_node(path);
 	/// }lock
 	cache::leaf_unlock();
 	

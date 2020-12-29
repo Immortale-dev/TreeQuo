@@ -19,7 +19,7 @@ void forest::bloom(string path)
 
 	cache::init_cache();
 
-	DBFS::root = path;
+	DBFS::set_root(path);
 	if(!DBFS::exists(ROOT_TREE)){
 		details::create_root_file();
 	} 
