@@ -174,12 +174,12 @@ forest::Tree forest::reach_tree(details::string path)
 	details::cache::tree_cache_r[path].second++;
 	details::cache::tree_cache_m.unlock();
 	t->ready();
-	return t;
+	return details::tree_owner_ptr(new details::tree_owner(t));
 }
 
 void forest::insert_leaf(details::string name, details::tree_t::key_type key, details::detached_leaf_ptr val)
 {	
-	details::tree_ptr tree = find_tree(name);
+	details::tree_owner_ptr tree = find_tree(name);
 	
 	L_PUB("[forest::insert_leaf]-" + tree->get_name() + "_" + key);
 	
@@ -187,7 +187,7 @@ void forest::insert_leaf(details::string name, details::tree_t::key_type key, de
 		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
-	tree->insert(key, details::extract_leaf_val(val));
+	extract_native_tree(tree)->insert(key, details::extract_leaf_val(val));
 	leave_tree(tree->get_name());
 }
 
@@ -199,12 +199,12 @@ void forest::insert_leaf(Tree tree, details::tree_t::key_type key, details::deta
 		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
-	tree->insert(key, details::extract_leaf_val(val));
+	details::extract_native_tree(tree)->insert(key, details::extract_leaf_val(val));
 }
 
 void forest::update_leaf(details::string name, details::tree_t::key_type key, details::detached_leaf_ptr val)
 {	
-	details::tree_ptr tree = find_tree(name);
+	details::tree_owner_ptr tree = find_tree(name);
 	
 	L_PUB("[forest::update_leaf]-" + tree->get_name() + "_" + key);
 	
@@ -212,7 +212,7 @@ void forest::update_leaf(details::string name, details::tree_t::key_type key, de
 		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
-	tree->insert(key, details::extract_leaf_val(val), true);
+	extract_native_tree(tree)->insert(key, details::extract_leaf_val(val), true);
 	leave_tree(tree->get_name());
 }
 
@@ -224,12 +224,12 @@ void forest::update_leaf(Tree tree, details::tree_t::key_type key, details::deta
 		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
-	tree->insert(key, details::extract_leaf_val(val), true);
+	details::extract_native_tree(tree)->insert(key, details::extract_leaf_val(val), true);
 }
 
 void forest::remove_leaf(details::string name, details::tree_t::key_type key)
 {	
-	details::tree_ptr tree = find_tree(name);
+	details::tree_owner_ptr tree = find_tree(name);
 	
 	L_PUB("[forest::remove_leaf]-" + tree->get_name() + "_" + key);
 	
@@ -237,7 +237,7 @@ void forest::remove_leaf(details::string name, details::tree_t::key_type key)
 		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
-	tree->erase(key);
+	extract_native_tree(tree)->erase(key);
 	leave_tree(tree->get_name());
 }
 
@@ -249,12 +249,12 @@ void forest::remove_leaf(Tree tree, details::tree_t::key_type key)
 		throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 	}
 	
-	tree->erase(key);
+	details::extract_native_tree(tree)->erase(key);
 }
 
 forest::Leaf forest::find_leaf(details::string name, details::tree_t::key_type key)
 {	
-	details::tree_ptr tree = find_tree(name);
+	details::tree_owner_ptr tree = find_tree(name);
 	try{
 		L_PUB("[forest::find_leaf]-KEY_" + key);
 		
@@ -262,9 +262,11 @@ forest::Leaf forest::find_leaf(details::string name, details::tree_t::key_type k
 			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
-		details::tree_t::iterator t = tree->find(key);
+		details::tree_ptr nt = details::extract_native_tree(tree);
 		
-		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, tree));
+		details::tree_t::iterator t = nt->find(key);
+		
+		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, nt));
 		
 		leave_tree(tree->get_name());
 		return rc;
@@ -277,7 +279,7 @@ forest::Leaf forest::find_leaf(details::string name, details::tree_t::key_type k
 
 forest::Leaf forest::find_leaf(details::string name, LEAF_POSITION position)
 {	
-	details::tree_ptr tree = find_tree(name);
+	details::tree_owner_ptr tree = find_tree(name);
 	try{
 		L_PUB("[forest::find_leaf]-POS_" + to_string((int)position));
 		
@@ -285,15 +287,17 @@ forest::Leaf forest::find_leaf(details::string name, LEAF_POSITION position)
 			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
+		details::tree_ptr nt = details::extract_native_tree(tree);
+		
 		details::tree_t::iterator t;
 		if(position == LEAF_POSITION::BEGIN){
-			t = tree->get_tree()->begin();
+			t = nt->get_tree()->begin();
 		}
 		else{
-			t = --tree->get_tree()->end();
+			t = --nt->get_tree()->end();
 		}
 		
-		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, tree));
+		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, nt));
 		
 		leave_tree(tree->get_name());
 		
@@ -311,7 +315,7 @@ forest::Leaf forest::find_leaf(details::string name, details::tree_t::key_type k
 		return find_leaf(name, position);
 	}
 	
-	details::tree_ptr tree = find_tree(name);
+	details::tree_owner_ptr tree = find_tree(name);
 	try{
 		L_PUB("[forest::find_leaf]-BNT_" + key + "_" + details::to_string((int)position));
 		
@@ -319,15 +323,17 @@ forest::Leaf forest::find_leaf(details::string name, details::tree_t::key_type k
 			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
+		details::tree_ptr nt = details::extract_native_tree(tree);
+		
 		details::tree_t::iterator t;
 		if(position == LEAF_POSITION::LOWER){
-			t = tree->get_tree()->lower_bound(key);
+			t = nt->get_tree()->lower_bound(key);
 		}
 		else {
-			t = tree->get_tree()->upper_bound(key);
+			t = nt->get_tree()->upper_bound(key);
 		}
 		
-		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, tree));
+		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, nt));
 		
 		leave_tree(tree->get_name());
 		
@@ -349,9 +355,11 @@ forest::Leaf forest::find_leaf(Tree tree, details::tree_t::key_type key)
 			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
-		details::tree_t::iterator t = tree->find(key);
+		details::tree_ptr nt = details::extract_native_tree(tree);
 		
-		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, tree));
+		details::tree_t::iterator t = nt->find(key);
+		
+		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, nt));
 		
 		return rc;
 	} catch(TreeException& e) {
@@ -368,14 +376,16 @@ forest::Leaf forest::find_leaf(Tree tree, LEAF_POSITION position)
 			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
+		details::tree_ptr nt = details::extract_native_tree(tree);
+		
 		details::tree_t::iterator t;
 		if(position == LEAF_POSITION::BEGIN){
-			t = tree->get_tree()->begin();
+			t = nt->get_tree()->begin();
 		} else {
-			t = --tree->get_tree()->end();
+			t = --nt->get_tree()->end();
 		}
 		
-		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, tree));
+		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, nt));
 		
 		return rc;
 	} catch(TreeException& e) {
@@ -396,14 +406,16 @@ forest::Leaf forest::find_leaf(Tree tree, details::tree_t::key_type key, LEAF_PO
 			throw TreeException(TreeException::ERRORS::FOREST_FOLDED);
 		}
 		
+		details::tree_ptr nt = details::extract_native_tree(tree);
+		
 		details::tree_t::iterator t;
 		if(position == LEAF_POSITION::LOWER){
-			t = tree->get_tree()->lower_bound(key);
+			t = nt->get_tree()->lower_bound(key);
 		} else {
-			t = tree->get_tree()->upper_bound(key);
+			t = nt->get_tree()->upper_bound(key);
 		}
 		
-		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, tree));
+		details::LeafRecord_ptr rc = details::LeafRecord_ptr(new details::LeafRecord(t, nt));
 		
 		return rc;
 	} catch(TreeException& e) {
@@ -534,13 +546,15 @@ void forest::details::insert_tree(string name, string file_name, tree_ptr tree)
 
 void forest::details::erase_tree(string path)
 {	
-	tree_ptr t = reach_tree(path);
+	tree_owner_ptr t = reach_tree(path);
 	
-	t->get_tree()->lock_write();
-	savior->remove(path, SAVE_TYPES::BASE, t);
-	t->get_tree()->unlock_write();
+	details::tree_ptr nt = details::extract_native_tree(t);
 	
-	t->get_tree()->clear();
+	nt->get_tree()->lock_write();
+	savior->remove(path, SAVE_TYPES::BASE, nt);
+	nt->get_tree()->unlock_write();
+	
+	nt->get_tree()->clear();
 
 	// Clear cache
 	cache::tree_cache_m.lock();

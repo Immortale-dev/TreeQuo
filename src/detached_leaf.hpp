@@ -1,5 +1,5 @@
-#ifndef FOREST_DETACHED_LEAF
-#define FOREST_DETACHED_LEAF
+#ifndef FOREST_DETACHED_LEAF_H
+#define FOREST_DETACHED_LEAF_H
 
 #include "dbutils.hpp"
 
@@ -27,4 +27,4 @@ namespace details{
 } // details
 } // forest
 
-#endif // FOREST_DETACHED_LEAF
+#endif // FOREST_DETACHED_LEAF_H

@@ -17,6 +17,7 @@ namespace details{
 	class Tree;
 	class file_data_t;
 	class detached_leaf;
+	class tree_owner;
 	
 	using string = std::string;
 	using int_t = long long int;
@@ -29,6 +30,7 @@ namespace details{
 	
 	using file_data_ptr = std::shared_ptr<file_data_t>;
 	using detached_leaf_ptr = std::shared_ptr<detached_leaf>;
+	using tree_owner_ptr = std::shared_ptr<tree_owner>;
 	
 	using tree_t = BPlusTree<string, file_data_ptr, Tree>;
 	using child_item_type_ptr = tree_t::child_item_type_ptr;

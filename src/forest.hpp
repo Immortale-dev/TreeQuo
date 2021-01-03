@@ -11,12 +11,13 @@
 #include "leaf_record.hpp"
 #include "savior.hpp"
 #include "detached_leaf.hpp"
+#include "tree_owner.hpp"
 
 namespace forest{
 	
 	// Aliases
 	using Leaf = details::LeafRecord_ptr;
-	using Tree = details::tree_ptr;
+	using Tree = details::tree_owner_ptr;
 	using DetachedLeaf = details::detached_leaf_ptr;
 	using LeafFile = details::file_ptr;
 	using LeafKey = details::tree_t::key_type;

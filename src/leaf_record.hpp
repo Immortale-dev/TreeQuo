@@ -19,7 +19,7 @@ namespace details{
 			bool eof();
 			bool move_forward();
 			bool move_back();
-			file_data_ptr val();
+			detached_leaf_ptr val();
 			string key();
 		private:
 			tree_t::iterator it;

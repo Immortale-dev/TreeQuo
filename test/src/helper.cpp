@@ -63,7 +63,7 @@ void config_low()
 	forest::config_savior_queue_size(20);
 }
 
-string read_leaf(forest::details::file_data_ptr item)
+string read_leaf(forest::DetachedLeaf item)
 {
 	int sz = item->size();
 	char* buf = new char[sz];

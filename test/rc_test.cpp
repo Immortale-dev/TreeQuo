@@ -50,7 +50,7 @@ DESCRIBE("[RC]", {
                 int rnd = rand()%10000 + 200;
                 if(!check.count(rnd)){
                     check.insert(rnd);
-                    forest::insert_leaf("test", "p"+std::to_string(rnd), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
+                    forest::insert_leaf("test", "p"+std::to_string(rnd), forest::make_leaf("val_" + std::to_string(rnd*rnd)));
                 }
             }
             
@@ -72,7 +72,7 @@ DESCRIBE("[RC]", {
                             string key = it->key();
                             keys.push_back(key);
                             auto val = it->val();
-                            string sval = forest::read_leaf_item(val);
+                            string sval = read_leaf(val);
                             
                             if(sval.substr(0,3) == "new"){
                                 continue;
@@ -100,7 +100,7 @@ DESCRIBE("[RC]", {
                             string key = it->key();
                             keys.push_back(key);
                             auto val = it->val();
-                            string sval = forest::read_leaf_item(val);
+                            string sval = read_leaf(val);
                             
                             if(sval.substr(0,3) == "new"){
                                 continue;
@@ -140,7 +140,7 @@ DESCRIBE("[RC]", {
                             }
                             check.insert(rnd);
                         }
-                        forest::insert_leaf("test", "p"+std::to_string(rnd), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
+                        forest::insert_leaf("test", "p"+std::to_string(rnd), forest::make_leaf("val_" + std::to_string(rnd*rnd)));
                         lock_guard<mutex> lock(m);
                         complete.push_back("insert");
                     }

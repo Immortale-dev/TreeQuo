@@ -25,7 +25,6 @@
 #include "threading.hpp"
 #include "types.hpp"
 #include "file_data.hpp"
-//#include "detached_leaf.hpp"
 
 namespace forest{
 namespace details{

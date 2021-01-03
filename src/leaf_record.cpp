@@ -15,7 +15,6 @@ forest::details::LeafRecord::~LeafRecord()
 
 forest::details::LeafRecord::LeafRecord(tree_t::iterator it, tree_ptr tree) : it(std::move(it)), tree(tree)
 {
-	//if(!eof()) dl = detached_leaf_ptr(new detached_leaf(this->it->second));
 	tree->tree_reserve();
 	// main ctor
 }
@@ -37,10 +36,9 @@ bool forest::details::LeafRecord::move_back()
 	return !eof();
 }
 
-forest::details::file_data_ptr forest::details::LeafRecord::val()
+forest::details::detached_leaf_ptr forest::details::LeafRecord::val()
 {
-	return it->second;
-	//return detached_leaf_ptr(new detached_leaf(it->second));
+	return detached_leaf_ptr(new detached_leaf(it->second));
 }
 
 forest::details::string forest::details::LeafRecord::key()
