@@ -3,6 +3,7 @@
 extern int hook_remove_leaf;
 
 namespace forest{
+namespace details{
 	
 	namespace cache{
 		ListCache<string, tree_ptr> tree_cache(TREE_CACHE_LENGTH);
@@ -12,30 +13,32 @@ namespace forest{
 		std::unordered_map<string, leaf_cache_ref_t> leaf_cache_r;
 		std::unordered_map<string, std::pair<tree_t::node_ptr, int> > intr_cache_r;
 	}
-}
+	
+} // details
+} // forest
 
 /////////////CACHE_METHODS//////////////
 
-void forest::cache::init_cache()
+void forest::details::cache::init_cache()
 {
-	tree_cache.set_callback([](string key){ forest::cache::check_tree_ref(key); });
-	leaf_cache.set_callback([](string key){ forest::cache::check_leaf_ref(key); });
-	intr_cache.set_callback([](string key){ forest::cache::check_intr_ref(key); });
+	tree_cache.set_callback([](string key){ forest::details::cache::check_tree_ref(key); });
+	leaf_cache.set_callback([](string key){ forest::details::cache::check_leaf_ref(key); });
+	intr_cache.set_callback([](string key){ forest::details::cache::check_intr_ref(key); });
 }
 
-void forest::cache::release_cache()
+void forest::details::cache::release_cache()
 {
 	leaf_cache.clear();
 	intr_cache.clear();
 	tree_cache.clear();
 }
 
-void forest::cache::leaf_unlock()
+void forest::details::cache::leaf_unlock()
 {
 	leaf_cache_m.unlock();
 }
 
-void forest::cache::check_tree_ref(string key)
+void forest::details::cache::check_tree_ref(string key)
 {
 	if(!tree_cache_r.count(key)){
 		return;
@@ -51,7 +54,7 @@ void forest::cache::check_tree_ref(string key)
 	}
 }
 
-void forest::cache::check_leaf_ref(string& key)
+void forest::details::cache::check_leaf_ref(string& key)
 {
 	if(!leaf_cache_r.count(key)){
 		return;
@@ -73,7 +76,7 @@ void forest::cache::check_leaf_ref(string& key)
 	}
 }
 
-void forest::cache::check_intr_ref(string& key)
+void forest::details::cache::check_intr_ref(string& key)
 {
 	if(!intr_cache_r.count(key)){
 		return;
@@ -90,7 +93,7 @@ void forest::cache::check_intr_ref(string& key)
 	}
 }
 
-void forest::cache::set_tree_cache_length(int length)
+void forest::details::cache::set_tree_cache_length(int length)
 {
 	TREE_CACHE_LENGTH = length;
 	tree_cache_m.lock();
@@ -98,7 +101,7 @@ void forest::cache::set_tree_cache_length(int length)
 	tree_cache_m.unlock();
 }
 
-void forest::cache::set_intr_cache_length(int length)
+void forest::details::cache::set_intr_cache_length(int length)
 {
 	INTR_CACHE_LENGTH = length;
 	intr_cache_m.lock();
@@ -106,7 +109,7 @@ void forest::cache::set_intr_cache_length(int length)
 	intr_cache_m.unlock();
 }
 
-void forest::cache::set_leaf_cache_length(int length)
+void forest::details::cache::set_leaf_cache_length(int length)
 {
 	LEAF_CACHE_LENGTH = length;
 	leaf_cache_m.lock();
@@ -114,7 +117,7 @@ void forest::cache::set_leaf_cache_length(int length)
 	leaf_cache_m.unlock();
 }
 
-void forest::cache::reserve_node(tree_t::node_ptr& node, bool w_lock)
+void forest::details::cache::reserve_node(tree_t::node_ptr& node, bool w_lock)
 {
 	ASSERT(has_data(node));
 	
@@ -140,7 +143,7 @@ void forest::cache::reserve_node(tree_t::node_ptr& node, bool w_lock)
 	}
 }
 
-void forest::cache::release_node(tree_t::node_ptr& node, bool w_lock)
+void forest::details::cache::release_node(tree_t::node_ptr& node, bool w_lock)
 {
 	bool is_leaf = node->is_leaf();
 	string& path = get_node_data(node)->path;
@@ -164,7 +167,7 @@ void forest::cache::release_node(tree_t::node_ptr& node, bool w_lock)
 	}
 }
 
-void forest::cache::with_lock(NODE_TYPES type, std::function<void()> fn)
+void forest::details::cache::with_lock(NODE_TYPES type, std::function<void()> fn)
 {
 	if(type == NODE_TYPES::INTR){
 		intr_lock();
@@ -182,7 +185,7 @@ void forest::cache::with_lock(NODE_TYPES type, std::function<void()> fn)
 }
 
 
-void forest::cache::intr_insert(tree_t::node_ptr& node, bool w_lock)
+void forest::details::cache::intr_insert(tree_t::node_ptr& node, bool w_lock)
 {
 	if(w_lock){
 		intr_lock();
@@ -193,7 +196,7 @@ void forest::cache::intr_insert(tree_t::node_ptr& node, bool w_lock)
 	}
 }
 
-void forest::cache::leaf_insert(tree_t::node_ptr& node, bool w_lock)
+void forest::details::cache::leaf_insert(tree_t::node_ptr& node, bool w_lock)
 {
 	if(w_lock){
 		leaf_lock();
@@ -204,7 +207,7 @@ void forest::cache::leaf_insert(tree_t::node_ptr& node, bool w_lock)
 	}
 }
 
-void forest::cache::clear_node_cache(tree_t::node_ptr& node)
+void forest::details::cache::clear_node_cache(tree_t::node_ptr& node)
 {
 	node_data_ptr data = get_node_data(node);
 	string& path = data->path;

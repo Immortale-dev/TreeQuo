@@ -111,7 +111,7 @@ DESCRIBE("Test single thread", {
 						char c = (i*2)+'a';
 						string k = "";
 						k.push_back(c);
-						forest::insert_leaf("test", k, forest::leaf_value("value_" + std::to_string(i*2)));
+						forest::insert_leaf("test", k, forest::make_leaf("value_" + std::to_string(i*2)));
 					}
 					
 				});
@@ -140,15 +140,15 @@ DESCRIBE("Test single thread", {
 			DESCRIBE("Add 120 items to the tree", {
 				BEFORE_ALL({
 					for(int i=0;i<120;i++){
-						forest::insert_leaf("test", "k"+std::to_string(i), forest::leaf_value("value_" + std::to_string(i*i)));
+						forest::insert_leaf("test", "k"+std::to_string(i), forest::make_leaf("value_" + std::to_string(i*i)));
 					}
 				});
 				
 				IT("Tree should contain keys from `k0` to `k99`", {
-					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k25")->val())).toBe("value_625");
-					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k100")->val())).toBe("value_10000");
+					EXPECT(read_leaf(forest::find_leaf("test", "k25")->val())).toBe("value_625");
+					EXPECT(read_leaf(forest::find_leaf("test", "k100")->val())).toBe("value_10000");
 					for(int i=0;i<100;i++){
-						EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k" + std::to_string(i))->val())).toBe("value_" + std::to_string(i*i));
+						EXPECT(read_leaf(forest::find_leaf("test", "k" + std::to_string(i))->val())).toBe("value_" + std::to_string(i*i));
 					}
 				});
 			});
@@ -160,14 +160,14 @@ DESCRIBE("Test single thread", {
 						int rnd = rand()%10000 + 200;
 						if(!check.count(rnd)){
 							check.insert(rnd);
-							forest::insert_leaf("test", "p"+std::to_string(rnd), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
+							forest::insert_leaf("test", "p"+std::to_string(rnd), forest::make_leaf("val_" + std::to_string(rnd*rnd)));
 						}
 					}
 				});
 				
 				IT("all leafs should exist in tree", {
 					for(auto &it : check){
-						EXPECT(forest::read_leaf_item(forest::find_leaf("test", "p" + std::to_string(it))->val())).toBe("val_" + std::to_string(it*it));
+						EXPECT(read_leaf(forest::find_leaf("test", "p" + std::to_string(it))->val())).toBe("val_" + std::to_string(it*it));
 					}
 				});
 			});
@@ -181,7 +181,7 @@ DESCRIBE("Test single thread", {
 						int rnd = rand()%10000 + 200;
 						if(!check.count(rnd)){
 							check.insert(rnd);
-							forest::insert_leaf("test", "p"+std::to_string(rnd), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
+							forest::insert_leaf("test", "p"+std::to_string(rnd), forest::make_leaf("val_" + std::to_string(rnd*rnd)));
 						}
 					}
 					num_of_items = check.size();
@@ -232,7 +232,7 @@ DESCRIBE("Test single thread", {
 			
 			IT("Every tree annotation should be equal to `annotation provided`", {
 				for(int i=0;i<20;i++){
-					forest::tree_ptr tree = forest::find_tree("gt_" + std::to_string(i));
+					forest::Tree tree = forest::find_tree("gt_" + std::to_string(i));
 					EXPECT(tree->get_annotation()).toBe("annotation provided");
 					forest::leave_tree(tree);
 				}

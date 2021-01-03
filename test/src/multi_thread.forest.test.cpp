@@ -141,7 +141,7 @@ DESCRIBE("Test multi threads", {
 			IT("Add 100 items to 10 trees in 100 threads randomly", {
 				for(int i=0;i<100;i++){
 					std::thread t([](int ind, int tree_id){
-						forest::insert_leaf("tree_"+std::to_string(tree_id), "key_"+std::to_string(ind), forest::leaf_value("value_"+std::to_string(ind*2)));
+						forest::insert_leaf("tree_"+std::to_string(tree_id), "key_"+std::to_string(ind), forest::make_leaf("value_"+std::to_string(ind*2)));
 					}, i, rand()%10);
 					threads.push_back(std::move(t));
 				}
@@ -170,7 +170,7 @@ DESCRIBE("Test multi threads", {
 						char c = (i*2)+'a';
 						string k = "";
 						k.push_back(c);
-						forest::insert_leaf("test", k, forest::leaf_value("value_" + std::to_string(i*2)));
+						forest::insert_leaf("test", k, forest::make_leaf("value_" + std::to_string(i*2)));
 					}
 					
 					vector<thread> trds;
@@ -211,7 +211,7 @@ DESCRIBE("Test multi threads", {
 					for(int i=0;i<10;i++){
 						thread t([](int ind){
 							while(ind<120){
-								forest::insert_leaf("test", "k"+std::to_string(ind), forest::leaf_value("value_" + std::to_string(ind*ind)));
+								forest::insert_leaf("test", "k"+std::to_string(ind), forest::make_leaf("value_" + std::to_string(ind*ind)));
 								ind += 10;
 							}
 						}, i);
@@ -223,10 +223,10 @@ DESCRIBE("Test multi threads", {
 				});
 				
 				IT("Tree should contain keys from `k0` to `k99`", {
-					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k25")->val())).toBe("value_625");
-					EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k100")->val())).toBe("value_10000");
+					EXPECT(read_leaf(forest::find_leaf("test", "k25")->val())).toBe("value_625");
+					EXPECT(read_leaf(forest::find_leaf("test", "k100")->val())).toBe("value_10000");
 					for(int i=0;i<100;i++){
-						EXPECT(forest::read_leaf_item(forest::find_leaf("test", "k" + std::to_string(i))->val())).toBe("value_" + std::to_string(i*i));
+						EXPECT(read_leaf(forest::find_leaf("test", "k" + std::to_string(i))->val())).toBe("value_" + std::to_string(i*i));
 					}
 				});
 			});
@@ -241,7 +241,7 @@ DESCRIBE("Test multi threads", {
 						if(!check.count(rnd)){
 							check.insert(rnd);
 							thread t([](int ind){								
-								forest::insert_leaf("test", "p"+std::to_string(ind), forest::leaf_value("val_" + std::to_string(ind*ind)));
+								forest::insert_leaf("test", "p"+std::to_string(ind), forest::make_leaf("val_" + std::to_string(ind*ind)));
 							}, rnd);
 							trds.push_back(move(t));
 						}
@@ -253,7 +253,7 @@ DESCRIBE("Test multi threads", {
 					for(auto &it : check){
 						thread t([&good](int ind){		
 							auto it = forest::find_leaf("test", "p" + std::to_string(ind));						
-							if( forest::read_leaf_item(it->val()) != "val_" + std::to_string(ind*ind) ){
+							if( read_leaf(it->val()) != "val_" + std::to_string(ind*ind) ){
 								good = false;
 							}
 						}, it);
@@ -280,7 +280,7 @@ DESCRIBE("Test multi threads", {
 						int rnd = rand()%10000 + 200;
 						if(!check.count(rnd)){
 							check.insert(rnd);
-							forest::insert_leaf("test", "p"+std::to_string(rnd), forest::leaf_value("val_" + std::to_string(rnd*rnd)));
+							forest::insert_leaf("test", "p"+std::to_string(rnd), forest::make_leaf("val_" + std::to_string(rnd*rnd)));
 						}
 					}
 					num_of_items = check.size();
@@ -398,7 +398,7 @@ DESCRIBE("Test multi threads", {
 										string key = it->key();
 										keys.push_back(key);
 										auto val = it->val();
-										string sval = forest::read_leaf_item(val);
+										string sval = read_leaf(val);
 										
 										if(sval.substr(0,3) == "new"){
 											continue;
@@ -426,7 +426,7 @@ DESCRIBE("Test multi threads", {
 										string key = it->key();
 										keys.push_back(key);
 										auto val = it->val();
-										string sval = forest::read_leaf_item(val);
+										string sval = read_leaf(val);
 										
 										if(sval.substr(0,3) == "new"){
 											continue;
@@ -481,7 +481,7 @@ DESCRIBE("Test multi threads", {
 										p = q.front();
 										q.pop();
 									}
-									forest::update_leaf("test", "p"+std::to_string(p), std::move(forest::leaf_value("new_" + std::to_string(rnd*rnd))) );
+									forest::update_leaf("test", "p"+std::to_string(p), std::move(forest::make_leaf("new_" + std::to_string(rnd*rnd))) );
 								}
 								else if(cs == 7){
 									int p;
@@ -503,7 +503,7 @@ DESCRIBE("Test multi threads", {
 										}
 										check.insert(rnd);
 									}
-									forest::file_data_ptr tmp = forest::leaf_value("val_" + std::to_string(rnd*rnd));
+									forest::DetachedLeaf tmp = forest::make_leaf("val_" + std::to_string(rnd*rnd));
 									forest::insert_leaf("test", "p" + std::to_string(rnd), std::move(tmp) );
 									lock_guard<mutex> lock(m);
 									complete.push_back("insert");

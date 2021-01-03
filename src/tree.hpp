@@ -27,6 +27,7 @@
 #include "savior.hpp"
 
 namespace forest{
+namespace details{
 	
 	class LeafRecord;
 	class Savior;
@@ -142,6 +143,8 @@ namespace forest{
 			string annotation;
 			mutex tree_m;
 	};
-}
+	
+} // details
+} // forest
 
 #endif //FOREST_TREE_H

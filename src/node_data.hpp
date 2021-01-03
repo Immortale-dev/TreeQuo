@@ -4,6 +4,7 @@
 #include "dbutils.hpp"
 
 namespace forest{
+namespace details{
 	
 	struct node_data_t {
 		bool ghost = true;
@@ -24,6 +25,7 @@ namespace forest{
 	bool has_data(tree_t::node_ptr node);
 	bool has_data(tree_t::Node* node);
 
-}
+} // details
+} // forest
 
 #endif // FOREST_NODE_DATA_H

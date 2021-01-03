@@ -1,7 +1,6 @@
 #ifndef FOREST_H
 #define FOREST_H
 
-
 #include "variables.hpp"
 #include "cache.hpp"
 #include "dbfs.hpp"
@@ -11,39 +10,51 @@
 #include "tree.hpp"
 #include "leaf_record.hpp"
 #include "savior.hpp"
+#include "detached_leaf.hpp"
 
 namespace forest{
 	
-	using tree_ptr = std::shared_ptr<Tree>;
-	using child_item_type_ptr = tree_t::child_item_type_ptr;
-	using leaf = LeafRecord_ptr;
-	using tree = tree_ptr;
+	// Aliases
+	using Leaf = details::LeafRecord_ptr;
+	using Tree = details::tree_ptr;
+	using DetachedLeaf = details::detached_leaf_ptr;
+	using LeafFile = details::file_ptr;
+	using LeafKey = details::tree_t::key_type;
+	using size_t = details::uint_t;
+	using string = details::string;
 	
-	void plant_tree(TREE_TYPES type, string name, int factor = 0, string annotation = "");
-	void cut_tree(string name);
-	tree find_tree(string name);
-	tree reach_tree(string path);
-	void leave_tree(string path);
-	void leave_tree(tree tree);
+	// Tree modifications
+	void plant_tree(TREE_TYPES type, details::string name, int factor = 0, details::string annotation = "");
+	void cut_tree(details::string name);
+	Tree find_tree(details::string name);
+	Tree reach_tree(details::string path);
+	void leave_tree(details::string path);
+	void leave_tree(Tree tree);
 	
 	// Tree operations with name
-	void insert_leaf(string name, tree_t::key_type key, tree_t::val_type val);
-	void update_leaf(string name, tree_t::key_type key, tree_t::val_type val);
-	void remove_leaf(string name, tree_t::key_type key);
-	leaf find_leaf(string name, tree_t::key_type key);
-	leaf find_leaf(string name, LEAF_POSITION position = LEAF_POSITION::BEGIN);
-	leaf find_leaf(string name, tree_t::key_type key, LEAF_POSITION position);
+	void insert_leaf(details::string name, details::tree_t::key_type key, details::detached_leaf_ptr val);
+	void update_leaf(details::string name, details::tree_t::key_type key, details::detached_leaf_ptr val);
+	void remove_leaf(details::string name, details::tree_t::key_type key);
+	Leaf find_leaf(details::string name, details::tree_t::key_type key);
+	Leaf find_leaf(details::string name, LEAF_POSITION position = LEAF_POSITION::BEGIN);
+	Leaf find_leaf(details::string name, details::tree_t::key_type key, LEAF_POSITION position);
 	
 	// Tree operations with tree
-	void insert_leaf(tree tree, tree_t::key_type key, tree_t::val_type val);
-	void update_leaf(tree tree, tree_t::key_type key, tree_t::val_type val);
-	void remove_leaf(tree tree, tree_t::key_type key);
-	leaf find_leaf(tree tree, tree_t::key_type key);
-	leaf find_leaf(tree tree, LEAF_POSITION position = LEAF_POSITION::BEGIN);
-	leaf find_leaf(tree tree, tree_t::key_type key, LEAF_POSITION position);
+	void insert_leaf(Tree tree, details::tree_t::key_type key, details::detached_leaf_ptr val);
+	void update_leaf(Tree tree, details::tree_t::key_type key, details::detached_leaf_ptr val);
+	void remove_leaf(Tree tree, details::tree_t::key_type key);
+	Leaf find_leaf(Tree tree, details::tree_t::key_type key);
+	Leaf find_leaf(Tree tree, LEAF_POSITION position = LEAF_POSITION::BEGIN);
+	Leaf find_leaf(Tree tree, details::tree_t::key_type key, LEAF_POSITION position);
+	
+	// Leaf Methods
+	DetachedLeaf make_leaf(details::string data);
+	DetachedLeaf make_leaf(char* buffer, details::uint_t length);
+	DetachedLeaf make_leaf(LeafFile file, details::uint_t start, details::uint_t length);
+	
 			
 	// Init methods
-	void bloom(string path);
+	void bloom(details::string path);
 	void fold();
 	
 	// Status methods
@@ -54,7 +65,7 @@ namespace forest{
 	/* Configurations */
 	void config_root_factor(int root_factor);
 	void config_default_factor(int default_factor);
-	void config_root_tree(string root_tree);
+	void config_root_tree(details::string root_tree);
 	void config_intr_cache_length(int length);
 	void config_leaf_cache_length(int length);
 	void config_tree_cache_length(int length);

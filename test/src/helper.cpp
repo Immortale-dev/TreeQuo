@@ -62,3 +62,14 @@ void config_low()
 	forest::config_opened_files_limit(10);
 	forest::config_savior_queue_size(20);
 }
+
+string read_leaf(forest::details::file_data_ptr item)
+{
+	int sz = item->size();
+	char* buf = new char[sz];
+	auto reader = item->get_reader();
+	reader.read(buf,sz);
+	string ret(buf,sz);
+	delete[] buf;
+	return ret;
+}

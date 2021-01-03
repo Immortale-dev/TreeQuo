@@ -1,11 +1,11 @@
 #include "leaf_record.hpp"
 
-forest::LeafRecord::LeafRecord()
+forest::details::LeafRecord::LeafRecord()
 {
 	//ctor
 }
 
-forest::LeafRecord::~LeafRecord()
+forest::details::LeafRecord::~LeafRecord()
 {
 	if(tree){
 		tree->tree_release();
@@ -13,35 +13,37 @@ forest::LeafRecord::~LeafRecord()
 	//dtor
 }
 
-forest::LeafRecord::LeafRecord(tree_t::iterator it, tree_ptr tree) : it(std::move(it)), tree(tree)
+forest::details::LeafRecord::LeafRecord(tree_t::iterator it, tree_ptr tree) : it(std::move(it)), tree(tree)
 {
+	//if(!eof()) dl = detached_leaf_ptr(new detached_leaf(this->it->second));
 	tree->tree_reserve();
 	// main ctor
 }
 
-bool forest::LeafRecord::eof()
+bool forest::details::LeafRecord::eof()
 {
 	return it.expired();
 }
 
-bool forest::LeafRecord::move_forward()
+bool forest::details::LeafRecord::move_forward()
 {
 	++it;
 	return !eof();
 }
 
-bool forest::LeafRecord::move_back()
+bool forest::details::LeafRecord::move_back()
 {
 	--it;
 	return !eof();
 }
 
-forest::file_data_ptr forest::LeafRecord::val()
+forest::details::file_data_ptr forest::details::LeafRecord::val()
 {
 	return it->second;
+	//return detached_leaf_ptr(new detached_leaf(it->second));
 }
 
-forest::string forest::LeafRecord::key()
+forest::details::string forest::details::LeafRecord::key()
 {
 	return it->first;
 }

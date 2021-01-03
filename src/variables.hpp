@@ -4,6 +4,8 @@
 #include "dbutils.hpp"
 
 namespace forest{
+namespace details{
+	
 	// Variables
 	extern tree_ptr FOREST;
 	extern bool blossomed;
@@ -21,6 +23,8 @@ namespace forest{
 	extern int CHUNK_SIZE;
 	extern int OPENED_FILES_LIMIT;
 	extern int SAVIOUR_QUEUE_LENGTH;
-}
+	
+} // details
+} // forest
 
 #endif // FOREST_VARIABLES_H

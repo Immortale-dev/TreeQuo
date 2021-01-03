@@ -1,7 +1,7 @@
 #include "lock.hpp"
 
 
-void forest::change_lock_bunch(tree_t::node_ptr& node, tree_t::node_ptr& c_node, bool w_prior)
+void forest::details::change_lock_bunch(tree_t::node_ptr& node, tree_t::node_ptr& c_node, bool w_prior)
 {
 	// quick-access
 	auto& ch_node = get_data(node).change_locks;
@@ -45,7 +45,7 @@ void forest::change_lock_bunch(tree_t::node_ptr& node, tree_t::node_ptr& c_node,
 	}
 }
 
-void forest::change_lock_bunch(tree_t::node_ptr& node, tree_t::node_ptr& m_node, tree_t::node_ptr& c_node, bool w_prior)
+void forest::details::change_lock_bunch(tree_t::node_ptr& node, tree_t::node_ptr& m_node, tree_t::node_ptr& c_node, bool w_prior)
 {
 	// quick-access
 	auto& ch_node = get_data(node).change_locks;
@@ -97,7 +97,7 @@ void forest::change_lock_bunch(tree_t::node_ptr& node, tree_t::node_ptr& m_node,
 	}
 }
 
-void forest::change_lock_bunch(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item, bool w_prior)
+void forest::details::change_lock_bunch(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item, bool w_prior)
 {	
 	// Quick-access
 	auto& ch_node = get_data(node).change_locks;
@@ -127,12 +127,12 @@ void forest::change_lock_bunch(tree_t::node_ptr& node, tree_t::child_item_type_p
 	}
 }
 
-void forest::change_lock_read(tree_t::node_ptr& node)
+void forest::details::change_lock_read(tree_t::node_ptr& node)
 {
 	change_lock_read(node.get());
 }
 
-void forest::change_lock_read(tree_t::Node* node)
+void forest::details::change_lock_read(tree_t::Node* node)
 {
 	auto& ch_node = get_data(node).change_locks;
 	std::unique_lock<std::mutex> lock(ch_node.g);
@@ -144,12 +144,12 @@ void forest::change_lock_read(tree_t::Node* node)
 	}
 }
 
-void forest::change_unlock_read(tree_t::node_ptr& node)
+void forest::details::change_unlock_read(tree_t::node_ptr& node)
 {
 	change_unlock_read(node.get());
 }
 
-void forest::change_unlock_read(tree_t::Node* node)
+void forest::details::change_unlock_read(tree_t::Node* node)
 {
 	auto& ch_node = get_data(node).change_locks;
 	ch_node.g.lock();
@@ -163,12 +163,12 @@ void forest::change_unlock_read(tree_t::Node* node)
 	ch_node.g.unlock();
 }
 
-void forest::change_lock_promote(tree_t::node_ptr& node)
+void forest::details::change_lock_promote(tree_t::node_ptr& node)
 {
 	change_lock_promote(node.get());
 }
 
-void forest::change_lock_promote(tree_t::Node* node)
+void forest::details::change_lock_promote(tree_t::Node* node)
 {
 	auto& ch_node = get_data(node).change_locks;
 	std::unique_lock<std::mutex> lock(ch_node.g);

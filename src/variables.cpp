@@ -1,6 +1,7 @@
 #include "variables.hpp"
 
 namespace forest{
+namespace details{
 	
 	const string LEAF_NULL = "-";
 
@@ -15,4 +16,6 @@ namespace forest{
 	int OPENED_FILES_LIMIT = 20;
 	int SCHEDULE_TIMER = 10000;
 	int SAVIOUR_QUEUE_LENGTH = 20;
-}
+	
+} // details
+} // forest

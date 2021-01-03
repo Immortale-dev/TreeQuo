@@ -4,6 +4,8 @@
 #include "dbutils.hpp"
 
 namespace forest{
+namespace details{
+	
 	class file_data_t{
 		
 		using fn = std::function<void(file_data_t* self, char*, int)>;
@@ -47,6 +49,8 @@ namespace forest{
 			mutex mtx;
 			bool cached = false;
 	};
-}
+	
+} // details
+} // forest
 
 #endif // FOREST_FILE_DATA_H

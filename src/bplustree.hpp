@@ -10,10 +10,13 @@
 #include "BPlusTreeBase.hpp"
 #include "node_addition.hpp"
 
+namespace forest{
+namespace details{
+
 template <class Key, class T>
 class BPTInternal : public BPlusTreeBaseInternalNode<Key, T>{
 	public:
-		forest::node_addition data;
+		node_addition data;
 		using BPlusTreeBaseInternalNode<Key, T>::BPlusTreeBaseInternalNode;
 };
 
@@ -34,7 +37,7 @@ class BPTLeaf : public BPlusTreeBaseLeafNode<Key, T>{
 		node_ptr p_prev_leaf;
 		node_ptr p_next_leaf;
 		
-		forest::node_addition data;
+		node_addition data;
 };
 
 template <class Key, class T>
@@ -379,4 +382,7 @@ void BPlusTree<Key, T, D>::unlock_write()
 	processSearchNodeEnd(stem, PROCESS_TYPE::WRITE);
 }
 
-#endif //FOREST_BPLUSTREE_H
+} // details
+} // forest
+
+#endif // FOREST_BPLUSTREE_H

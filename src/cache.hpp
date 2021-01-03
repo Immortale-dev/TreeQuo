@@ -9,7 +9,8 @@
 #include "savior.hpp"
 
 namespace forest{
-	
+namespace details{
+
 	class Savior;
 	
 	extern Savior* savior;
@@ -71,63 +72,65 @@ namespace forest{
 		extern std::queue<string> savior_save;
 		extern std::mutex savior_save_m;
 	}
-}
+	
+} // details
+} // forest
 
 
-inline void forest::cache::insert_item(tree_t::child_item_type_ptr& item)
+inline void forest::details::cache::insert_item(tree_t::child_item_type_ptr& item)
 {
 	++item->item->second->res_c;
 }
 
-inline void forest::cache::remove_item(tree_t::child_item_type_ptr& item)
+inline void forest::details::cache::remove_item(tree_t::child_item_type_ptr& item)
 {
 	ASSERT(item->item->second->res_c > 0);
 	--item->item->second->res_c;
 }
 
-inline void forest::cache::intr_lock()
+inline void forest::details::cache::intr_lock()
 {
 	intr_cache_m.lock();
 }
 
-inline void forest::cache::intr_unlock()
+inline void forest::details::cache::intr_unlock()
 {
 	intr_cache_m.unlock();
 }
 
-inline void forest::cache::leaf_lock()
+inline void forest::details::cache::leaf_lock()
 {
 	leaf_cache_m.lock();
 }
 
-inline std::lock_guard<std::mutex> forest::cache::get_intr_lock()
+inline std::lock_guard<std::mutex> forest::details::cache::get_intr_lock()
 {
 	return std::lock_guard<std::mutex>(intr_cache_m);
 }
 
-inline std::lock_guard<std::mutex> forest::cache::get_leaf_lock()
+inline std::lock_guard<std::mutex> forest::details::cache::get_leaf_lock()
 {
 	return std::lock_guard<std::mutex>(leaf_cache_m);
 }
 
-inline void forest::cache::reserve_intr_node(string& path)
+inline void forest::details::cache::reserve_intr_node(string& path)
 {
 	intr_cache_r[path].second++;
 }
 
-inline void forest::cache::release_intr_node(string& path)
+inline void forest::details::cache::release_intr_node(string& path)
 {
 	if(--intr_cache_r[path].second == 0){
 		check_intr_ref(path);
 	}
 }
 
-inline void forest::cache::reserve_leaf_node(string& path)
+inline void forest::details::cache::reserve_leaf_node(string& path)
 {
 	leaf_cache_r[path].second++;
 }
 
-inline void forest::cache::release_leaf_node(string& path)
+inline void forest::details::cache::release_leaf_node(string& path)
 {
 	ASSERT(leaf_cache_r[path].second > 0);
 	if(--leaf_cache_r[path].second == 0){;
@@ -135,7 +138,7 @@ inline void forest::cache::release_leaf_node(string& path)
 	}
 }
 
-inline void forest::cache::_intr_insert(tree_t::node_ptr& node)
+inline void forest::details::cache::_intr_insert(tree_t::node_ptr& node)
 {
 	string& path = get_node_data(node)->path;
 	get_data(node).is_original = true;
@@ -143,7 +146,7 @@ inline void forest::cache::_intr_insert(tree_t::node_ptr& node)
 	cache::intr_cache.push(path, node);
 }
 
-inline void forest::cache::_leaf_insert(tree_t::node_ptr& node)
+inline void forest::details::cache::_leaf_insert(tree_t::node_ptr& node)
 {
 	string& path = get_node_data(node)->path;
 	get_data(node).is_original = true;

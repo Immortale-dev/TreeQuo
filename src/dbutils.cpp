@@ -1,12 +1,16 @@
 #include "dbutils.hpp"
 
 namespace forest{
+namespace details{
+	
 	std::atomic<int> opened_files_count = 0;
 	std::mutex opened_files_m;
 	std::condition_variable opened_files_cv;
-}
+	
+} // details
+} // forest
 
-forest::node_addition& forest::get_data(node_ptr node)
+forest::details::node_addition& forest::details::get_data(node_ptr node)
 {
 	if(node->is_leaf()){
 		auto r_node = std::static_pointer_cast<BPTLeaf<string, file_data_ptr> >(node);
@@ -17,7 +21,7 @@ forest::node_addition& forest::get_data(node_ptr node)
 	}
 }
 
-forest::node_addition& forest::get_data(tree_t::Node* node)
+forest::details::node_addition& forest::details::get_data(tree_t::Node* node)
 {
 	if(node->is_leaf()){
 		auto r_node = static_cast<BPTLeaf<string, file_data_ptr>* >(node);
@@ -28,12 +32,12 @@ forest::node_addition& forest::get_data(tree_t::Node* node)
 	}
 }
 
-forest::file_data_ptr forest::leaf_value(string str)
+forest::details::file_data_ptr forest::details::leaf_value(string str)
 {
 	return file_data_ptr(new file_data_t(str.c_str(), str.size()));
 }
 
-forest::string forest::to_string(int num)
+forest::details::string forest::details::to_string(int num)
 {
 	ASSERT(num >= 0);
 	if(!num){
@@ -52,7 +56,7 @@ forest::string forest::to_string(int num)
 	return ret;
 }
 
-forest::string forest::read_leaf_item(file_data_ptr item)
+forest::details::string forest::details::read_leaf_item(file_data_ptr item)
 {	
 	int sz = item->size();
 	char* buf = new char[sz];
@@ -63,18 +67,18 @@ forest::string forest::read_leaf_item(file_data_ptr item)
 	return ret;
 }
 
-void forest::opened_files_inc()
+void forest::details::opened_files_inc()
 {
-	std::unique_lock<std::mutex> flock(forest::opened_files_m);
-	while(forest::opened_files_count > forest::OPENED_FILES_LIMIT){
-		forest::opened_files_cv.wait(flock);
+	std::unique_lock<std::mutex> flock(opened_files_m);
+	while(opened_files_count > OPENED_FILES_LIMIT){
+		opened_files_cv.wait(flock);
 	}
-	forest::opened_files_count++;
+	opened_files_count++;
 }
 
-void forest::opened_files_dec()
+void forest::details::opened_files_dec()
 {
-	ASSERT(forest::opened_files_count > 0);
-	forest::opened_files_count--;
-	forest::opened_files_cv.notify_all();
+	ASSERT(opened_files_count > 0);
+	opened_files_count--;
+	opened_files_cv.notify_all();
 }

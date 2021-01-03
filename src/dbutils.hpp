@@ -25,8 +25,10 @@
 #include "threading.hpp"
 #include "types.hpp"
 #include "file_data.hpp"
+//#include "detached_leaf.hpp"
 
 namespace forest{
+namespace details{
 	
 	// Nodes data methods
 	node_addition& get_data(node_ptr node);
@@ -34,12 +36,15 @@ namespace forest{
 	
 	// Leaf methods
 	file_data_ptr leaf_value(string str);
+	file_data_ptr extract_leaf_val(detached_leaf_ptr dl);
 	string to_string(int num);
 	string read_leaf_item(file_data_ptr item);
 	
 	// Files manager methods
 	void opened_files_inc();
 	void opened_files_dec();
-}
+	
+} // details
+} // forest
 
-#endif //FOREST_DBUTILS_H
+#endif // FOREST_DBUTILS_H

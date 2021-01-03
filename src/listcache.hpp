@@ -6,6 +6,8 @@
 #include <list>
 #include <functional>
 
+namespace forest{
+
 template<typename Key, typename T>
 class ListCache{
 	public:
@@ -168,5 +170,6 @@ void ListCache<Key, T>::remove_overflow()
 	}
 }
 
+} // forest
 
 #endif // FOREST_LISTCACHE_H

@@ -28,9 +28,9 @@ DESCRIBE("Initialize forest at tmp/perf", {
 			
 			IT("Insert 100000 items [0,100000)", {
 				p1 = chrono::system_clock::now();
-				forest::tree tree = forest::find_tree("test_else");
+				forest::Tree tree = forest::find_tree("test_else");
 				for(int i=0;i<rec_count;i++){
-					forest::insert_leaf(tree, to_str(i), forest::leaf_value("some pretty basic value to insert into the database"));
+					forest::insert_leaf(tree, to_str(i), forest::make_leaf("some pretty basic value to insert into the database"));
 				}
 				forest::leave_tree(tree);
 				p2 = chrono::system_clock::now();
@@ -41,10 +41,10 @@ DESCRIBE("Initialize forest at tmp/perf", {
 			
 			IT("Get all items independently", {
 				p1 = chrono::system_clock::now();
-				forest::tree t = forest::find_tree("test_else");
+				forest::Tree t = forest::find_tree("test_else");
 				for(int i=0;i<rec_count;i++){
 					auto rc = forest::find_leaf(t, to_str(i));
-					EXPECT(forest::read_leaf_item(rc->val())).toBe("some pretty basic value to insert into the database");
+					EXPECT(read_leaf(rc->val())).toBe("some pretty basic value to insert into the database");
 				}
 				forest::leave_tree(t);
 				p2 = chrono::system_clock::now();
@@ -58,7 +58,7 @@ DESCRIBE("Initialize forest at tmp/perf", {
 				auto rc = forest::find_leaf("test_else", forest::LEAF_POSITION::BEGIN);
 				int cnt = 0;
 				do{
-					EXPECT(forest::read_leaf_item(rc->val())).toBe("some pretty basic value to insert into the database");
+					EXPECT(read_leaf(rc->val())).toBe("some pretty basic value to insert into the database");
 					cnt++;
 				}while(rc->move_forward());
 				EXPECT(cnt).toBe(rec_count);
@@ -71,7 +71,7 @@ DESCRIBE("Initialize forest at tmp/perf", {
 			
 			IT("Remove all records", {
 				p1 = chrono::system_clock::now();
-				forest::tree t = forest::find_tree("test_else");
+				forest::Tree t = forest::find_tree("test_else");
 				for(int i=0;i<rec_count;i++){
 					forest::remove_leaf(t, to_str(i));
 				}

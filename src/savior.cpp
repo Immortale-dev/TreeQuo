@@ -1,6 +1,6 @@
 #include "savior.hpp"
 
-forest::Savior::Savior()
+forest::details::Savior::Savior()
 {
 	items_queue.resize(SAVIOUR_QUEUE_LENGTH);
 	items_queue.set_callback([this](save_key item){
@@ -8,7 +8,7 @@ forest::Savior::Savior()
 	});
 }
 
-forest::Savior::~Savior()
+forest::details::Savior::~Savior()
 {
 	// Save everything in sync mode
 	save_all();
@@ -21,7 +21,7 @@ forest::Savior::~Savior()
 	wait_for_threads();
 }
 
-void forest::Savior::put(save_key item, SAVE_TYPES type, void_shared node)
+void forest::details::Savior::put(save_key item, SAVE_TYPES type, void_shared node)
 {
 	std::unique_lock<std::mutex> lock(map_mtx);
 	
@@ -35,7 +35,7 @@ void forest::Savior::put(save_key item, SAVE_TYPES type, void_shared node)
 	schedule_save(item);
 }
 
-void forest::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
+void forest::details::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
 {
 	std::unique_lock<std::mutex> lock(map_mtx);
 
@@ -43,7 +43,7 @@ void forest::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
 	schedule_save(item);
 }
 
-void forest::Savior::leave(save_key item, SAVE_TYPES type, void_shared nodef)
+void forest::details::Savior::leave(save_key item, SAVE_TYPES type, void_shared nodef)
 {
 	std::unique_lock<std::mutex> lock(map_mtx);
 	
@@ -65,7 +65,7 @@ void forest::Savior::leave(save_key item, SAVE_TYPES type, void_shared nodef)
 	}
 }
 
-void forest::Savior::save(save_key item, bool sync)
+void forest::details::Savior::save(save_key item, bool sync)
 {
 	if(sync){
 		save_item(item);
@@ -79,7 +79,7 @@ void forest::Savior::save(save_key item, bool sync)
 	}
 }
 
-void forest::Savior::get(save_key item)
+void forest::details::Savior::get(save_key item)
 {
 	std::unique_lock lock(map_mtx);
 	while(map.count(item)){
@@ -87,13 +87,13 @@ void forest::Savior::get(save_key item)
 	}
 }
 
-int forest::Savior::save_queue_size()
+int forest::details::Savior::save_queue_size()
 {
 	std::unique_lock lock(map_mtx);
 	return items_queue.size();
 }
 
-void forest::Savior::save_all()
+void forest::details::Savior::save_all()
 {
 	while(true){
 		std::unique_lock<std::mutex> lock(map_mtx);
@@ -109,27 +109,27 @@ void forest::Savior::save_all()
 	}
 }
 
-bool forest::Savior::has(save_key& item)
+bool forest::details::Savior::has(save_key& item)
 {
 	return map.count(item);
 }
 
-bool forest::Savior::has_locking(save_key& item)
+bool forest::details::Savior::has_locking(save_key& item)
 {
 	return locking_items.count(item);
 }
 
-void forest::Savior::lock_map()
+void forest::details::Savior::lock_map()
 {
 	map_mtx.lock();
 }
 
-void forest::Savior::unlock_map()
+void forest::details::Savior::unlock_map()
 {
 	map_mtx.unlock();
 }
 
-void forest::Savior::save_item(save_key item)
+void forest::details::Savior::save_item(save_key item)
 {
 	std::unique_lock<std::mutex> lock(map_mtx);
 	
@@ -154,13 +154,13 @@ void forest::Savior::save_item(save_key item)
 		node_ptr node = std::static_pointer_cast<tree_t::Node>(it->node);
 		
 		// To avoid any deadlocks and RC, lock the node
-		forest::lock_write(node);
+		forest::details::lock_write(node);
 		
 		it = lock_item(item);
 		
 		if(it->action == ACTION_TYPE::SAVE){
 			DBFS::File* f = DBFS::create();
-			forest::Tree::save_intr(node, f);
+			forest::details::Tree::save_intr(node, f);
 			string new_name = f->name();
 			delete f;
 			
@@ -174,7 +174,7 @@ void forest::Savior::save_item(save_key item)
 			remove_file_async(data->path);
 		}
 		
-		forest::unlock_write(node);
+		forest::details::unlock_write(node);
 	} else if(it->type == SAVE_TYPES::LEAF){
 		node_ptr node = std::static_pointer_cast<tree_t::Node>(it->node);
 		
@@ -190,7 +190,7 @@ void forest::Savior::save_item(save_key item)
 			file_ptr cur_f = get_data(node).f;
 			if(cur_f){
 				// Update count of opened files to not exceed the limit
-				forest::opened_files_inc();
+				forest::details::opened_files_inc();
 				auto locked = cur_f->get_lock();
 				cur_f->move(DBFS::random_filename());
 				
@@ -201,7 +201,7 @@ void forest::Savior::save_item(save_key item)
 			
 			file_ptr fp = file_ptr(new DBFS::File(cur_name));
 			get_data(node).f = fp;
-			forest::Tree::save_leaf(node, fp);
+			forest::details::Tree::save_leaf(node, fp);
 		} else { // REMOVE
 			file_ptr cur_f = get_data(node).f;
 			if(cur_f){
@@ -224,7 +224,7 @@ void forest::Savior::save_item(save_key item)
 		
 		if(it->action == ACTION_TYPE::SAVE){
 			DBFS::File* base_f = DBFS::create();
-			forest::Tree::save_base(tree, base_f);
+			forest::details::Tree::save_base(tree, base_f);
 			
 			string base_file_name = tree->get_name();
 			string new_base_file_name = base_f->name();
@@ -270,7 +270,7 @@ void forest::Savior::save_item(save_key item)
 	cv.notify_all();
 }
 
-void forest::Savior::run_scheduler()
+void forest::details::Savior::run_scheduler()
 {
 	if(scheduler_running){
 		return;
@@ -283,7 +283,7 @@ void forest::Savior::run_scheduler()
 	});
 }
 
-void forest::Savior::delayed_save()
+void forest::details::Savior::delayed_save()
 {
 	while(true){
 		std::this_thread::sleep_for(std::chrono::microseconds(SCHEDULE_TIMER));
@@ -303,13 +303,13 @@ void forest::Savior::delayed_save()
 	}
 }
 
-void forest::Savior::schedule_save(save_key& item)
+void forest::details::Savior::schedule_save(save_key& item)
 {
 	items_queue.push(item, true);
 	run_scheduler();
 }
 
-forest::Savior::save_value* forest::Savior::define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action, void_shared node)
+forest::details::Savior::save_value* forest::details::Savior::define_item(save_key item, SAVE_TYPES type, ACTION_TYPE action, void_shared node)
 {
 	
 	save_value* val = new save_value();
@@ -322,14 +322,14 @@ forest::Savior::save_value* forest::Savior::define_item(save_key item, SAVE_TYPE
 	return val;
 }
 
-void forest::Savior::remove_file_async(string name)
+void forest::details::Savior::remove_file_async(string name)
 {
 	file_deleter.work([name]{
 		DBFS::remove(name);
 	});
 }
 
-forest::Savior::save_value* forest::Savior::get_item(save_key& item)
+forest::details::Savior::save_value* forest::details::Savior::get_item(save_key& item)
 {
 	auto& map_ref = map[item];
 	while(map_ref.size() > 1){
@@ -339,14 +339,14 @@ forest::Savior::save_value* forest::Savior::get_item(save_key& item)
 	return map_ref.front();
 }
 
-forest::Savior::save_value* forest::Savior::lock_item(save_key& item)
+forest::details::Savior::save_value* forest::details::Savior::lock_item(save_key& item)
 {
 	std::lock_guard<std::mutex> lock(map_mtx);
 	locking_items.insert(item);
 	return get_item(item);
 }
 
-void forest::Savior::pop_item(save_key& item)
+void forest::details::Savior::pop_item(save_key& item)
 {
 	auto& map_ref = map[item];
 	delete map_ref.front();
@@ -356,16 +356,16 @@ void forest::Savior::pop_item(save_key& item)
 	}
 }
 
-void forest::Savior::lazy_delete_file(file_ptr f)
+void forest::details::Savior::lazy_delete_file(file_ptr f)
 {
 	f->on_close([this](DBFS::File* file){
 		// preserve limit
-		forest::opened_files_dec();
+		forest::details::opened_files_dec();
 		remove_file_async(file->name());
 	});
 }
 
-void forest::Savior::wait_for_threads()
+void forest::details::Savior::wait_for_threads()
 {
 	while(true){
 		join_mtx.lock();

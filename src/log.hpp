@@ -23,6 +23,7 @@
 #endif
 
 namespace forest{
+namespace details{
 	
 	extern int LOGGER_FLAG;
 	extern int LOG_DETAILS;
@@ -34,6 +35,7 @@ namespace forest{
 	void log_info_details(std::string str);
 	void log_info_extended(std::string str);
 	
-}
+} // details
+} // forest
 
 #endif // FOREST_LOG_H

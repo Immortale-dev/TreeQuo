@@ -6,6 +6,8 @@
 #include <memory>
 
 namespace forest{
+namespace details{
+	
 	struct node_addition{
 		struct{
 			std::mutex m,g;
@@ -31,6 +33,8 @@ namespace forest{
 		bool is_original = false;
 		bool leaved = false;
 	};
-}
+	
+} // details
+} // forest
 
 #endif //FOREST_NODE_ADDITION_H

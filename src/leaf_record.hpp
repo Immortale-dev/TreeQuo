@@ -4,8 +4,10 @@
 #include <memory>
 #include "dbutils.hpp"
 #include "tree.hpp"
+#include "detached_leaf.hpp"
 
 namespace forest{
+namespace details{
 	
 	class LeafRecord{
 		
@@ -25,6 +27,8 @@ namespace forest{
 	};
 	
 	using LeafRecord_ptr = std::shared_ptr<LeafRecord>;
-}
+	
+} // details
+} // forest
 
 #endif // FOREST_LEAF_RECORD_H

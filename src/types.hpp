@@ -2,8 +2,6 @@
 #define FOREST_TYPES_H
 
 namespace forest{
-	extern int CACHE_BYTES;
-	extern int OPENED_FILES_LIMIT;
 	
 	enum class TREE_TYPES { KEY_STRING };
 	enum class LEAF_POSITION{ BEGIN, END, LOWER, UPPER };
@@ -11,8 +9,14 @@ namespace forest{
 	enum class NODE_TYPES { INTR, LEAF };
 	enum class SAVE_TYPES{ LEAF, INTR, BASE };
 	
+namespace details{
+	
+	extern int CACHE_BYTES;
+	extern int OPENED_FILES_LIMIT;
+	
 	class Tree;
 	class file_data_t;
+	class detached_leaf;
 	
 	using string = std::string;
 	using int_t = long long int;
@@ -24,8 +28,10 @@ namespace forest{
 	using uintptr_t = std::uintptr_t;
 	
 	using file_data_ptr = std::shared_ptr<file_data_t>;
+	using detached_leaf_ptr = std::shared_ptr<detached_leaf>;
 	
 	using tree_t = BPlusTree<string, file_data_ptr, Tree>;
+	using child_item_type_ptr = tree_t::child_item_type_ptr;
 	
 	using tree_ptr = std::shared_ptr<Tree>;
 	using node_ptr = tree_t::node_ptr;
@@ -56,6 +62,8 @@ namespace forest{
 		string branch;
 		string annotation;
 	};
-}
+	
+} // details
+} // forest
 
 #endif // FOREST_TYPES_H

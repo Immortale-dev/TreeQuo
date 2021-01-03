@@ -11,6 +11,7 @@
 #include "listcache.hpp"
 
 namespace forest{
+namespace details{
 	
 	extern std::atomic<int> opened_files_count;
 	extern std::mutex opened_files_m;
@@ -83,7 +84,9 @@ namespace forest{
 			
 			std::queue<std::thread> thrds;
 	};
-}
+	
+} // details
+} // forest
 
 
 #endif // FOREST_SAVIOR_H
