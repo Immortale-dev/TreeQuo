@@ -32,7 +32,6 @@ DESCRIBE("Initialize forest at tmp/perf", {
 				for(int i=0;i<rec_count;i++){
 					forest::insert_leaf(tree, to_str(i), forest::make_leaf("some pretty basic value to insert into the database"));
 				}
-				forest::leave_tree(tree);
 				p2 = chrono::system_clock::now();
 				time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
 				TEST_SUCCEED();
@@ -46,7 +45,6 @@ DESCRIBE("Initialize forest at tmp/perf", {
 					auto rc = forest::find_leaf(t, to_str(i));
 					EXPECT(read_leaf(rc->val())).toBe("some pretty basic value to insert into the database");
 				}
-				forest::leave_tree(t);
 				p2 = chrono::system_clock::now();
 				time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
 				TEST_SUCCEED();
@@ -75,7 +73,6 @@ DESCRIBE("Initialize forest at tmp/perf", {
 				for(int i=0;i<rec_count;i++){
 					forest::remove_leaf(t, to_str(i));
 				}
-				forest::leave_tree(t);
 				p2 = chrono::system_clock::now();
 				time_free = chrono::duration_cast<chrono::milliseconds>(p2-p1).count();
 				TEST_SUCCEED();

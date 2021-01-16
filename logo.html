@@ -1,0 +1,276 @@
+
+<svg id="s" width="1000" height="200">
+	<style>
+		path{
+			stroke: #13211f;
+			stroke-width: 2px;
+		}
+		
+		path.leaf{
+			stroke-width: 0;
+			fill: #2c9659;
+			z-index: 3;
+		}
+	</style>
+</svg>
+
+<svg id="sq" width="1000" height="200">
+	<style>
+		#sq path{
+			stroke: #13211f;
+			stroke-width: 2px;
+		}
+	</style>
+</svg>
+
+
+<script>
+	const svg = document.querySelector('#s')
+	
+	class Tree{
+		
+		constructor(){
+			this.root = null;
+			this.lvls = [1,2,7,8]
+			this.lengths = [100, 70, 40, 5]
+			
+			this.build();
+		}
+		
+		build(){
+			this.root = new Tree.Branch({
+				length: 100,
+				radius: [15, 10],
+				rotation: -Math.PI/2,
+				position: 0,
+			});
+			
+			const leftBr = new Tree.Branch({
+				length: 70,
+				radius: [5, 0.1],
+				rotation: -Math.PI/2.1,
+				position: 0.91,
+			});
+			
+			const rightBr = new Tree.Branch({
+				length: 65,
+				radius: [5, 0.1],
+				rotation: Math.PI/2.2,
+				position: 0.95,
+			});
+			
+			this._reqBranch(leftBr, 2);
+			this._reqBranch(rightBr, 2);
+			
+			this.root.addChild(leftBr);
+			this.root.addChild(rightBr);
+		}
+		
+		getPoints(){
+			const arr = [];
+			this._reqGetPoints(this.root, arr, 0, 0, 0);
+			return arr;
+		}
+		
+		_reqGetPoints(b, arr, x, y, rot){
+			
+			const nrot = rot + b.rotation;
+			const alllen = b.offset + b.length;
+			
+			arr.push([{
+				x: x + Math.cos(nrot) * b.offset,
+				y: y + Math.sin(nrot) * b.offset,
+				l: !b.childs.length,
+				r: nrot,
+				s: b.length
+			},
+			{
+				x: Math.cos(nrot)*alllen + x,
+				y: Math.sin(nrot)*alllen + y
+			}]);
+			for(let it of b.childs){
+				this._reqGetPoints(it,arr,Math.cos(rot+b.rotation)*(b.offset + b.length*it.position) + x, Math.sin(rot+b.rotation)*(b.offset + b.length*it.position) + y, rot + b.rotation);
+			}
+		}
+		
+		_reqBranch(b, lvl){
+			console.log(this.lvls);
+			if(lvl == this.lvls.length) return;
+			
+			let cnt = this.lvls[lvl];
+			let start = 0;
+			let step = (1-start)/cnt;
+			let length = this.lengths[lvl];
+			let rot = Math.PI/2.2;
+			let offset = lvl == 3 ? 6 : 8;
+			let minus = length/2;
+			
+			if(lvl == 3 && b.length <= 30){
+				cnt = 6;
+			}
+			
+			for(let i=0;i<cnt;i++,start+=step){
+				let coof = Math.pow(i/(cnt-1),2);
+				
+				let br = new Tree.Branch({
+					length: length - coof*minus,
+					radius: [0,0],
+					rotation: (rot - coof * Math.PI/4) * (1-i%2*2),
+					position: start,
+					offset: offset
+				});
+				
+				this._reqBranch(br, lvl+1);
+				
+				b.addChild(br);
+			}
+		}
+		
+	}
+	
+	Tree.defaultTfn = (x) => x*x;
+	
+	Tree.Branch = class Branch{
+		constructor(o){
+			this.length = o.length;
+			this.radius = [...o.radius];
+			this.rotation = o.rotation;
+			this.position = o.position;
+			this.tfn = o.tfn || Tree.defaultTfn;
+			this.curve = o.curve;
+			this.childs = o.childs || [];
+			this.leaf = o.leaf || false;
+			this.offset = o.offset || 8;
+		}
+		
+		addChild(ch){
+			this.childs.push(ch);
+		}
+	}
+	
+	
+	
+	
+	
+	
+	function draw(points){
+		let gx = 110;
+		let gy = 170;
+		
+		let gBranches = document.createElementNS('http://www.w3.org/2000/svg',"g");
+		gBranches.id = 'tree-branches';
+		
+		let gLeafs = document.createElementNS('http://www.w3.org/2000/svg',"g");
+		gLeafs.id = 'tree-leafs';
+		
+		let gTree = document.createElementNS('http://www.w3.org/2000/svg',"g");
+		gTree.id = 'tree';
+		
+		gTree.appendChild(gBranches);
+		gTree.appendChild(gLeafs);
+		
+		gTree.setAttributeNS(null, 'transform', 'translate('+gx+', '+gy+')');
+		
+		for(let l of points){
+			
+			let i = 0;
+			let path = document.createElementNS('http://www.w3.org/2000/svg',"path");
+			let str = "";
+			for(let p of l){
+				if(i){
+					str += " ";
+				}
+				if(!i){
+					str += "M ";
+				} else {
+					str += "L ";
+				}
+				str+= (p.x) + " " + (p.y);
+				i++;
+			}
+			path.setAttributeNS(null, 'd', str);
+			gBranches.appendChild(path);
+		}
+		
+		for(let l of points){
+			let leaf = l[0].l;
+			let rot = l[0].r * 180/Math.PI;
+			if(!leaf) continue;
+			let lfPath = createLeaf();
+			let scale = l[0].s/3;
+			if(scale > 1) scale = 1;
+			lfPath.setAttributeNS(null, 'transform', 'translate('+(l[1].x)+', '+(l[1].y)+') rotate('+rot+') scale('+scale+')');
+			gLeafs.appendChild(lfPath);
+		}
+		
+		svg.appendChild(gTree);
+	}
+	function createLeaf(){
+		let path = document.createElementNS('http://www.w3.org/2000/svg',"path");
+		path.setAttributeNS(null, 'd', 'M2 0 Q4 8 14 0 Q4 -8 2 0 Z');
+		path.setAttributeNS(null, 'class', 'leaf');
+		return path;
+	}
+	
+	function drawQ(){
+		
+		let len = 70;
+		let radius = 60;
+		let offset = 10;
+		
+		let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+		g.setAttributeNS(null, 'transform', 'translate(100, 100)');
+		g.id = 'tree-txt-q';
+		
+		for(let i=0;i<6;i++){
+			let prot = i * Math.PI/6*2;
+			let px = Math.cos(prot)*radius;
+			let py = Math.sin(prot)*radius;
+			
+			let rot = prot + Math.PI/3*2;
+			let lx = Math.cos(rot)*(!i ? 35 : len);
+			let ly = Math.sin(rot)*(!i ? 35 : len);
+			
+			let ox = Math.cos(rot)*offset;
+			let oy = Math.sin(rot)*offset;
+			
+			let path = document.createElementNS('http://www.w3.org/2000/svg',"path");
+			path.setAttributeNS(null, 'd', `M ${px+ox} ${py+oy} L ${px+lx} ${py+ly}`);
+			
+			g.appendChild(path);
+			
+			if(!i){
+				// tail
+				let tlot = prot+Math.PI/4;
+				
+				let t1l = 55;
+				let t1x = Math.cos(tlot)*t1l;
+				let t1y = Math.sin(tlot)*t1l;
+				
+				let ofm = 1;
+				let pfm = 0.6;
+				
+				let ofm2 = 1.8;
+				let pfm2 = 0.8;
+				
+				let t1p = document.createElementNS('http://www.w3.org/2000/svg',"path");
+				t1p.setAttributeNS(null, 'd', `M ${px+ox*ofm+lx-t1x*pfm} ${py+oy*ofm+ly-t1y*pfm} L ${px+t1x+ox*ofm+lx-t1x*pfm} ${py+t1y+oy*ofm+ly-t1y*pfm}`);
+				
+				let t2p = document.createElementNS('http://www.w3.org/2000/svg',"path");
+				t2p.setAttributeNS(null, 'd', `M ${px+ox*ofm2+lx-t1x*pfm2} ${py+oy*ofm2+ly-t1y*pfm2} L ${px+t1x+ox*ofm2+lx-t1x*pfm2} ${py+t1y+oy*ofm2+ly-t1y*pfm2}`);
+				
+				g.appendChild(t1p);
+				g.appendChild(t2p);
+				
+			}
+		}
+		
+		document.querySelector('#sq').appendChild(g);
+	}
+	
+	const t = new Tree();
+	const points = t.getPoints();
+	
+	draw(points);
+	drawQ();
+</script>

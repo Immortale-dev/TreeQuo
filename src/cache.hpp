@@ -38,6 +38,8 @@ namespace details{
 		void intr_unlock();
 		void leaf_lock();
 		void leaf_unlock();
+		void tree_lock();
+		void tree_unlock();
 		std::lock_guard<mutex> get_intr_lock();
 		std::lock_guard<mutex> get_leaf_lock();
 		
@@ -47,6 +49,8 @@ namespace details{
 		void release_intr_node(string& path);
 		void reserve_leaf_node(string& path);
 		void release_leaf_node(string& path);
+		void reserve_tree(string path);
+		void release_tree(string path);
 		
 		void intr_insert(tree_t::node_ptr& node, bool w_lock=false);
 		void leaf_insert(tree_t::node_ptr& node, bool w_lock=false);
@@ -103,6 +107,16 @@ inline void forest::details::cache::leaf_lock()
 	leaf_cache_m.lock();
 }
 
+inline void forest::details::cache::tree_lock()
+{
+	tree_cache_m.lock();
+}
+
+inline void forest::details::cache::tree_unlock()
+{
+	tree_cache_m.unlock();
+}
+
 inline std::lock_guard<std::mutex> forest::details::cache::get_intr_lock()
 {
 	return std::lock_guard<std::mutex>(intr_cache_m);
@@ -115,11 +129,14 @@ inline std::lock_guard<std::mutex> forest::details::cache::get_leaf_lock()
 
 inline void forest::details::cache::reserve_intr_node(string& path)
 {
+	ASSERT(intr_cache_r.count(path));
 	intr_cache_r[path].second++;
 }
 
 inline void forest::details::cache::release_intr_node(string& path)
 {
+	ASSERT(intr_cache_r.count(path));
+	ASSERT(intr_cache_r[path].second > 0);
 	if(--intr_cache_r[path].second == 0){
 		check_intr_ref(path);
 	}
@@ -127,14 +144,31 @@ inline void forest::details::cache::release_intr_node(string& path)
 
 inline void forest::details::cache::reserve_leaf_node(string& path)
 {
+	ASSERT(leaf_cache_r.count(path));
 	leaf_cache_r[path].second++;
 }
 
 inline void forest::details::cache::release_leaf_node(string& path)
 {
+	ASSERT(leaf_cache_r.count(path));
 	ASSERT(leaf_cache_r[path].second > 0);
 	if(--leaf_cache_r[path].second == 0){;
 		check_leaf_ref(path);
+	}
+}
+
+inline void forest::details::cache::reserve_tree(string path)
+{
+	ASSERT(tree_cache_r.count(path));
+	tree_cache_r[path].second++;
+}
+
+inline void forest::details::cache::release_tree(string path)
+{
+	ASSERT(tree_cache_r.count(path));
+	ASSERT(tree_cache_r[path].second > 0);
+	if(--tree_cache_r[path].second == 0){
+		check_tree_ref(path);
 	}
 }
 

@@ -104,6 +104,23 @@ DESCRIBE("Test single thread", {
 				EXPECT(record->eof()).toBe(true);
 			});
 			
+			IT("Retreiving data from end leaf shpuld throw", {
+				auto record = forest::find_leaf("test", forest::LEAF_POSITION::END);
+				EXPECT([&record](){record->key();}).toThrowError();
+			});
+			
+			IT("Finding leaf using incorrect parameters should throw", {
+				EXPECT([](){
+					forest::find_leaf("test", forest::LEAF_POSITION::LOWER);
+				}).toThrowError();
+			});
+			
+			IT("Finding leaf using incorrect parameters again should throw", {
+				EXPECT([](){
+					forest::find_leaf("test", "a", forest::LEAF_POSITION::BEGIN);
+				}).toThrowError();
+			});
+			
 			DESCRIBE("Add 10 items with even key to the tree", {
 				BEFORE_ALL({
 					
@@ -234,7 +251,7 @@ DESCRIBE("Test single thread", {
 				for(int i=0;i<20;i++){
 					forest::Tree tree = forest::find_tree("gt_" + std::to_string(i));
 					EXPECT(tree->get_annotation()).toBe("annotation provided");
-					forest::leave_tree(tree);
+					//forest::leave_tree(tree);
 				}
 			});
 			

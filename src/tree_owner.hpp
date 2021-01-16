@@ -14,8 +14,7 @@ namespace details{
 		public:
 			tree_owner(tree_ptr tree);
 			virtual ~tree_owner();
-			
-			string get_name();
+
 			string get_annotation();
 			TREE_TYPES get_type();
 			

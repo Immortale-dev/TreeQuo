@@ -38,10 +38,16 @@ bool forest::details::LeafRecord::move_back()
 
 forest::details::detached_leaf_ptr forest::details::LeafRecord::val()
 {
+	if(eof()){
+		throw TreeException(TreeException::ERRORS::ACCESSING_END_LEAF);
+	}
 	return detached_leaf_ptr(new detached_leaf(it->second));
 }
 
 forest::details::string forest::details::LeafRecord::key()
 {
+	if(eof()){
+		throw TreeException(TreeException::ERRORS::ACCESSING_END_LEAF);
+	}
 	return it->first;
 }

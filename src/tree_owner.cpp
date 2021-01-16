@@ -2,17 +2,14 @@
 
 forest::details::tree_owner::tree_owner(tree_ptr tree) : tree(tree)
 {
-	// ctor
+	// No need to reserve as tree is reserved already
 }
 
 forest::details::tree_owner::~tree_owner()
 {
-	// dtor
-}
-
-forest::details::string forest::details::tree_owner::get_name()
-{
-	return tree->get_name();
+	cache::tree_lock();
+	cache::release_tree(tree->get_name());
+	cache::tree_unlock();
 }
 
 forest::details::string forest::details::tree_owner::get_annotation()

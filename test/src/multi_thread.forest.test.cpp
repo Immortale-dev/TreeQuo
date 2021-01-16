@@ -205,6 +205,40 @@ DESCRIBE("Test multi threads", {
 				});
 			});
 			
+			DESCRIBE("Add 100 items using file in 10 threads to the tree", {
+				auto f = forest::create_leaf_file();
+				
+				BEFORE_ALL({
+					string str = "";
+					for(int i=0;i<100;i++){
+						str += "VALUE";
+					}
+					str += "\n";
+					f->write(str);
+					
+					vector<thread> trds;
+					for(int i=0;i<10;i++){
+						thread t([&f](int ind){
+							while(ind<100){
+								forest::insert_leaf("test", "nk"+std::to_string(ind), forest::make_leaf(f,ind*5,5));
+								ind += 10;
+							}
+						}, i);
+						trds.push_back(move(t));
+					}
+					for(int i=0;i<10;i++){
+						trds[i].join();
+					}
+				});
+				
+				IT("Tree should contain keys form `nk0` to `nk99`", {
+					for(int i=0;i<100;i++){
+						EXPECT(read_leaf(forest::find_leaf("test", "nk" + std::to_string(i))->val())).toBe("VALUE");
+					}
+				});
+				
+			});
+			
 			DESCRIBE("Add 120 items in 10 threads to the tree", {
 				BEFORE_ALL({
 					vector<thread> trds;
@@ -538,6 +572,14 @@ DESCRIBE("Test multi threads", {
 			int fc = dir_count("tmp/t2");
 			// root tree and one leaf folders
 			EXPECT(fc).toBe(2);
+		});
+		
+		IT("Cache should not contains any records", {
+			EXPECT(forest::details::cache::leaf_cache_r.size()).toBe(0);
+			EXPECT(forest::details::cache::intr_cache_r.size()).toBe(0);
+			EXPECT(forest::details::cache::tree_cache_r.size()).toBe(0);
+			
+			INFO_PRINT("Leafs Count: " + std::to_string(forest::details::cache::leaf_cache_r.size()));
 		});
 	});
 });

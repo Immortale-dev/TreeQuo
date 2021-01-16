@@ -5,11 +5,12 @@ namespace forest{
 	
 	enum class TREE_TYPES { KEY_STRING };
 	enum class LEAF_POSITION{ BEGIN, END, LOWER, UPPER };
+	
+namespace details{
+	
 	enum class KEY_TYPES { STRING };
 	enum class NODE_TYPES { INTR, LEAF };
 	enum class SAVE_TYPES{ LEAF, INTR, BASE };
-	
-namespace details{
 	
 	extern int CACHE_BYTES;
 	extern int OPENED_FILES_LIMIT;

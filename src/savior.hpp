@@ -43,6 +43,7 @@ namespace details{
 			void save(save_key item, bool async = false);
 			void get(save_key item);
 			int save_queue_size();
+			void remove_file_async(string name);
 			
 		private:
 			void save_item(save_key item);
@@ -50,7 +51,6 @@ namespace details{
 			void run_scheduler();
 			void delayed_save();
 			void schedule_save(save_key& item);
-			void remove_file_async(string name);
 			save_value* get_item(save_key& item);
 			save_value* lock_item(save_key& item);
 			void pop_item(save_key& item);

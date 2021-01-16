@@ -17,7 +17,9 @@ namespace forest{
 				LEAF_DOES_NOT_EXISTS,
 				CANNOT_READ_FILE,
 				CANNOT_WRITE_FILE,
-				FOREST_FOLDED
+				FOREST_FOLDED,
+				ACCESSING_END_LEAF,
+				BAD_INPUT_PARAMETER
 			};
 			
 			TreeException(ERRORS code)
@@ -31,7 +33,7 @@ namespace forest{
 			
 		private:
 			std::string msg;
-			static inline const std::string error_messages[9] = {
+			static inline const std::string error_messages[11] = {
 				"Cannot create root files",
 				"Cannot create files",
 				"Not valid tree type",
@@ -40,7 +42,9 @@ namespace forest{
 				"Leaf does not exists in the tree",
 				"Cannot read file",
 				"Cannot write to file",
-				"Forest Folded"
+				"Forest Folded",
+				"Trying to access End leaf data",
+				"Inconvinient input parameter provided"
 			};  
 	};
 }
