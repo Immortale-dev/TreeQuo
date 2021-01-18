@@ -41,11 +41,11 @@ void config_high()
 {
 	forest::config_root_factor(100);
 	forest::config_default_factor(100);
-	forest::config_intr_cache_length(100);
+	forest::config_intr_cache_length(30);
 	forest::config_leaf_cache_length(100);
-	forest::config_tree_cache_length(100);
-	forest::config_cache_bytes(512);
-	forest::config_chunk_bytes(1024);
+	forest::config_tree_cache_length(10);
+	forest::config_cache_bytes(256);
+	forest::config_chunk_bytes(512);
 	forest::config_opened_files_limit(100);
 	forest::config_savior_queue_size(200);
 }
