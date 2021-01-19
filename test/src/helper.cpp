@@ -48,6 +48,7 @@ void config_high()
 	forest::config_chunk_bytes(512);
 	forest::config_opened_files_limit(100);
 	forest::config_savior_queue_size(200);
+	forest::config_save_schedule_mks(20000);
 }
 
 void config_low()
@@ -61,6 +62,7 @@ void config_low()
 	forest::config_chunk_bytes(256);
 	forest::config_opened_files_limit(10);
 	forest::config_savior_queue_size(20);
+	forest::config_save_schedule_mks(20000);
 }
 
 string read_leaf(forest::DetachedLeaf item)
