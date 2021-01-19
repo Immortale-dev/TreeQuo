@@ -9,8 +9,8 @@ namespace details{
 	struct node_data_t {
 		bool ghost = true;
 		string path = "";
-		string prev = "-";
-		string next = "-";
+		string prev = LEAF_NULL;
+		string next = LEAF_NULL;
 		node_data_t(bool ghost, string path) : ghost(ghost), path(path) {};
 	};
 	

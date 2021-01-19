@@ -566,7 +566,7 @@ DESCRIBE("Test multi threads", {
 			});
 		});
 	});
-	
+
 	DESCRIBE("Check all files deleted", {
 		IT("Should not find any not deleted files", {
 			int fc = dir_count("tmp/t2");

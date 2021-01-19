@@ -579,9 +579,8 @@ Hello fellow reader! :)
 I hope you enjoy using this product as much as I was when writing it!
 If you find some bugs/issues or if you know the way to make this product better, or if you just want to ask some questions, just let me know in the comments, or create an issue here on github, thank you in advance!
 
-**And of course if you really like the way it works and want to thank me, I would appreciate any donations ;)**
-
 Best wishes and have fun!
+
 -- _Immortale_
 
 ## License

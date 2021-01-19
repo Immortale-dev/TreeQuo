@@ -12,9 +12,8 @@ using namespace std;
 
 
 int main(){
-    
-    cout << "START" << endl;
-    {
+	cout << "START" << endl;
+	{
 		forest::bloom("tmp/mtest");
 		
 		forest::plant_tree(forest::TREE_TYPES::KEY_STRING, "test");
@@ -32,5 +31,4 @@ int main(){
 		forest::fold();
 	}
 	cout << "END" << endl;
-	
 }

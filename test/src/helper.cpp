@@ -5,36 +5,36 @@
 
 int dir_count(std::string path)
 {
-    DIR *dp;
-    int i = 0;
-    struct dirent *ep;     
-    dp = opendir (path.c_str());
+	DIR *dp;
+	int i = 0;
+	struct dirent *ep;     
+	dp = opendir (path.c_str());
 
-    if (dp != NULL)
-    {
-        while ( (ep = readdir (dp)) )
-            i++;
+	if (dp != NULL)
+	{
+		while ( (ep = readdir (dp)) )
+			i++;
 
-        (void) closedir (dp);
-    }
-    else
-        perror ("Couldn't open the directory");
-    
-    return i-2;
+		(void) closedir (dp);
+	}
+	else
+		perror ("Couldn't open the directory");
+
+	return i-2;
 }
 
 string to_str(int a)
 {
-    string ret;
-    while(a > 0){
-        ret.push_back(a%26+'a');
-        a/=26;
-    }
-    while(ret.size()<10){
-        ret.push_back('a');   
-    }
-    reverse(ret.begin(),ret.end());
-    return ret;
+	string ret;
+	while(a > 0){
+		ret.push_back(a%26+'a');
+		a/=26;
+	}
+	while(ret.size()<10){
+		ret.push_back('a');   
+	}
+	reverse(ret.begin(),ret.end());
+	return ret;
 }
 
 void config_high()
