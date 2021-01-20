@@ -3,6 +3,7 @@
 
 // define it for saving logs and turning on asserts
 //#define DEBUG
+#define DEBUG_PERF
 
 #include <cstring>
 #include <functional>

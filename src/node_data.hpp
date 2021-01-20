@@ -6,6 +6,8 @@
 namespace forest{
 namespace details{
 	
+	extern const string LEAF_NULL;
+	
 	struct node_data_t {
 		bool ghost = true;
 		string path = "";

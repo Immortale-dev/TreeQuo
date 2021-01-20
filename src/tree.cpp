@@ -1,5 +1,16 @@
 #include "tree.hpp"
 
+#ifdef DEBUG_PERF
+#include <chrono>
+namespace forest{
+namespace details{
+	unsigned long int h_enter=0, h_leave=0, h_insert=0, h_remove=0, h_reserve=0,
+		h_release=0, h_l_insert=0, h_l_delete=0, h_l_split=0, h_l_join=0,
+		h_l_shift=0, h_l_lock=0, h_l_free=0, h_l_ref=0, h_save_base=0; 
+}
+}
+#endif
+
 forest::details::Tree::Tree(string path)
 {	
 	name = path;
@@ -967,6 +978,7 @@ void forest::details::Tree::write_leaf_item(file_ptr file, tree_t::val_type& dat
 // Proceed
 void forest::details::Tree::d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type)
 {	
+	DP_LOG_START(p);
 	// Lock node mutex
 	lock_type(node, type);
 	
@@ -974,16 +986,18 @@ void forest::details::Tree::d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE
 	if(tree->is_stem_pub(node)){
 		return;
 	}
-		
+	
 	if(!node->is_leaf()){
 		materialize_intr(node);
 	} else {
 		materialize_leaf(node);
 	}
+	DP_LOG_END(p, h_enter);
 }
 
 void forest::details::Tree::d_leave(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type)
 {	
+	DP_LOG_START(p);
 	// Nothing to do with stem
 	if(tree->is_stem_pub(node)){
 		unlock_type(node, type);
@@ -996,10 +1010,12 @@ void forest::details::Tree::d_leave(tree_t::node_ptr& node, tree_t::PROCESS_TYPE
 		unmaterialize_leaf(node);
 	}
 	unlock_type(node, type);
+	DP_LOG_END(p, h_leave);
 }
 
 void forest::details::Tree::d_insert(tree_t::node_ptr& node)
 {	
+	DP_LOG_START(p);
 	if(!node->is_leaf()){
 		
 		cache::intr_lock();
@@ -1021,10 +1037,12 @@ void forest::details::Tree::d_insert(tree_t::node_ptr& node)
 		string cur_name = data->path;
 		savior->put(cur_name, SAVE_TYPES::LEAF, n);
 	}
+	DP_LOG_END(p, h_insert);
 }
 
 void forest::details::Tree::d_remove(tree_t::node_ptr& node)
 {	
+	DP_LOG_START(p);
 	node_data_ptr data = get_node_data(node);
 	
 	node_ptr n;
@@ -1045,10 +1063,12 @@ void forest::details::Tree::d_remove(tree_t::node_ptr& node)
 		savior->remove(data->path, SAVE_TYPES::LEAF, n);
 	}
 	cache::clear_node_cache(node);
+	DP_LOG_END(p, h_remove);
 }
 
 void forest::details::Tree::d_reserve(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type)
 {	
+	DP_LOG_START(p);
 	string& path = get_node_data(node)->path;
 	
 	cache::leaf_lock();
@@ -1059,10 +1079,12 @@ void forest::details::Tree::d_reserve(tree_t::node_ptr& node, tree_t::PROCESS_TY
 	cache::leaf_unlock();
 	
 	change_lock_type(node, type);
+	DP_LOG_END(p, h_reserve);
 }
 
 void forest::details::Tree::d_release(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type)
 {	
+	DP_LOG_START(p);
 	string& path = get_node_data(node)->path;
 	
 	cache::leaf_lock();
@@ -1073,6 +1095,7 @@ void forest::details::Tree::d_release(tree_t::node_ptr& node, tree_t::PROCESS_TY
 	cache::leaf_unlock();
 	
 	change_unlock_type(node, type);
+	DP_LOG_END(p, h_release);
 }
 
 void forest::details::Tree::d_before_move(tree_t::childs_type_iterator& item, int_t step)
@@ -1190,6 +1213,8 @@ void forest::details::Tree::d_item_move(tree_t::node_ptr& node, tree_t::child_it
 		return;
 	}
 	
+	DP_LOG_START(p);
+	
 	cache::leaf_lock();
 	node_ptr onode = extract_node(item);
 	
@@ -1215,6 +1240,8 @@ void forest::details::Tree::d_item_move(tree_t::node_ptr& node, tree_t::child_it
 	}
 	
 	cache::leaf_unlock();
+	
+	DP_LOG_END(p, h_l_ref);
 }
 
 void forest::details::Tree::d_offset_reserve(tree_t::node_ptr& node, int step)
@@ -1271,6 +1298,7 @@ void forest::details::Tree::d_offset_release(tree_t::node_ptr& node, int offset)
 
 void forest::details::Tree::d_leaf_insert(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item)
 {	
+	DP_LOG_START(p);
 	cache::leaf_lock();
 	/// lock{
 	string& path = get_node_data(node)->path;
@@ -1281,6 +1309,7 @@ void forest::details::Tree::d_leaf_insert(tree_t::node_ptr& node, tree_t::child_
 	
 	// Lock both at once
 	change_lock_bunch(node, item, true);
+	DP_LOG_END(p, h_l_insert);
 }
 
 void forest::details::Tree::d_leaf_delete(tree_t::node_ptr& node, tree_t::child_item_type_ptr& item)
@@ -1372,6 +1401,7 @@ void forest::details::Tree::d_leaf_free(tree_t::node_ptr& node)
 
 void forest::details::Tree::d_leaf_ref(tree_t::node_ptr& node, tree_t::node_ptr& ref_node, tree_t::LEAF_REF ref)
 {
+	DP_LOG_START(p);
 	string ref_path = LEAF_NULL;
 	if(ref_node){
 		ASSERT(has_data(ref_node));
@@ -1401,10 +1431,12 @@ void forest::details::Tree::d_leaf_ref(tree_t::node_ptr& node, tree_t::node_ptr&
 			data->prev = ref_path;
 		}
 	}
+	DP_LOG_END(p, h_l_ref);
 }
 
 void forest::details::Tree::d_save_base(tree_t::node_ptr& node)
 {
+	DP_LOG_START(p);
 	// Save Base File
 	string base_file_name = this->get_name();
 	
@@ -1420,4 +1452,5 @@ void forest::details::Tree::d_save_base(tree_t::node_ptr& node)
 	}
 	
 	savior->put(base_file_name, SAVE_TYPES::BASE, t);
+	DP_LOG_END(p, h_save_base);
 }
