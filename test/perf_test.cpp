@@ -1,5 +1,5 @@
 #define DEBUG
-#define TEST_ONLY_RULE
+//#define TEST_ONLY_RULE
 
 #include "qtest.hpp"
 using namespace std;

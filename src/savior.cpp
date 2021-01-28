@@ -14,6 +14,7 @@ forest::details::Savior::~Savior()
 	save_all();
 	
 	// Wait workers to finish current work
+	scheduler_worker.wait();
 	joiner.wait();
 	file_deleter.wait();
 	

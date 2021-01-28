@@ -35,7 +35,7 @@ extern unsigned long int h_enter, h_leave, h_insert, h_remove, h_reserve,
 }
 }
 #define DP_LOG_START(p) auto p = std::chrono::high_resolution_clock::now()
-#define DP_LOG_END(p,v) { auto __p_end = std::chrono::high_resolution_clock::now(); v+=std::chrono::duration_cast<std::chrono::microseconds>(__p_end-p).count(); }
+#define DP_LOG_END(p,v) { auto __p_end = std::chrono::high_resolution_clock::now(); v+=std::chrono::duration_cast<std::chrono::nanoseconds>(__p_end-p).count(); }
 #else
 #define DP_LOG_START(p) 
 #define DP_LOG_END(p,v)
@@ -74,6 +74,9 @@ namespace details{
 			string get_annotation();
 			void set_annotation(string annotation);
 			
+			cache::tree_cache_ref_t* get_cached_ref();
+			void set_cached_ref(cache::tree_cache_ref_t* ref);
+			
 			TREE_TYPES get_type();
 			void set_type(TREE_TYPES type);
 			
@@ -87,6 +90,9 @@ namespace details{
 			static string seed(TREE_TYPES type, int factor);
 			static string seed(TREE_TYPES type, string path, int factor);
 			static tree_ptr get(string path);
+			
+			void tree_reserve();
+			void tree_release();
 			
 		private:
 		
@@ -103,8 +109,6 @@ namespace details{
 			// Tree methods
 			static tree_base_read_t read_base(string filename);
 			static void seed_tree(DBFS::File* file, TREE_TYPES type, int factor);
-			void tree_reserve();
-			void tree_release();
 		
 			// Proceed
 			void d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type);
@@ -157,6 +161,7 @@ namespace details{
 			string name;
 			string annotation;
 			mutex tree_m;
+			cache::tree_cache_ref_t* cached_ref;
 	};
 	
 } // details

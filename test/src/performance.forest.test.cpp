@@ -86,7 +86,7 @@ DESCRIBE("Initialize forest at tmp/perf", {
 			
 			int rec_count = 1000000;
 			
-			IT_ONLY("Insert 1000000 items [0,1000000)", {
+			IT("Insert 1000000 items [0,1000000)", {
 				p1 = chrono::system_clock::now();
 				forest::Tree tree = forest::find_tree("test_else");
 				for(int i=0;i<rec_count;i++){
@@ -97,15 +97,15 @@ DESCRIBE("Initialize forest at tmp/perf", {
 				TEST_SUCCEED();
 				INFO_PRINT("Time For Insert: " + to_string(time_free) + "ms");
 				
-				INFO_PRINT("d_enter_time: " + to_string(forest::details::h_enter/1000));
-				INFO_PRINT("d_leave_time: " + to_string(forest::details::h_leave/1000));
-				INFO_PRINT("d_insert_time: " + to_string(forest::details::h_insert/1000));
-				INFO_PRINT("d_remove_time: " + to_string(forest::details::h_remove/1000));
-				INFO_PRINT("d_reserve_time: " + to_string(forest::details::h_reserve/1000));
-				INFO_PRINT("d_release_time: " + to_string(forest::details::h_release/1000));
-				INFO_PRINT("d_leaf_insert: " + to_string(forest::details::h_l_insert/1000));
-				INFO_PRINT("h_l_ref: " + to_string(forest::details::h_l_ref/1000));
-				INFO_PRINT("h_save_base: " + to_string(forest::details::h_save_base/1000));
+				//INFO_PRINT("d_enter_time: " + to_string(forest::details::h_enter/1000000));
+				//INFO_PRINT("d_leave_time: " + to_string(forest::details::h_leave/1000000));
+				//INFO_PRINT("d_insert_time: " + to_string(forest::details::h_insert/1000000));
+				//INFO_PRINT("d_remove_time: " + to_string(forest::details::h_remove/1000000));
+				//INFO_PRINT("d_reserve_time: " + to_string(forest::details::h_reserve/1000000));
+				//INFO_PRINT("d_release_time: " + to_string(forest::details::h_release/1000000));
+				//INFO_PRINT("d_leaf_insert: " + to_string(forest::details::h_l_insert/1000000));
+				//INFO_PRINT("h_l_ref: " + to_string(forest::details::h_l_ref/1000000));
+				//INFO_PRINT("h_save_base: " + to_string(forest::details::h_save_base/1000000));
 			});
 			
 			IT("Get all items independently", {

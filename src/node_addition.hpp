@@ -4,10 +4,20 @@
 #include <mutex>
 #include <condition_variable>
 #include <memory>
+#include <list>
+#include "dbutils.hpp"
+
 
 namespace forest{
 namespace details{
 	
+	
+	class Tree;
+	
+	namespace cache{
+		struct node_cache_ref_t;
+	}
+
 	struct node_addition{
 		struct{
 			std::mutex m,g;
@@ -28,7 +38,12 @@ namespace details{
 		} change_locks;
 		std::shared_ptr<void> drive_data;
 		std::shared_ptr<DBFS::File> f;
-		std::weak_ptr<void> original;
+		std::weak_ptr<tree_t::Node> original;
+		
+		cache::node_cache_ref_t* cached_ref;
+		std::list<node_ptr>::iterator cache_iterator;
+		bool cache_iterator_valid = false;
+		
 		bool bloomed = true;
 		bool is_original = false;
 		bool leaved = false;

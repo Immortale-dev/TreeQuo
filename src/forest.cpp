@@ -111,7 +111,7 @@ void forest::cut_tree(details::string name)
 		// Get tree path
 		path = details::read_leaf_item(it->second);
 	}
-
+	
 	// Remove tree from forest
 	details::FOREST->erase(name);
 
@@ -245,7 +245,7 @@ forest::Leaf forest::find_leaf(details::string tree_name, LEAF_POSITION position
 	details::tree_owner_ptr tree = find_tree(tree_name);
 	details::tree_ptr nt = details::extract_native_tree(tree);
 
-	L_PUB("[forest::find_leaf]-POS_" + nt->name() + "_" + to_string((int)position));
+	L_PUB("[forest::find_leaf]-POS_" + nt->get_name() + "_" + details::to_string((int)position));
 
 	details::tree_t::iterator t;
 	if(position == LEAF_POSITION::BEGIN){
@@ -459,24 +459,26 @@ forest::details::tree_ptr forest::details::reach_tree(string path)
 {
 	cache::tree_lock();
 	tree_ptr t = get_tree(path);
-	cache::reserve_tree(path);
+	t->tree_reserve();
 	cache::tree_unlock();
 	t->ready();
 	return t;
 }
 
-void forest::details::leave_tree(string path)
+void forest::details::leave_tree(tree_ptr t)
 {
 	cache::tree_lock();
-	cache::release_tree(path);
+	t->tree_release();
 	cache::tree_unlock();
 }
 
 void forest::details::insert_tree(string name, string file_name, tree_ptr tree)
 {
+	auto* cache_obj = new cache::tree_cache_ref_t{tree,1};
 	cache::tree_lock();
 	cache::tree_cache.push(file_name, tree);
-	cache::tree_cache_r[file_name] = make_pair(tree,1);
+	cache::tree_cache_r[file_name] = cache_obj;
+	tree->set_cached_ref(cache_obj);
 	cache::tree_unlock();
 	
 	savior->put(file_name, SAVE_TYPES::BASE, tree);
@@ -484,7 +486,7 @@ void forest::details::insert_tree(string name, string file_name, tree_ptr tree)
 	file_data_ptr tmp = file_data_ptr(new file_data_t(file_name.c_str(), file_name.size()));
 	FOREST->insert(name, std::move(tmp));
 	
-	leave_tree(file_name);
+	leave_tree(tree);
 }
 
 void forest::details::erase_tree(string path)
@@ -504,7 +506,7 @@ void forest::details::erase_tree(string path)
 	}
 	cache::tree_unlock();
 	
-	leave_tree(path);
+	leave_tree(nt);
 }
 
 forest::details::tree_ptr forest::details::get_tree(string path)

@@ -2,8 +2,8 @@
 #define FOREST_DBUTILS_H
 
 // define it for saving logs and turning on asserts
-//#define DEBUG
-#define DEBUG_PERF
+#define DEBUG
+//#define DEBUG_PERF
 
 #include <cstring>
 #include <functional>
@@ -26,6 +26,7 @@
 #include "threading.hpp"
 #include "types.hpp"
 #include "file_data.hpp"
+#include "node_addition.hpp"
 
 namespace forest{
 namespace details{

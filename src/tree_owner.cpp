@@ -8,7 +8,7 @@ forest::details::tree_owner::tree_owner(tree_ptr tree) : tree(tree)
 forest::details::tree_owner::~tree_owner()
 {
 	cache::tree_lock();
-	cache::release_tree(tree->get_name());
+	tree->tree_release();
 	cache::tree_unlock();
 }
 
