@@ -460,6 +460,7 @@ forest::details::tree_ptr forest::details::reach_tree(string path)
 	cache::tree_lock();
 	tree_ptr t = get_tree(path);
 	t->tree_reserve();
+	cache::tree_cache_push(t);
 	cache::tree_unlock();
 	t->ready();
 	return t;
@@ -476,9 +477,9 @@ void forest::details::insert_tree(string name, string file_name, tree_ptr tree)
 {
 	auto* cache_obj = new cache::tree_cache_ref_t{tree,1};
 	cache::tree_lock();
-	cache::tree_cache.push(file_name, tree);
+	cache::tree_cache_push(tree);
 	cache::tree_cache_r[file_name] = cache_obj;
-	tree->set_cached_ref(cache_obj);
+	tree->get_cached().ref = cache_obj;
 	cache::tree_unlock();
 	
 	savior->put(file_name, SAVE_TYPES::BASE, tree);
@@ -501,9 +502,7 @@ void forest::details::erase_tree(string path)
 
 	// Clear cache
 	cache::tree_lock();
-	if(cache::tree_cache.has(path)){
-		cache::tree_cache.remove(path);
-	}
+	cache::tree_cache_remove(nt);
 	cache::tree_unlock();
 	
 	leave_tree(nt);

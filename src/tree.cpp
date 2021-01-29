@@ -70,7 +70,6 @@ forest::details::tree_ptr forest::details::Tree::get(string path)
 	// Check reference
 	if(cache::tree_cache_r.count(path)){
 		t = cache::tree_cache_r[path]->first;
-		cache::tree_cache.push(path, t);
 		return t;
 	}
 	
@@ -80,17 +79,16 @@ forest::details::tree_ptr forest::details::Tree::get(string path)
 	
 	auto* cache_obj = new cache::tree_cache_ref_t{t,1};
 	
-	t->set_cached_ref(cache_obj);
+	t->get_cached().ref = cache_obj;
+	t->set_name(path);
 	
 	cache::tree_cache_r[path] = cache_obj;
-	
 	cache::tree_unlock();
 	
 	// Read Tree data
 	tree_base_read_t base = read_base(path);
 	
 	// Fill tree
-	t->set_name(path);
 	t->set_type(base.type);
 	t->set_annotation(base.annotation);
 	
@@ -99,7 +97,6 @@ forest::details::tree_ptr forest::details::Tree::get(string path)
 	
 	cache::tree_lock();
 	
-	cache::tree_cache.push(path, t);
 	cache_obj->second--;
 	t->unlock();
 
@@ -170,11 +167,9 @@ void forest::details::Tree::tree_reserve()
 	if(FOREST.get() == this){
 		return;
 	}
-	//cache::tree_cache_m.lock();
 	ASSERT(cache::tree_cache_r.count(name));
 	ASSERT(cache::tree_cache_r[name]->second >= 0);
-	cached_ref->second++;
-	//cache::tree_cache_m.unlock();
+	cache::reserve_tree(get_cached().ref->first);
 }
 
 void forest::details::Tree::tree_release()
@@ -182,12 +177,9 @@ void forest::details::Tree::tree_release()
 	if(FOREST.get() == this){
 		return;
 	}
-	//cache::tree_cache_m.lock();
 	ASSERT(cache::tree_cache_r.count(name));
 	ASSERT(cache::tree_cache_r[name]->second > 0);
-	cached_ref->second--;
-	cache::check_tree_ref(name);
-	//cache::tree_cache_m.unlock();
+	cache::release_tree(get_cached().ref->first);
 }
 
 forest::details::tree_base_read_t forest::details::Tree::read_base(string filename)
@@ -581,14 +573,9 @@ void forest::details::Tree::set_annotation(string annotation)
 	this->annotation = annotation;
 }
 
-forest::details::cache::tree_cache_ref_t* forest::details::Tree::get_cached_ref()
+forest::details::Tree::tree_cache_t& forest::details::Tree::get_cached()
 {
-	return cached_ref;
-}
-
-void forest::details::Tree::set_cached_ref(cache::tree_cache_ref_t* ref)
-{
-	cached_ref = ref;
+	return cached;
 }
 
 forest::TREE_TYPES forest::details::Tree::get_type()
@@ -1477,7 +1464,7 @@ void forest::details::Tree::d_save_base(tree_t::node_ptr& node)
 		cache::tree_lock();
 		//ASSERT(cache::tree_cache_r.count(base_file_name));
 		//ASSERT(cache::tree_cache_r[base_file_name]->second > 0);
-		t = this->cached_ref->first;
+		t = this->get_cached().ref->first;
 		cache::tree_unlock();
 	}
 	

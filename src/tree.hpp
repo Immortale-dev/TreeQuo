@@ -58,6 +58,8 @@ namespace details{
 		using tree_node_type = tree_t::Node::nodes_type;
 		using tree_keys_type = tree_t::Node::keys_type;
 		
+		struct tree_cache_t;
+		
 		public:
 			Tree();
 			Tree(string path);
@@ -74,8 +76,7 @@ namespace details{
 			string get_annotation();
 			void set_annotation(string annotation);
 			
-			cache::tree_cache_ref_t* get_cached_ref();
-			void set_cached_ref(cache::tree_cache_ref_t* ref);
+			tree_cache_t& get_cached();
 			
 			TREE_TYPES get_type();
 			void set_type(TREE_TYPES type);
@@ -95,6 +96,13 @@ namespace details{
 			void tree_release();
 			
 		private:
+		
+			// Cache optimisation structure
+			struct tree_cache_t{
+				cache::tree_cache_ref_t* ref = nullptr;
+				bool iterator_valid = false;
+				std::list<tree_ptr>::iterator iterator;
+			};
 		
 			// Intr methods
 			tree_intr_read_t read_intr(string filename);
@@ -161,7 +169,8 @@ namespace details{
 			string name;
 			string annotation;
 			mutex tree_m;
-			cache::tree_cache_ref_t* cached_ref;
+			
+			tree_cache_t cached;
 	};
 	
 } // details

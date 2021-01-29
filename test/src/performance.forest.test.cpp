@@ -86,7 +86,7 @@ DESCRIBE("Initialize forest at tmp/perf", {
 			
 			int rec_count = 1000000;
 			
-			IT("Insert 1000000 items [0,1000000)", {
+			IT_ONLY("Insert 1000000 items [0,1000000)", {
 				p1 = chrono::system_clock::now();
 				forest::Tree tree = forest::find_tree("test_else");
 				for(int i=0;i<rec_count;i++){

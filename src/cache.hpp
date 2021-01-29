@@ -35,7 +35,7 @@ namespace details{
 		void release_cache();
 		void check_leaf_ref(node_ptr node);
 		void check_intr_ref(node_ptr node);
-		void check_tree_ref(string key);
+		void check_tree_ref(tree_ptr tree);
 		void set_tree_cache_length(int length);
 		void set_intr_cache_length(int length);
 		void set_leaf_cache_length(int length);
@@ -44,10 +44,13 @@ namespace details{
 		
 		void leaf_cache_push(node_ptr node);
 		void intr_cache_push(node_ptr node);
+		void tree_cache_push(tree_ptr tree);
 		void leaf_cache_remove(node_ptr node);
 		void intr_cache_remove(node_ptr node);
+		void tree_cache_remove(tree_ptr tree);
 		void leaf_cache_clear();
 		void intr_cache_clear();
+		void tree_cache_clear();
 		
 		void intr_lock();
 		void intr_unlock();
@@ -64,6 +67,8 @@ namespace details{
 		void release_intr_node(node_ptr node, int cnt = 1);
 		void reserve_leaf_node(node_ptr node, int cnt = 1);
 		void release_leaf_node(node_ptr node, int cnt = 1);
+		void reserve_tree(tree_ptr tree);
+		void release_tree(tree_ptr tree);
 		
 		void intr_insert(tree_t::node_ptr& node, bool w_lock=false);
 		void leaf_insert(tree_t::node_ptr& node, bool w_lock=false);
@@ -75,7 +80,7 @@ namespace details{
 		void _intr_insert(tree_t::node_ptr& node);
 		void _leaf_insert(tree_t::node_ptr& node);
 		
-		extern ListCache<string, tree_ptr> tree_cache;
+		//extern ListCache<string, tree_ptr> tree_cache;
 		//extern ListCache<string, tree_t::node_ptr> leaf_cache, intr_cache;
 		extern mutex tree_cache_m, leaf_cache_m, intr_cache_m;
 		extern std::unordered_map<string, tree_cache_ref_t*> tree_cache_r;

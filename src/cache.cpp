@@ -6,7 +6,7 @@ namespace forest{
 namespace details{
 	
 	namespace cache{
-		ListCache<string, tree_ptr> tree_cache(TREE_CACHE_LENGTH);
+		//ListCache<string, tree_ptr> tree_cache(TREE_CACHE_LENGTH);
 		//ListCache<string, tree_t::node_ptr> leaf_cache(LEAF_CACHE_LENGTH), intr_cache(INTR_CACHE_LENGTH);
 		mutex tree_cache_m, leaf_cache_m, intr_cache_m;
 		std::unordered_map<string, tree_cache_ref_t*> tree_cache_r;
@@ -14,6 +14,7 @@ namespace details{
 		std::unordered_map<string, node_cache_ref_t*> intr_cache_r;
 		
 		std::list<node_ptr> leaf_cache_l, intr_cache_l;
+		std::list<tree_ptr> tree_cache_l;
 	}
 	
 } // details
@@ -23,7 +24,7 @@ namespace details{
 
 void forest::details::cache::init_cache()
 {
-	tree_cache.set_callback([](string key){ forest::details::cache::check_tree_ref(key); });
+	//tree_cache.set_callback([](string key){ forest::details::cache::check_tree_ref(key); });
 	//leaf_cache.set_callback([](string key){ forest::details::cache::check_leaf_ref(key); });
 	//intr_cache.set_callback([](string key){ forest::details::cache::check_intr_ref(key); });
 }
@@ -65,6 +66,24 @@ void forest::details::cache::intr_cache_push(node_ptr node)
 	}
 }
 
+void forest::details::cache::tree_cache_push(tree_ptr tree)
+{
+	auto& cached = tree->get_cached();
+	if(!cached.iterator_valid){
+		tree_cache_l.push_front(tree);
+		cached.iterator = tree_cache_l.begin();
+		cached.iterator_valid = true;
+		if(tree_cache_l.size() > (size_t)TREE_CACHE_LENGTH){
+			tree = tree_cache_l.back();
+			tree->get_cached().iterator_valid = false;
+			tree_cache_l.pop_back();
+			check_tree_ref(tree);
+		}
+	} else {
+		tree_cache_l.splice(tree_cache_l.begin(), tree_cache_l, cached.iterator);
+	}
+}
+
 void forest::details::cache::leaf_cache_remove(node_ptr node)
 {
 	auto& node_data = get_data(node);
@@ -83,6 +102,16 @@ void forest::details::cache::intr_cache_remove(node_ptr node)
 	intr_cache_l.erase(node_data.cache_iterator);
 	node_data.cache_iterator_valid = false;
 	check_intr_ref(node);
+}
+
+void forest::details::cache::tree_cache_remove(tree_ptr tree)
+{
+	auto& cached = tree->get_cached();
+	if(!cached.iterator_valid)
+		return;
+	tree_cache_l.erase(cached.iterator);
+	cached.iterator_valid = false;
+	check_tree_ref(tree);
 }
 
 void forest::details::cache::leaf_cache_clear()
@@ -105,13 +134,23 @@ void forest::details::cache::intr_cache_clear()
 	}
 }
 
+void forest::details::cache::tree_cache_clear()
+{
+	while(!tree_cache_l.empty()){
+		tree_ptr tree = tree_cache_l.front();
+		tree->get_cached().iterator_valid = false;
+		tree_cache_l.pop_front();
+		check_tree_ref(tree);
+	}
+}
+
 void forest::details::cache::release_cache()
 {
 	//leaf_cache.clear();
 	//intr_cache.clear();
 	leaf_cache_clear();
 	intr_cache_clear();
-	tree_cache.clear();
+	tree_cache_clear();
 }
 
 void forest::details::cache::leaf_unlock()
@@ -119,19 +158,18 @@ void forest::details::cache::leaf_unlock()
 	leaf_cache_m.unlock();
 }
 
-void forest::details::cache::check_tree_ref(string key)
+void forest::details::cache::check_tree_ref(tree_ptr tree)
 {
-	if(!tree_cache_r.count(key)){
-		return;
-	}
-	auto* tree_cache_ref = tree_cache_r[key];
+	auto* tree_cache_ref = tree->get_cached().ref;
+	if(!tree_cache_ref) return;
 	
 	ASSERT(tree_cache_ref->second >= 0);
 	
-	if(tree_cache_ref->second == 0 && !tree_cache.has(key)){
+	if(tree_cache_ref->second == 0 && !tree->get_cached().iterator_valid){
 		tree_ptr tree = tree_cache_ref->first;
-		tree_cache_r.erase(key);
 		delete tree_cache_ref;
+		string key = tree->get_name();
+		tree_cache_r.erase(key);
 		savior->leave(key, SAVE_TYPES::BASE, tree);
 	}
 }
@@ -182,7 +220,7 @@ void forest::details::cache::set_tree_cache_length(int length)
 {
 	TREE_CACHE_LENGTH = length;
 	tree_cache_m.lock();
-	tree_cache.resize(TREE_CACHE_LENGTH);
+	///tree_cache.resize(TREE_CACHE_LENGTH);
 	tree_cache_m.unlock();
 }
 
@@ -225,6 +263,20 @@ void forest::details::cache::reserve_node(tree_t::node_ptr& node, bool w_lock)
 		} else {
 			reserve_intr_node(node);
 		}
+	}
+}
+
+void forest::details::cache::reserve_tree(tree_ptr tree)
+{
+	ASSERT(tree->get_cached().ref->second >= 0);
+	++tree->get_cached().ref->second;
+}
+
+void forest::details::cache::release_tree(tree_ptr tree)
+{
+	ASSERT(tree->get_cached().ref->second > 0);
+	if(--tree->get_cached().ref->second == 0){
+		cache::check_tree_ref(tree);
 	}
 }
 
