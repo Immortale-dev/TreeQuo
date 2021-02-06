@@ -17,6 +17,7 @@ namespace details{
 		public:
 			P data;
 			using BPlusTreeBaseInternalNode<Key, T>::BPlusTreeBaseInternalNode;
+			~BPTInternal();
 	};
 
 	template <class Key, class T, class P>
@@ -49,6 +50,15 @@ namespace details{
 			self_type& operator--();
 			
 	};
+	
+	template <class Key, class T, class P>
+	BPTInternal<Key, T, P>::~BPTInternal()
+	{
+		if(!data.is_original){
+			this->set_keys(nullptr);
+			this->set_nodes(nullptr);
+		}
+	}
 
 	template <class Key, class T>
 	BPTIterator<Key, T>& BPTIterator<Key, T>::operator++()
@@ -67,6 +77,11 @@ namespace details{
 	{
 		if(data.f){
 			data.f->close();
+		}
+		if(!data.is_original){
+			this->set_childs(nullptr);
+			set_prev_leaf(nullptr);
+			set_next_leaf(nullptr);
 		}
 	}
 

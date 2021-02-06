@@ -21,6 +21,14 @@
 	#define ASSERT(cond)
 #endif
 
+#ifdef DEBUG_PERF
+#define DP_LOG_START(p) auto p = std::chrono::high_resolution_clock::now()
+#define DP_LOG_END(p,v) { auto __p_end = std::chrono::high_resolution_clock::now(); v+=std::chrono::duration_cast<std::chrono::nanoseconds>(__p_end-p).count(); }
+#else
+#define DP_LOG_START(p) 
+#define DP_LOG_END(p,v)
+#endif
+
 namespace forest{
 namespace details{
 	

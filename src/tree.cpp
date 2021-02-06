@@ -2,13 +2,9 @@
 
 #ifdef DEBUG_PERF
 #include <chrono>
-namespace forest{
-namespace details{
 	unsigned long int h_enter=0, h_leave=0, h_insert=0, h_remove=0, h_reserve=0,
 		h_release=0, h_l_insert=0, h_l_delete=0, h_l_split=0, h_l_join=0,
 		h_l_shift=0, h_l_lock=0, h_l_free=0, h_l_ref=0, h_save_base=0; 
-}
-}
 #endif
 
 forest::details::Tree::Tree(string path)
@@ -366,7 +362,7 @@ void forest::details::Tree::materialize_intr(tree_t::node_ptr node)
 	// Owners lock made for readers-writer concept
 	own_lock(node);
 	/// own_lock{
-	if(!own_inc(node)){
+	if(node->get_keys() != n->get_keys() || node->get_nodes() != n->get_nodes()){
 		node->set_keys(n->get_keys());
 		node->set_nodes(n->get_nodes());
 		data->ghost = false;
@@ -427,24 +423,30 @@ void forest::details::Tree::materialize_leaf(tree_t::node_ptr node)
 	// Own lock made for readers-writer concept
 	own_lock(node);
 	/// own_lock{
-	if(own_inc(node)){
-		own_unlock(node);
-		return;
-	}
+	//if(own_inc(node)){
+	//	own_unlock(node);
+	//	return;
+	//}
 	
-	node->set_childs(n->get_childs());
 	node_data_ptr ndata = get_node_data(n);
 	
-	next_leaf = create_node(ndata->next, NODE_TYPES::LEAF, true);
-	prev_leaf = create_node(ndata->prev, NODE_TYPES::LEAF, true);
+	if(node->get_childs() != n->get_childs() || data->prev != ndata->prev || data->next != ndata->next){
+	//if(true){
 	
-	if(ndata->prev != LEAF_NULL){
-		node->set_prev_leaf(prev_leaf);
+		node->set_childs(n->get_childs());
+		
+		next_leaf = create_node(ndata->next, NODE_TYPES::LEAF, true);
+		prev_leaf = create_node(ndata->prev, NODE_TYPES::LEAF, true);
+		
+		if(ndata->prev != LEAF_NULL){
+			node->set_prev_leaf(prev_leaf);
+		}
+		if(ndata->next != LEAF_NULL){
+			node->set_next_leaf(next_leaf);
+		}
+		data->ghost = false;
+		
 	}
-	if(ndata->next != LEAF_NULL){
-		node->set_next_leaf(next_leaf);
-	}
-	data->ghost = false;
 	/// }own_lock
 	own_unlock(node);
 }
@@ -463,9 +465,11 @@ void forest::details::Tree::unmaterialize_intr(tree_t::node_ptr node)
 	} else {
 		unlock_read(n);
 	}
+	cache::release_intr_node(n);
 	/// }lock
 	cache::intr_unlock();
 	
+	/*
 	// made for readers-writer concept
 	own_lock(node);
 	/// own_lock{
@@ -475,9 +479,8 @@ void forest::details::Tree::unmaterialize_intr(tree_t::node_ptr node)
 		data->ghost = true;
 	}
 	/// }own_lock
-	own_unlock(node);
+	own_unlock(node); */
 	
-	cache::release_node(n, true);
 }
 
 void forest::details::Tree::unmaterialize_leaf(tree_t::node_ptr node)
@@ -491,11 +494,12 @@ void forest::details::Tree::unmaterialize_leaf(tree_t::node_ptr node)
 	} else {
 		unlock_read(n);
 	}
+	cache::release_leaf_node(n);
 	/// }lock
 	cache::leaf_unlock();
 	
 	// Owner lock made for readers-writer concept
-	own_lock(node);
+	/*own_lock(node);
 	/// own_lock{
 	if(!own_dec(node)){
 		node->set_childs(nullptr);
@@ -504,9 +508,8 @@ void forest::details::Tree::unmaterialize_leaf(tree_t::node_ptr node)
 		get_node_data(node)->ghost = true;
 	}
 	/// }own_lock
-	own_unlock(node);
+	own_unlock(node); */
 	
-	cache::release_node(n, true);
 }
 
 forest::details::node_ptr forest::details::Tree::create_node(string path, NODE_TYPES node_type)

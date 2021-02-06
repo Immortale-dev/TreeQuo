@@ -10,6 +10,10 @@
 #include "tree.hpp"
 #include "listcache.hpp"
 
+#ifdef DEBUG_PERF
+extern unsigned long int h_blocking;
+#endif
+
 namespace forest{
 namespace details{
 	

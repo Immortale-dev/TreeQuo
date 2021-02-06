@@ -1,5 +1,9 @@
 #include "savior.hpp"
 
+#ifdef DEBUG_PERF
+unsigned long int h_blocking = 0;
+#endif
+
 forest::details::Savior::Savior()
 {
 	items_queue.resize(SAVIOUR_QUEUE_LENGTH);
@@ -24,28 +28,34 @@ forest::details::Savior::~Savior()
 
 void forest::details::Savior::put(save_key item, SAVE_TYPES type, void_shared node)
 {
+	DP_LOG_START(p);
 	std::unique_lock<std::mutex> lock(map_mtx);
 	
 	if(has(item) && !has_locking(item)){
 		// Just schedule as its going to be saved
 		schedule_save(item);
+		DP_LOG_END(p, h_blocking);
 		return;
 	}
 	
 	define_item(item, type, ACTION_TYPE::SAVE, node);
 	schedule_save(item);
+	DP_LOG_END(p, h_blocking);
 }
 
 void forest::details::Savior::remove(save_key item, SAVE_TYPES type, void_shared node)
 {
+	DP_LOG_START(p);
 	std::unique_lock<std::mutex> lock(map_mtx);
 
 	define_item(item, type, ACTION_TYPE::REMOVE, node);
 	schedule_save(item);
+	DP_LOG_END(p, h_blocking);
 }
 
 void forest::details::Savior::leave(save_key item, SAVE_TYPES type, void_shared nodef)
 {
+	DP_LOG_START(p);
 	std::unique_lock<std::mutex> lock(map_mtx);
 	
 	// Implicitly close file if leaf is up to date
@@ -64,6 +74,7 @@ void forest::details::Savior::leave(save_key item, SAVE_TYPES type, void_shared 
 	if(has(item)){
 		save(item, false);
 	}
+	DP_LOG_END(p, h_blocking);
 }
 
 void forest::details::Savior::save(save_key item, bool sync)

@@ -147,13 +147,13 @@ inline std::lock_guard<std::mutex> forest::details::cache::get_leaf_lock()
 
 inline void forest::details::cache::reserve_intr_node(node_ptr node, int cnt)
 {
-	assert(get_data(node).is_original);
+	ASSERT(get_data(node).is_original);
 	get_data(node).cached_ref->second += cnt;
 }
 
 inline void forest::details::cache::release_intr_node(node_ptr node, int cnt)
 {
-	assert(get_data(node).is_original);
+	ASSERT(get_data(node).is_original);
 	auto& data = get_data(node);
 	ASSERT(data.cached_ref->second >= cnt);
 	data.cached_ref->second -= cnt;
@@ -164,15 +164,15 @@ inline void forest::details::cache::release_intr_node(node_ptr node, int cnt)
 
 inline void forest::details::cache::reserve_leaf_node(node_ptr node, int cnt)
 {
-	assert(get_data(node).is_original);
+	ASSERT(get_data(node).is_original);
 	get_data(node).cached_ref->second += cnt;
 }
 
 inline void forest::details::cache::release_leaf_node(node_ptr node, int cnt)
 {
-	assert(get_data(node).is_original);
+	ASSERT(get_data(node).is_original);
 	auto& data = get_data(node);
-	ASSERT(data.cached_ref->second >= cnt);
+	ASSERT(get_data(node).cached_ref->second >= cnt);
 	data.cached_ref->second -= cnt;
 	if(data.cached_ref->second == 0){
 		check_leaf_ref(node);

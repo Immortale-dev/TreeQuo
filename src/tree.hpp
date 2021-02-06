@@ -27,18 +27,9 @@
 #include "savior.hpp"
 
 #ifdef DEBUG_PERF
-namespace forest{
-namespace details{
 extern unsigned long int h_enter, h_leave, h_insert, h_remove, h_reserve,
 		h_release, h_l_insert, h_l_delete, h_l_split, h_l_join,
 		h_l_shift, h_l_lock, h_l_free, h_l_ref, h_save_base; 
-}
-}
-#define DP_LOG_START(p) auto p = std::chrono::high_resolution_clock::now()
-#define DP_LOG_END(p,v) { auto __p_end = std::chrono::high_resolution_clock::now(); v+=std::chrono::duration_cast<std::chrono::nanoseconds>(__p_end-p).count(); }
-#else
-#define DP_LOG_START(p) 
-#define DP_LOG_END(p,v)
 #endif
 
 namespace forest{
