@@ -17,11 +17,9 @@ forest::details::LeafRecord::~LeafRecord()
 
 forest::details::LeafRecord::LeafRecord(tree_t::iterator it, tree_ptr tree) : it(std::move(it)), tree(tree)
 {
-	//tree->tree_reserve();
 	cache::tree_cache_m.lock();
 	tree->tree_reserve();
 	cache::tree_cache_m.unlock();
-	// main ctor
 }
 
 bool forest::details::LeafRecord::eof()

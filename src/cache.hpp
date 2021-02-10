@@ -80,8 +80,6 @@ namespace details{
 		void _intr_insert(tree_t::node_ptr& node);
 		void _leaf_insert(tree_t::node_ptr& node);
 		
-		//extern ListCache<string, tree_ptr> tree_cache;
-		//extern ListCache<string, tree_t::node_ptr> leaf_cache, intr_cache;
 		extern mutex tree_cache_m, leaf_cache_m, intr_cache_m;
 		extern std::unordered_map<string, tree_cache_ref_t*> tree_cache_r;
 		extern std::unordered_map<string, node_cache_ref_t*> leaf_cache_r;

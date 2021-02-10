@@ -6,8 +6,6 @@ namespace forest{
 namespace details{
 	
 	namespace cache{
-		//ListCache<string, tree_ptr> tree_cache(TREE_CACHE_LENGTH);
-		//ListCache<string, tree_t::node_ptr> leaf_cache(LEAF_CACHE_LENGTH), intr_cache(INTR_CACHE_LENGTH);
 		mutex tree_cache_m, leaf_cache_m, intr_cache_m;
 		std::unordered_map<string, tree_cache_ref_t*> tree_cache_r;
 		std::unordered_map<string, node_cache_ref_t*> leaf_cache_r;
@@ -24,9 +22,7 @@ namespace details{
 
 void forest::details::cache::init_cache()
 {
-	//tree_cache.set_callback([](string key){ forest::details::cache::check_tree_ref(key); });
-	//leaf_cache.set_callback([](string key){ forest::details::cache::check_leaf_ref(key); });
-	//intr_cache.set_callback([](string key){ forest::details::cache::check_intr_ref(key); });
+	// No need to initiate
 }
 
 
@@ -37,7 +33,7 @@ void forest::details::cache::leaf_cache_push(node_ptr node)
 		leaf_cache_l.push_front(node);
 		node_data.cache_iterator = leaf_cache_l.begin();
 		node_data.cache_iterator_valid = true;
-		if(leaf_cache_l.size() > (size_t)LEAF_CACHE_LENGTH){
+		while(leaf_cache_l.size() > (size_t)LEAF_CACHE_LENGTH){
 			node = leaf_cache_l.back();
 			get_data(node).cache_iterator_valid = false;
 			leaf_cache_l.pop_back();
@@ -55,7 +51,7 @@ void forest::details::cache::intr_cache_push(node_ptr node)
 		intr_cache_l.push_front(node);
 		node_data.cache_iterator = intr_cache_l.begin();
 		node_data.cache_iterator_valid = true;
-		if(intr_cache_l.size() > (size_t)INTR_CACHE_LENGTH){
+		while(intr_cache_l.size() > (size_t)INTR_CACHE_LENGTH){
 			node = intr_cache_l.back();
 			get_data(node).cache_iterator_valid = false;
 			intr_cache_l.pop_back();
@@ -73,7 +69,7 @@ void forest::details::cache::tree_cache_push(tree_ptr tree)
 		tree_cache_l.push_front(tree);
 		cached.iterator = tree_cache_l.begin();
 		cached.iterator_valid = true;
-		if(tree_cache_l.size() > (size_t)TREE_CACHE_LENGTH){
+		while(tree_cache_l.size() > (size_t)TREE_CACHE_LENGTH){
 			tree = tree_cache_l.back();
 			tree->get_cached().iterator_valid = false;
 			tree_cache_l.pop_back();
@@ -146,8 +142,6 @@ void forest::details::cache::tree_cache_clear()
 
 void forest::details::cache::release_cache()
 {
-	//leaf_cache.clear();
-	//intr_cache.clear();
 	leaf_cache_clear();
 	intr_cache_clear();
 	tree_cache_clear();
@@ -219,25 +213,16 @@ void forest::details::cache::check_intr_ref(node_ptr node)
 void forest::details::cache::set_tree_cache_length(int length)
 {
 	TREE_CACHE_LENGTH = length;
-	tree_cache_m.lock();
-	///tree_cache.resize(TREE_CACHE_LENGTH);
-	tree_cache_m.unlock();
 }
 
 void forest::details::cache::set_intr_cache_length(int length)
 {
 	INTR_CACHE_LENGTH = length;
-	intr_cache_m.lock();
-	///intr_cache.resize(INTR_CACHE_LENGTH);
-	intr_cache_m.unlock();
 }
 
 void forest::details::cache::set_leaf_cache_length(int length)
 {
 	LEAF_CACHE_LENGTH = length;
-	leaf_cache_m.lock();
-	///leaf_cache.resize(LEAF_CACHE_LENGTH);
-	leaf_cache_m.unlock();
 }
 
 void forest::details::cache::reserve_node(tree_t::node_ptr& node, bool w_lock)
@@ -245,7 +230,6 @@ void forest::details::cache::reserve_node(tree_t::node_ptr& node, bool w_lock)
 	ASSERT(has_data(node));
 	
 	bool is_leaf = node->is_leaf();
-	//string& path = get_node_data(node)->path;
 	
 	if(is_leaf){
 		if(w_lock){
@@ -283,7 +267,6 @@ void forest::details::cache::release_tree(tree_ptr tree)
 void forest::details::cache::release_node(tree_t::node_ptr& node, bool w_lock)
 {
 	bool is_leaf = node->is_leaf();
-	//string& path = get_node_data(node)->path;
 
 	if(is_leaf){
 		if(w_lock){
@@ -347,21 +330,14 @@ void forest::details::cache::leaf_insert(tree_t::node_ptr& node, bool w_lock)
 void forest::details::cache::clear_node_cache(tree_t::node_ptr& node)
 {
 	node_data_ptr data = get_node_data(node);
-	//string& path = data->path;
 	if(node->is_leaf()){
 		cache::leaf_lock();
 		leaf_cache_remove(node);
-		//if(cache::leaf_cache.has(path)){
-		//	cache::leaf_cache.remove(path);
-		//}
 		cache::leaf_unlock();
 	}
 	else{
 		cache::intr_lock();
 		intr_cache_remove(node);
-		//if(cache::intr_cache.has(path)){
-		//	cache::intr_cache.remove(path);
-		//}
 		cache::intr_unlock();
 	}
 }
