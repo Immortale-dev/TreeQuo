@@ -8,6 +8,10 @@ namespace forest{
 	
 namespace details{
 	
+	namespace cache {
+		struct tree_cache_ref_t;
+	}
+	
 	enum class KEY_TYPES { STRING };
 	enum class NODE_TYPES { INTR, LEAF };
 	enum class SAVE_TYPES{ LEAF, INTR, BASE };
@@ -19,6 +23,7 @@ namespace details{
 	class file_data_t;
 	class detached_leaf;
 	class tree_owner;
+	class node_addition;
 	
 	using string = std::string;
 	using int_t = long long int;
@@ -33,7 +38,7 @@ namespace details{
 	using detached_leaf_ptr = std::shared_ptr<detached_leaf>;
 	using tree_owner_ptr = std::shared_ptr<tree_owner>;
 	
-	using tree_t = BPlusTree<string, file_data_ptr, Tree>;
+	using tree_t = BPlusTree<string, file_data_ptr, Tree, node_addition>;
 	using child_item_type_ptr = tree_t::child_item_type_ptr;
 	
 	using tree_ptr = std::shared_ptr<Tree>;
@@ -65,7 +70,6 @@ namespace details{
 		string branch;
 		string annotation;
 	};
-	
 } // details
 } // forest
 

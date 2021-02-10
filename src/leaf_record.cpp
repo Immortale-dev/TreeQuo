@@ -8,15 +8,18 @@ forest::details::LeafRecord::LeafRecord()
 forest::details::LeafRecord::~LeafRecord()
 {
 	if(tree){
+		cache::tree_cache_m.lock();
 		tree->tree_release();
+		cache::tree_cache_m.unlock();
 	}
 	//dtor
 }
 
 forest::details::LeafRecord::LeafRecord(tree_t::iterator it, tree_ptr tree) : it(std::move(it)), tree(tree)
 {
+	cache::tree_cache_m.lock();
 	tree->tree_reserve();
-	// main ctor
+	cache::tree_cache_m.unlock();
 }
 
 bool forest::details::LeafRecord::eof()

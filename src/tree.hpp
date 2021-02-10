@@ -26,6 +26,12 @@
 #include "lock.hpp"
 #include "savior.hpp"
 
+#ifdef DEBUG_PERF
+extern unsigned long int h_enter, h_leave, h_insert, h_remove, h_reserve,
+		h_release, h_l_insert, h_l_delete, h_l_split, h_l_join,
+		h_l_shift, h_l_lock, h_l_free, h_l_ref, h_save_base; 
+#endif
+
 namespace forest{
 namespace details{
 	
@@ -43,6 +49,8 @@ namespace details{
 		using tree_node_type = tree_t::Node::nodes_type;
 		using tree_keys_type = tree_t::Node::keys_type;
 		
+		struct tree_cache_t;
+		
 		public:
 			Tree();
 			Tree(string path);
@@ -59,6 +67,8 @@ namespace details{
 			string get_annotation();
 			void set_annotation(string annotation);
 			
+			tree_cache_t& get_cached();
+			
 			TREE_TYPES get_type();
 			void set_type(TREE_TYPES type);
 			
@@ -73,7 +83,17 @@ namespace details{
 			static string seed(TREE_TYPES type, string path, int factor);
 			static tree_ptr get(string path);
 			
+			void tree_reserve();
+			void tree_release();
+			
 		private:
+		
+			// Cache optimisation structure
+			struct tree_cache_t{
+				cache::tree_cache_ref_t* ref = nullptr;
+				bool iterator_valid = false;
+				std::list<tree_ptr>::iterator iterator;
+			};
 		
 			// Intr methods
 			tree_intr_read_t read_intr(string filename);
@@ -88,8 +108,6 @@ namespace details{
 			// Tree methods
 			static tree_base_read_t read_base(string filename);
 			static void seed_tree(DBFS::File* file, TREE_TYPES type, int factor);
-			void tree_reserve();
-			void tree_release();
 		
 			// Proceed
 			void d_enter(tree_t::node_ptr& node, tree_t::PROCESS_TYPE type);
@@ -142,6 +160,8 @@ namespace details{
 			string name;
 			string annotation;
 			mutex tree_m;
+			
+			tree_cache_t cached;
 	};
 	
 } // details

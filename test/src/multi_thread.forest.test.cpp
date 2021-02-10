@@ -579,7 +579,13 @@ DESCRIBE("Test multi threads", {
 			EXPECT(forest::details::cache::intr_cache_r.size()).toBe(0);
 			EXPECT(forest::details::cache::tree_cache_r.size()).toBe(0);
 			
+			for(auto& it : forest::details::cache::tree_cache_r){
+				std::cout << "WTF??? " << (it.second->second) << std::endl;
+			}
+			
 			INFO_PRINT("Leafs Count: " + std::to_string(forest::details::cache::leaf_cache_r.size()));
+			INFO_PRINT("Intrs Count: " + std::to_string(forest::details::cache::intr_cache_r.size()));
+			INFO_PRINT("Trees Count: " + std::to_string(forest::details::cache::tree_cache_r.size()));
 		});
 	});
 });

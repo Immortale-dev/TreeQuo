@@ -88,7 +88,7 @@ namespace forest{
 		void erase_tree(string path);
 		tree_ptr get_tree(string path);
 		tree_ptr reach_tree(string path);
-		void leave_tree(string path);
+		void leave_tree(tree_ptr tree);
 
 		// Other methods
 		void init_savior();

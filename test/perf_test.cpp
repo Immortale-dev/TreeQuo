@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 //#define TEST_ONLY_RULE
 
 #include "qtest.hpp"

@@ -13,10 +13,10 @@ namespace details{
 forest::details::node_addition& forest::details::get_data(node_ptr node)
 {
 	if(node->is_leaf()){
-		auto r_node = std::static_pointer_cast<BPTLeaf<string, file_data_ptr> >(node);
+		auto r_node = std::static_pointer_cast<BPTLeaf<string, file_data_ptr, node_addition> >(node);
 		return r_node->data;
 	} else {
-		auto r_node = std::static_pointer_cast<BPTInternal<string, file_data_ptr> >(node);
+		auto r_node = std::static_pointer_cast<BPTInternal<string, file_data_ptr, node_addition> >(node);
 		return r_node->data;
 	}
 }
@@ -24,10 +24,10 @@ forest::details::node_addition& forest::details::get_data(node_ptr node)
 forest::details::node_addition& forest::details::get_data(tree_t::Node* node)
 {
 	if(node->is_leaf()){
-		auto r_node = static_cast<BPTLeaf<string, file_data_ptr>* >(node);
+		auto r_node = static_cast<BPTLeaf<string, file_data_ptr, node_addition>* >(node);
 		return r_node->data;
 	} else {
-		auto r_node = static_cast<BPTInternal<string, file_data_ptr>* >(node);
+		auto r_node = static_cast<BPTInternal<string, file_data_ptr, node_addition>* >(node);
 		return r_node->data;
 	}
 }
